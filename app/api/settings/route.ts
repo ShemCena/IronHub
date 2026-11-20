@@ -6,19 +6,26 @@ import { DEFAULT_BUSINESS_HOURS } from "@/lib/domain/membership";
 import { getAssignableRoles, getRoleLabel, hasPermission } from "@/lib/permissions/rbac";
 import { writeAuditLog } from "@/lib/audit/log";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await requireStaffSession("account:self");
+    const { searchParams } = new URL(request.url);
+    const scope = searchParams.get("scope") ?? "all"; // "settings" | "staff" | "audit" | "all"
+
     const canViewGymSettings = hasPermission(session.role, "settings:view");
     const canManageGymSettings = hasPermission(session.role, "settings:manage");
     const canManageStaff = hasPermission(session.role, "staff:manage");
     const canViewAudit = hasPermission(session.role, "audit:view");
 
+    const loadSettings = canViewGymSettings && (scope === "all" || scope === "settings");
+    const loadStaff = canManageStaff && (scope === "all" || scope === "staff");
+    const loadAudit = canViewAudit && (scope === "all" || scope === "audit");
+
     const [settings, staff, auditLogs] = await Promise.all([
-      canViewGymSettings
+      loadSettings
         ? prisma.gymSetting.findUnique({ where: { id: "default" } })
         : Promise.resolve(null),
-      canManageStaff
+      loadStaff
         ? prisma.user.findMany({
             orderBy: { createdAt: "asc" },
             select: {
@@ -31,7 +38,7 @@ export async function GET() {
             },
           })
         : Promise.resolve([]),
-      canViewAudit
+      loadAudit
         ? prisma.auditLog.findMany({
             take: 200,
             orderBy: { createdAt: "desc" },

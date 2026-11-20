@@ -14,6 +14,7 @@ import {
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PlanDistributionDonut } from "@/components/charts/plan-distribution-donut";
 import { formatCurrency } from "@/lib/formatting/currency";
+import { getCached, setCached } from "@/lib/cache/client-cache";
 import { cn } from "@/lib/utils";
 
 interface CoachRow {
@@ -54,11 +55,21 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
+    const cacheKey = `reports:${days}`;
+    const cached = getCached<ReportPayload>(cacheKey, 60_000);
+    if (cached) {
+      setData(cached);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     fetch(`/api/reports?days=${days}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((json) => {
-        if (json) setData(json);
+        if (json) {
+          setCached(cacheKey, json);
+          setData(json);
+        }
       })
       .finally(() => setLoading(false));
   }, [days]);

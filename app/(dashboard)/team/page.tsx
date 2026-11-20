@@ -15,6 +15,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { useFeedback } from "@/components/ui/feedback-modal";
+import { getCached, setCached, invalidateCache } from "@/lib/cache/client-cache";
 
 interface TeamUser {
   id: string;
@@ -50,12 +51,26 @@ export default function TeamPage() {
     role: "TRAINER" as "ADMIN" | "TRAINER",
   });
 
-  const loadTeam = useCallback(async () => {
-    setLoading(true);
+  const loadTeam = useCallback(async (force = false) => {
+    const cacheKey = "settings:staff";
+    const cached = force ? null : getCached<{
+      staff: TeamUser[];
+      currentUser?: { id: string };
+      permissions?: { assignableRoles: ("ADMIN" | "TRAINER")[] };
+    }>(cacheKey, 45_000);
+    if (cached) {
+      setStaff(cached.staff ?? []);
+      setCurrentUserId(cached.currentUser?.id ?? "");
+      setAssignableRoles(cached.permissions?.assignableRoles ?? []);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     try {
-      const res = await fetch("/api/settings");
+      const res = await fetch("/api/settings?scope=staff");
       if (res.ok) {
         const data = await res.json();
+        setCached(cacheKey, data);
         setStaff(data.staff ?? []);
         setCurrentUserId(data.currentUser?.id ?? "");
         setAssignableRoles(data.permissions?.assignableRoles ?? []);

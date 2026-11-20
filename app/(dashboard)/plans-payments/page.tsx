@@ -20,6 +20,7 @@ import { KpiCard } from "@/components/ui/kpi-card";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { useFeedback } from "@/components/ui/feedback-modal";
 import { formatCompactCurrency, formatCurrency, formatDateTime } from "@/lib/formatting/currency";
+import { getCached, setCached } from "@/lib/cache/client-cache";
 import { cn } from "@/lib/utils";
 
 interface PlanItem {
@@ -138,17 +139,26 @@ export default function PlansAndPaymentsPage() {
   }, [paySearch, payMethodFilter, payStatusFilter]);
 
   const loadAll = useCallback(async () => {
+    const cachedPlans = getCached<PlanItem[]>("plans:all", 60_000);
+    const cachedMembers = getCached<MemberOption[]>("members:options", 60_000);
+    if (cachedPlans) setPlans(cachedPlans);
+    if (cachedMembers) setMembers(cachedMembers);
+
     const [plansRes, memRes] = await Promise.all([
       fetch("/api/plans"),
       fetch("/api/members?pageSize=50"),
     ]);
     if (plansRes.ok) {
       const p = await plansRes.json();
-      setPlans(p.plans ?? []);
+      const nextPlans = p.plans ?? [];
+      setCached("plans:all", nextPlans);
+      setPlans(nextPlans);
     }
     if (memRes.ok) {
       const m = await memRes.json();
-      setMembers(m.members ?? []);
+      const nextMembers = m.members ?? [];
+      setCached("members:options", nextMembers);
+      setMembers(nextMembers);
     }
     loadPayments();
   }, [loadPayments]);

@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Save, CheckCircle2, AlertCircle, KeyRound, Building2, UserCircle2 } from "lucide-react";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { useFeedback } from "@/components/ui/feedback-modal";
+import { getCached, setCached } from "@/lib/cache/client-cache";
 import type { BusinessHoursMap } from "@/lib/domain/membership";
 
 interface GymSettingsState {
@@ -50,9 +51,22 @@ export default function SettingsPage() {
   const [pwSaving, setPwSaving] = useState(false);
 
   const loadSettings = useCallback(async () => {
-    const res = await fetch("/api/settings");
+    const cacheKey = "settings:gym";
+    const cached = getCached<{
+      currentUser: CurrentUserInfo | null;
+      permissions: SettingsPermissions | null;
+      settings: GymSettingsState | null;
+    }>(cacheKey, 60_000);
+    if (cached) {
+      setCurrentUser(cached.currentUser);
+      setProfileName(cached.currentUser?.name ?? "");
+      setPermissions(cached.permissions);
+      setSettings(cached.settings);
+    }
+    const res = await fetch("/api/settings?scope=settings");
     if (!res.ok) return;
     const data = await res.json();
+    setCached(cacheKey, data);
     setCurrentUser(data.currentUser ?? null);
     setProfileName(data.currentUser?.name ?? "");
     setPermissions(data.permissions ?? null);

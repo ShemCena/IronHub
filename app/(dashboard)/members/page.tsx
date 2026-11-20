@@ -19,6 +19,7 @@ import { PaginationBar } from "@/components/ui/pagination-bar";
 import { useFeedback } from "@/components/ui/feedback-modal";
 import { getPlanTierColor } from "@/components/charts/plan-distribution-donut";
 import { formatCurrency, formatDate } from "@/lib/formatting/currency";
+import { getCached, setCached, invalidateCache } from "@/lib/cache/client-cache";
 import { cn } from "@/lib/utils";
 
 interface MemberRow {
@@ -92,20 +93,41 @@ export default function MembersPage() {
     status: "ACTIVE" as "ACTIVE" | "EXPIRED" | "SUSPENDED" | "ARCHIVED",
   });
 
-  const loadMembers = useCallback(async () => {
-    setLoading(true);
+  const loadMembers = useCallback(async (force = false) => {
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: String(PAGE_SIZE),
+      status: statusFilter,
+      planId: planFilter,
+      scope,
+    });
+    if (search.trim()) params.set("q", search.trim());
+    const cacheKey = `members:${params.toString()}`;
+    const cached = force ? null : getCached<{
+      members: MemberRow[];
+      trainers: TrainerOption[];
+      role?: string;
+      summary: { total: number; active: number; expired: number; suspended: number };
+      pagination?: { totalPages: number; total: number };
+    }>(cacheKey, 45_000);
+
+    if (cached) {
+      setMembers(cached.members ?? []);
+      setTrainers(cached.trainers ?? []);
+      if (cached.role) setRole(cached.role);
+      setSummary(cached.summary ?? { total: 0, active: 0, expired: 0, suspended: 0 });
+      setTotalPages(cached.pagination?.totalPages ?? 1);
+      setTotalFiltered(cached.pagination?.total ?? 0);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
     try {
-      const params = new URLSearchParams({
-        page: String(page),
-        pageSize: String(PAGE_SIZE),
-        status: statusFilter,
-        planId: planFilter,
-        scope,
-      });
-      if (search.trim()) params.set("q", search.trim());
       const res = await fetch(`/api/members?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
+        setCached(cacheKey, data);
         setMembers(data.members ?? []);
         setTrainers(data.trainers ?? []);
         if (data.role) setRole(data.role);
@@ -119,18 +141,29 @@ export default function MembersPage() {
   }, [page, statusFilter, planFilter, search, scope]);
 
   useEffect(() => {
+    if (!search.trim()) {
+      loadMembers();
+      return;
+    }
     const timer = setTimeout(() => {
       loadMembers();
-    }, 150);
+    }, 180);
     return () => clearTimeout(timer);
-  }, [loadMembers]);
+  }, [loadMembers, search]);
 
   useEffect(() => {
+    const cachedPlans = getCached<PlanOption[]>("plans:active", 120_000);
+    if (cachedPlans) {
+      setPlans(cachedPlans);
+      return;
+    }
     fetch("/api/plans")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.plans) {
-          setPlans(data.plans.filter((p: PlanOption) => p.isActive));
+          const active = data.plans.filter((p: PlanOption) => p.isActive);
+          setCached("plans:active", active);
+          setPlans(active);
         }
       })
       .catch(() => {});

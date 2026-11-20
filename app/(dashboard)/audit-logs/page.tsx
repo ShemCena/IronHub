@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Search, ShieldAlert } from "lucide-react";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { formatDateTime } from "@/lib/formatting/currency";
+import { getCached, setCached } from "@/lib/cache/client-cache";
 import { cn } from "@/lib/utils";
 
 interface AuditEntry {
@@ -63,12 +64,21 @@ export default function AuditLogsPage() {
   const [loading, setLoading] = useState(true);
 
   const loadLogs = useCallback(async () => {
-    setLoading(true);
+    const cacheKey = "settings:audit";
+    const cached = getCached<AuditEntry[]>(cacheKey, 30_000);
+    if (cached) {
+      setLogs(cached);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     try {
-      const res = await fetch("/api/settings");
+      const res = await fetch("/api/settings?scope=audit");
       if (res.ok) {
         const data = await res.json();
-        setLogs(data.auditLogs ?? []);
+        const next = data.auditLogs ?? [];
+        setCached(cacheKey, next);
+        setLogs(next);
       }
     } finally {
       setLoading(false);

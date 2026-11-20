@@ -45,7 +45,7 @@ export async function GET(request: Request) {
       };
     }
 
-    const [members, total, totalCount, activeCount, expiredCount, suspendedCount, trainers, trainerRows] =
+    const [members, total, statusGroups, trainers, trainerRows] =
       await Promise.all([
         prisma.member.findMany({
           where,
@@ -65,10 +65,11 @@ export async function GET(request: Request) {
           },
         }),
         prisma.member.count({ where }),
-        prisma.member.count({ where: { status: { not: "ARCHIVED" } } }),
-        prisma.member.count({ where: { status: "ACTIVE" } }),
-        prisma.member.count({ where: { status: "EXPIRED" } }),
-        prisma.member.count({ where: { status: "SUSPENDED" } }),
+        prisma.member.groupBy({
+          by: ["status"],
+          where: { status: { not: "ARCHIVED" } },
+          _count: { _all: true },
+        }),
         prisma.user.findMany({
           where: { role: "TRAINER", isActive: true },
           select: { id: true, name: true },
@@ -78,6 +79,12 @@ export async function GET(request: Request) {
           SELECT id, "trainerId", "trainerFee"::float8 AS "trainerFee" FROM members WHERE status <> 'ARCHIVED'
         `,
       ]);
+
+    const statusCounts = new Map(statusGroups.map((g) => [g.status, g._count._all]));
+    const activeCount = statusCounts.get("ACTIVE") ?? 0;
+    const expiredCount = statusCounts.get("EXPIRED") ?? 0;
+    const suspendedCount = statusCounts.get("SUSPENDED") ?? 0;
+    const totalCount = activeCount + expiredCount + suspendedCount;
 
     const trainerNameById = new Map(trainers.map((t) => [t.id, t.name]));
     const trainerMetaByMemberId = new Map(

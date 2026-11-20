@@ -7,6 +7,17 @@ import { getAuthSecretKey } from "@/lib/auth/secret";
 
 const COOKIE_NAME = "ironhub_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 12; // 12 hours
+const SESSION_CACHE_TTL_MS = 15_000; // 15s warm-lambda cache to avoid redundant DB round-trips
+
+const sessionCache = new Map<string, { session: StaffSession | null; expiresAt: number }>();
+
+export function invalidateStaffSessionCache(userId?: string): void {
+  if (userId) {
+    sessionCache.delete(userId);
+  } else {
+    sessionCache.clear();
+  }
+}
 
 export interface StaffSession {
   userId: string;
@@ -63,13 +74,21 @@ export async function getStaffSession(): Promise<StaffSession | null> {
   const userId = await readStaffUserId(token);
   if (!userId) return null;
 
+  const cached = sessionCache.get(userId);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.session;
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { id: true, email: true, name: true, role: true, isActive: true },
   });
-  if (!user || !user.isActive) return null;
+  const resolved = !user || !user.isActive
+    ? null
+    : { userId: user.id, email: user.email, name: user.name, role: user.role };
 
-  return { userId: user.id, email: user.email, name: user.name, role: user.role };
+  sessionCache.set(userId, { session: resolved, expiresAt: Date.now() + SESSION_CACHE_TTL_MS });
+  return resolved;
 }
 
 export async function requireStaffSession(permission?: Permission): Promise<StaffSession> {

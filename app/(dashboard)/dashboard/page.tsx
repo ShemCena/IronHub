@@ -28,6 +28,7 @@ import { KpiCard } from "@/components/ui/kpi-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { PlanDistributionDonut } from "@/components/charts/plan-distribution-donut";
+import { getCached, setCached } from "@/lib/cache/client-cache";
 import { cn } from "@/lib/utils";
 
 interface CoachPerformance {
@@ -109,7 +110,14 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
+    const cacheKey = `dashboard:${days}`;
+    const cached = getCached<DashboardPayload>(cacheKey, 45_000);
+    if (cached) {
+      setData(cached);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     setError(null);
     fetch(`/api/dashboard?days=${days}`)
       .then(async (res) => {
@@ -118,10 +126,11 @@ export default function DashboardPage() {
         return json;
       })
       .then((json) => {
+        setCached(cacheKey, json);
         if (active) setData(json);
       })
       .catch((err) => {
-        if (active) setError(err instanceof Error ? err.message : "Error loading data");
+        if (active && !cached) setError(err instanceof Error ? err.message : "Error loading data");
       })
       .finally(() => {
         if (active) setLoading(false);

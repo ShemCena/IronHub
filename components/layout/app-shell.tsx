@@ -23,6 +23,7 @@ import { BrandMark } from "@/components/ui/brand-mark";
 import { cn } from "@/lib/utils";
 import type { StaffSession } from "@/lib/auth/session";
 import { getRoleLabel, hasPermission, type Permission } from "@/lib/permissions/rbac";
+import { getCached, setCached, invalidateCache } from "@/lib/cache/client-cache";
 
 interface NavItem {
   label: string;
@@ -76,18 +77,33 @@ export function AppShell({
   );
 
   useEffect(() => {
+    const cached = getCached<{ notifications: NotificationItem[]; unreadCount: number }>(
+      "notifications",
+      60_000
+    );
+    if (cached) {
+      setNotifications(cached.notifications);
+      setUnreadCount(cached.unreadCount);
+      return;
+    }
     fetch("/api/notifications")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data) {
-          setNotifications(data.notifications ?? []);
-          setUnreadCount(data.unreadCount ?? 0);
+          const payload = {
+            notifications: data.notifications ?? [],
+            unreadCount: data.unreadCount ?? 0,
+          };
+          setCached("notifications", payload);
+          setNotifications(payload.notifications);
+          setUnreadCount(payload.unreadCount);
         }
       })
       .catch(() => {});
-  }, [pathname]);
+  }, []);
 
   async function handleLogout() {
+    invalidateCache();
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
     router.refresh();

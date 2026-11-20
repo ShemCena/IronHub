@@ -25,9 +25,6 @@ export async function GET(request: Request) {
     const daysParam = Number(searchParams.get("days") ?? "7");
     const days = [7, 30, 90].includes(daysParam) ? daysParam : 7;
 
-    const settings = await prisma.gymSetting.findUnique({ where: { id: "default" } });
-    const timeZone = settings?.timezone ?? "Asia/Manila";
-
     const now = new Date();
     const startOfToday = new Date(now);
     startOfToday.setHours(0, 0, 0, 0);
@@ -42,6 +39,7 @@ export async function GET(request: Request) {
     const canViewRevenue = hasPermission(session.role, "payments:view");
 
     const [
+      settings,
       totalMembers,
       membersJoinedThisMonth,
       membersJoinedLastMonth,
@@ -60,6 +58,7 @@ export async function GET(request: Request) {
       allActiveMembers,
       trainerAssignments,
     ] = await Promise.all([
+      prisma.gymSetting.findUnique({ where: { id: "default" } }),
       prisma.member.count({ where: { status: { not: "ARCHIVED" } } }),
       prisma.member.count({
         where: { joinedAt: { gte: startOfThisMonth }, status: { not: "ARCHIVED" } },
@@ -138,7 +137,6 @@ export async function GET(request: Request) {
           firstName: true,
           lastName: true,
           status: true,
-          photoUrl: true,
           memberships: {
             orderBy: { endDate: "desc" },
             take: 1,
@@ -148,9 +146,10 @@ export async function GET(request: Request) {
             where: { status: "PAID" },
             select: { amount: true },
           },
-          attendanceRecords: {
-            where: { outcome: "APPROVED" },
-            select: { id: true },
+          _count: {
+            select: {
+              attendanceRecords: { where: { outcome: "APPROVED" } },
+            },
           },
         },
       }),
@@ -158,6 +157,8 @@ export async function GET(request: Request) {
         SELECT id, "trainerId", "trainerFee"::float8 AS "trainerFee" FROM members WHERE status <> 'ARCHIVED'
       `,
     ]);
+
+    const timeZone = settings?.timezone ?? "Asia/Manila";
 
     const trainerByMemberId = new Map<string, string | null>(
       trainerAssignments.map((r) => [r.id, r.trainerId])
@@ -217,7 +218,7 @@ export async function GET(request: Request) {
         const coached = allActiveMembers.filter((m) => trainerByMemberId.get(m.id) === t.id);
         const totalClients = coached.length;
         const activeClients = coached.filter((m) => m.status === "ACTIVE").length;
-        const totalSessions = coached.reduce((sum, m) => sum + m.attendanceRecords.length, 0);
+        const totalSessions = coached.reduce((sum, m) => sum + m._count.attendanceRecords, 0);
         const clientRevenue = coached.reduce(
           (sum, m) => sum + m.payments.reduce((pSum, p) => pSum + Number(p.amount), 0),
           0
@@ -245,10 +246,10 @@ export async function GET(request: Request) {
             memberCode: m.memberCode,
             name: `${m.firstName} ${m.lastName}`,
             status: m.status,
-            photoUrl: m.photoUrl,
+            photoUrl: null,
             planName: m.memberships[0]?.planNameSnapshot ?? "No Plan",
             expiryDate: m.memberships[0]?.endDate ?? null,
-            sessions: m.attendanceRecords.length,
+            sessions: m._count.attendanceRecords,
             trainerFee: trainerFeeByMemberId.get(m.id) ?? 0,
             revenueGenerated: m.payments.reduce((s, p) => s + Number(p.amount), 0),
           })),

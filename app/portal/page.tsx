@@ -31,6 +31,7 @@ import { KpiCard } from "@/components/ui/kpi-card";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { useFeedback } from "@/components/ui/feedback-modal";
 import { formatCurrency, formatDate, formatDateTime, formatTime } from "@/lib/formatting/currency";
+import { getCached, setCached, invalidateCache } from "@/lib/cache/client-cache";
 import { cn } from "@/lib/utils";
 
 type PortalSection = "overview" | "qr" | "attendance" | "membership" | "settings";
@@ -175,15 +176,32 @@ export default function MemberPortalDashboardPage() {
   const [savingProfile, setSavingProfile] = useState(false);
 
   const loadPortal = useCallback(async () => {
-    setLoading(true);
+    const cached = getCached<PortalDashboardPayload>("portal:me", 45_000);
+    if (cached) {
+      setData(cached);
+      setProfileForm({
+        phone: cached.member.phone ?? "",
+        address: cached.member.address ?? "",
+        emergencyContactName: cached.member.emergencyContactName ?? "",
+        emergencyContactPhone: cached.member.emergencyContactPhone ?? "",
+        photoUrl: cached.member.photoUrl ?? null,
+        currentPassword: "",
+        newPassword: "",
+      });
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     try {
       const res = await fetch("/api/portal/me");
       if (res.status === 401) {
+        invalidateCache();
         router.push("/login");
         return;
       }
       if (res.ok) {
         const json: PortalDashboardPayload = await res.json();
+        setCached("portal:me", json);
         setData(json);
         setProfileForm({
           phone: json.member.phone ?? "",
