@@ -27,8 +27,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${barlowCondensed.variable} dark`}>
-      <body className="min-h-screen bg-[#090A0D] text-[#F5F6F8] antialiased selection:bg-[#E32935]/30 selection:text-white">
+    <html
+      lang="en"
+      className={`${inter.variable} ${barlowCondensed.variable} dark`}
+      suppressHydrationWarning
+    >
+      <body
+        className="min-h-screen bg-[#090A0D] text-[#F5F6F8] antialiased selection:bg-[#E32935]/30 selection:text-white"
+        suppressHydrationWarning
+      >
         {children}
       </body>
     </html>
