@@ -154,13 +154,16 @@ export async function GET(request: Request) {
           },
         },
       }),
-      prisma.$queryRaw<{ id: string; trainerId: string | null }[]>`
-        SELECT id, "trainerId" FROM members WHERE status <> 'ARCHIVED'
+      prisma.$queryRaw<{ id: string; trainerId: string | null; trainerFee: number | null }[]>`
+        SELECT id, "trainerId", "trainerFee"::float8 AS "trainerFee" FROM members WHERE status <> 'ARCHIVED'
       `,
     ]);
 
     const trainerByMemberId = new Map<string, string | null>(
       trainerAssignments.map((r) => [r.id, r.trainerId])
+    );
+    const trainerFeeByMemberId = new Map<string, number>(
+      trainerAssignments.map((r) => [r.id, Number(r.trainerFee ?? 0)])
     );
 
     const dayBuckets = new Map<string, { label: string; newMembers: number; renewals: number }>();
@@ -219,7 +222,11 @@ export async function GET(request: Request) {
           (sum, m) => sum + m.payments.reduce((pSum, p) => pSum + Number(p.amount), 0),
           0
         );
-        const coachingRevenue = Math.round(clientRevenue * 0.4 + totalSessions * 250);
+        const totalTrainerFees = coached.reduce(
+          (sum, m) => sum + (trainerFeeByMemberId.get(m.id) ?? 0),
+          0
+        );
+        const coachingRevenue = Math.round(totalTrainerFees + totalSessions * 250);
         const monthlySalary = 22000 + coachingRevenue;
 
         return {
@@ -239,9 +246,10 @@ export async function GET(request: Request) {
             name: `${m.firstName} ${m.lastName}`,
             status: m.status,
             photoUrl: m.photoUrl,
-            planName: m.memberships[0]?.planNameSnapshot ?? "Unassigned",
+            planName: m.memberships[0]?.planNameSnapshot ?? "No Plan",
             expiryDate: m.memberships[0]?.endDate ?? null,
             sessions: m.attendanceRecords.length,
+            trainerFee: trainerFeeByMemberId.get(m.id) ?? 0,
             revenueGenerated: m.payments.reduce((s, p) => s + Number(p.amount), 0),
           })),
         };

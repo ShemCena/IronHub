@@ -20,6 +20,7 @@ export const memberCreateSchema = z.object({
   address: z.string().trim().max(240).optional().or(z.literal("")),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
   trainerId: z.string().trim().optional().or(z.literal("")),
+  trainerFee: z.coerce.number().min(0, "Trainor fee cannot be negative.").max(500000).optional(),
   planId: z.string().trim().optional().or(z.literal("")),
   paymentMethod: z
     .enum(["CASH", "CARD", "EWALLET", "BANK_TRANSFER", "OTHER"])

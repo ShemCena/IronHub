@@ -51,6 +51,7 @@ interface CoachedClientItem {
   planName: string;
   expiryDate: string | null;
   sessions: number;
+  trainerFee: number;
   revenueGenerated: number;
 }
 
@@ -259,7 +260,7 @@ export default function DashboardPage() {
       {/* TRAINOR WORKSPACE VIEW */}
       {isTrainor ? (
         <>
-          <div className="animate-stagger-1 grid grid-cols-2 gap-2.5 md:grid-cols-4">
+          <div className="animate-stagger-1 grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-4">
             <KpiCard
               label="Coaching Revenue"
               value={loading ? "—" : formatCurrency(data?.trainerStats?.coachingRevenue ?? 0)}
@@ -316,7 +317,7 @@ export default function DashboardPage() {
                       <th className="px-3 py-2">Plan</th>
                       <th className="px-3 py-2">Status</th>
                       <th className="px-3 py-2">Sessions</th>
-                      <th className="px-3 py-2 text-right">Client Plan Rev</th>
+                      <th className="px-3 py-2 text-right">Trainor Fee</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#242934]">
@@ -353,7 +354,7 @@ export default function DashboardPage() {
                             {c.sessions}
                           </td>
                           <td className="px-3 py-2 text-right font-semibold text-[#2BCB83] tabular-nums">
-                            {formatCurrency(c.revenueGenerated)}
+                            {formatCurrency(c.trainerFee ?? 0)}
                           </td>
                         </tr>
                       ))
@@ -417,7 +418,7 @@ export default function DashboardPage() {
         /* ADMIN WORKSPACE VIEW (1:1 Reference Proportions at 1024px+) */
         <>
           {/* Row 2: 4 Compact KPI Cards in 1 Horizontal Row (md:grid-cols-4) */}
-          <div className="animate-stagger-1 grid grid-cols-2 gap-2.5 md:grid-cols-4">
+          <div className="animate-stagger-1 grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-4">
             <KpiCard
               label="Total Members"
               value={loading ? "—" : data?.kpis.totalMembers ?? 0}

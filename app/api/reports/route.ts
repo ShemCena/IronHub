@@ -65,13 +65,16 @@ export async function GET(request: Request) {
           attendanceRecords: { where: { outcome: "APPROVED" }, select: { id: true } },
         },
       }),
-      prisma.$queryRaw<{ id: string; trainerId: string | null }[]>`
-        SELECT id, "trainerId" FROM members WHERE status <> 'ARCHIVED'
+      prisma.$queryRaw<{ id: string; trainerId: string | null; trainerFee: number | null }[]>`
+        SELECT id, "trainerId", "trainerFee"::float8 AS "trainerFee" FROM members WHERE status <> 'ARCHIVED'
       `,
     ]);
 
     const trainerByMemberId = new Map<string, string | null>(
       trainerAssignments.map((r) => [r.id, r.trainerId])
+    );
+    const trainerFeeByMemberId = new Map<string, number>(
+      trainerAssignments.map((r) => [r.id, Number(r.trainerFee ?? 0)])
     );
 
     const grossRevenue = payments
@@ -83,16 +86,20 @@ export async function GET(request: Request) {
     const netRevenue = Math.max(0, grossRevenue - refundedAmount);
 
     if (format === "csv") {
+      const safeCsv = (val: string) => {
+        const cleaned = val.replace(/"/g, '""');
+        return /^[=+\-@\t\r]/.test(cleaned) ? `"'${cleaned}"` : `"${cleaned}"`;
+      };
       const header = "Receipt,Member Code,Member Name,Plan,Method,Status,Amount (PHP),Paid At\n";
       const rows = payments
         .map((p) =>
           [
-            p.receiptNumber,
-            p.member.memberCode,
-            `"${p.member.firstName} ${p.member.lastName}"`,
-            `"${p.membership?.planNameSnapshot ?? "Manual"}"`,
-            p.method,
-            p.status,
+            safeCsv(p.receiptNumber),
+            safeCsv(p.member.memberCode),
+            safeCsv(`${p.member.firstName} ${p.member.lastName}`),
+            safeCsv(p.membership?.planNameSnapshot ?? "Manual"),
+            safeCsv(p.method),
+            safeCsv(p.status),
             Number(p.amount).toFixed(2),
             p.paidAt.toISOString(),
           ].join(",")
@@ -160,7 +167,11 @@ export async function GET(request: Request) {
           (sum, m) => sum + m.payments.reduce((pSum, p) => pSum + Number(p.amount), 0),
           0
         );
-        const coachingRevenue = Math.round(clientRevenue * 0.4 + totalSessions * 250);
+        const totalTrainerFees = coached.reduce(
+          (sum, m) => sum + (trainerFeeByMemberId.get(m.id) ?? 0),
+          0
+        );
+        const coachingRevenue = Math.round(totalTrainerFees + totalSessions * 250);
         return {
           id: t.id,
           name: t.name,

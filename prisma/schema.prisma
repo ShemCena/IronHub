@@ -101,6 +101,7 @@ model Member {
   address               String?
   status                MemberStatus @default(EXPIRED)
   trainerId             String?
+  trainerFee            Decimal      @default(0) @db.Decimal(12, 2)
   notes                 String?
   passwordHash          String?
   portalActivatedAt     DateTime?    @db.Timestamptz(6)

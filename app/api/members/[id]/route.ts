@@ -58,9 +58,21 @@ export async function PATCH(
     const data = parsed.data;
     if (data.status === "ARCHIVED" && !hasPermission(session.role, "members:archive")) {
       return NextResponse.json(
-        { error: "Forbidden: only Owner or Admin can archive members." },
+        { error: "Forbidden: only Admin can archive members." },
         { status: 403 }
       );
+    }
+
+    if (session.role === "TRAINER") {
+      const ownerRows = await prisma.$queryRaw<{ trainerId: string | null }[]>`
+        SELECT "trainerId" FROM members WHERE id = ${id} LIMIT 1
+      `;
+      if (!ownerRows.length || ownerRows[0].trainerId !== session.userId) {
+        return NextResponse.json(
+          { error: "Forbidden: you can only edit clients assigned to you." },
+          { status: 403 }
+        );
+      }
     }
 
     const updated = await prisma.$transaction(async (tx) => {
@@ -75,11 +87,22 @@ export async function PATCH(
           emergencyContactPhone: data.emergencyContactPhone || null,
           address: data.address || null,
           notes: data.notes || null,
-          trainerId: data.trainerId === "" ? null : data.trainerId,
-          status: data.status,
+          status: session.role === "TRAINER" ? undefined : data.status,
           archivedAt: data.status === "ARCHIVED" ? new Date() : undefined,
         },
       });
+
+      if (session.role !== "TRAINER" && data.trainerId !== undefined) {
+        const nextTrainer = data.trainerId === "" ? null : data.trainerId;
+        await tx.$executeRaw`
+          UPDATE members SET "trainerId" = ${nextTrainer} WHERE id = ${id}
+        `;
+      }
+      if (data.trainerFee !== undefined) {
+        await tx.$executeRaw`
+          UPDATE members SET "trainerFee" = ${Number(data.trainerFee)} WHERE id = ${id}
+        `;
+      }
 
       await writeAuditLog(tx, {
         actorId: session.userId,

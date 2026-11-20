@@ -34,6 +34,7 @@ interface MemberRow {
   expiryDate: string | null;
   trainerId: string | null;
   trainerName: string | null;
+  trainerFee: number;
   hasActiveQr: boolean;
   qrLast4: string | null;
 }
@@ -81,6 +82,7 @@ export default function MembersPage() {
     phone: "",
     address: "",
     trainerId: "",
+    trainerFee: 500,
     planId: "",
     paymentMethod: "CASH" as "CASH" | "CARD" | "EWALLET" | "BANK_TRANSFER" | "OTHER",
     paymentReference: "",
@@ -141,6 +143,7 @@ export default function MembersPage() {
       phone: "",
       address: "",
       trainerId: trainers[0]?.id ?? "",
+      trainerFee: 500,
       planId: "",
       paymentMethod: "CASH",
       paymentReference: "",
@@ -159,6 +162,7 @@ export default function MembersPage() {
       phone: m.phone ?? "",
       address: "",
       trainerId: m.trainerId ?? "",
+      trainerFee: m.trainerFee ?? 0,
       planId: "",
       paymentMethod: "CASH",
       paymentReference: "",
@@ -247,21 +251,19 @@ export default function MembersPage() {
               </button>
             </div>
           )}
-          {role !== "TRAINER" && (
-            <button
-              type="button"
-              onClick={openAddModal}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E32935] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#F13A46]"
-            >
-              <UserPlus className="h-3.5 w-3.5" />
-              <span>Add Member</span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={openAddModal}
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E32935] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#F13A46]"
+          >
+            <UserPlus className="h-3.5 w-3.5" />
+            <span>{role === "TRAINER" ? "Add Client" : "Add Member"}</span>
+          </button>
         </div>
       </div>
 
       {/* 4 Compact KPI Cards in 1 Horizontal Row (md:grid-cols-4) */}
-      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-4">
         <KpiCard
           label="Total Members"
           value={summary.total}
@@ -357,8 +359,8 @@ export default function MembersPage() {
               <tr>
                 <th className="px-3 py-2">Member</th>
                 <th className="px-3 py-2">ID</th>
-                <th className="px-3 py-2">Plan</th>
-                <th className="px-3 py-2">Trainor</th>
+                <th className="px-3 py-2">Plan Type</th>
+                <th className="px-3 py-2">Trainor &amp; Fee</th>
                 <th className="px-3 py-2">Status</th>
                 <th className="px-3 py-2">Expiry</th>
                 <th className="px-3 py-2 text-right">Actions</th>
@@ -414,20 +416,36 @@ export default function MembersPage() {
                       </td>
                       <td className="px-3 py-2">
                         {m.currentPlan ? (
-                          <span className="inline-flex items-center gap-1.5 text-[#F5F6F8]">
-                            <span
-                              className="h-2 w-2 rounded-full"
-                              style={{ backgroundColor: getPlanTierColor(m.currentPlan) }}
-                              aria-hidden="true"
-                            />
-                            {m.currentPlan}
-                          </span>
+                          <div>
+                            <span className="inline-flex items-center gap-1.5 font-medium text-[#F5F6F8]">
+                              <span
+                                className="h-2 w-2 rounded-full"
+                                style={{ backgroundColor: getPlanTierColor(m.currentPlan) }}
+                                aria-hidden="true"
+                              />
+                              {m.currentPlan}
+                            </span>
+                            <p className="text-[10px] text-[#8A93A2]">
+                              {m.currentPlan.toLowerCase().includes("daily")
+                                ? "Daily Pass"
+                                : "Membership"}
+                            </p>
+                          </div>
                         ) : (
-                          <span className="text-[#8A93A2]">Unassigned</span>
+                          <span className="text-[11px] text-[#F2B84B]">No Plan</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-[11px] text-[#A4AAB5]">
-                        {m.trainerName ?? <span className="text-[#8A93A2]">—</span>}
+                      <td className="px-3 py-2 text-[11px]">
+                        {m.trainerName ? (
+                          <div>
+                            <p className="text-[#F5F6F8]">{m.trainerName}</p>
+                            <p className="font-mono text-[10px] text-[#2BCB83]">
+                              Fee: {formatCurrency(m.trainerFee ?? 0)}
+                            </p>
+                          </div>
+                        ) : (
+                          <span className="text-[#8A93A2]">—</span>
+                        )}
                       </td>
                       <td className="px-3 py-2">
                         <StatusBadge status={m.status} />
@@ -553,20 +571,38 @@ export default function MembersPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="mb-1 block text-xs text-[#A4AAB5]">Assigned Trainor / Coach</label>
-                <select
-                  value={form.trainerId}
-                  onChange={(e) => setForm({ ...form, trainerId: e.target.value })}
-                  className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
-                >
-                  <option value="">No assigned trainor</option>
-                  {trainers.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                {role !== "TRAINER" && (
+                  <div>
+                    <label className="mb-1 block text-xs text-[#A4AAB5]">
+                      Assigned Trainor / Coach
+                    </label>
+                    <select
+                      value={form.trainerId}
+                      onChange={(e) => setForm({ ...form, trainerId: e.target.value })}
+                      className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
+                    >
+                      <option value="">No assigned trainor</option>
+                      {trainers.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div className={role === "TRAINER" ? "sm:col-span-2" : ""}>
+                  <label className="mb-1 block text-xs text-[#A4AAB5]">Trainor Fee (PHP)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step="50"
+                    value={form.trainerFee}
+                    onChange={(e) => setForm({ ...form, trainerFee: Number(e.target.value) })}
+                    placeholder="500"
+                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8] tabular-nums"
+                  />
+                </div>
               </div>
 
               {editTarget ? (

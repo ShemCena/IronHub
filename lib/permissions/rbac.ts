@@ -55,6 +55,7 @@ const ROLE_PERMISSIONS: Record<StaffRole, ReadonlySet<Permission>> = {
   TRAINER: new Set<Permission>([
     "dashboard:view",
     "members:view",
+    "members:write",
     "account:self",
   ]),
 };

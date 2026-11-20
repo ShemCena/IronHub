@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import type { MemberStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { requireStaffSession } from "@/lib/auth/session";
@@ -73,19 +74,22 @@ export async function GET(request: Request) {
           select: { id: true, name: true },
           orderBy: { name: "asc" },
         }),
-        prisma.$queryRaw<{ id: string; trainerId: string | null }[]>`
-          SELECT id, "trainerId" FROM members WHERE status <> 'ARCHIVED'
+        prisma.$queryRaw<{ id: string; trainerId: string | null; trainerFee: number | null }[]>`
+          SELECT id, "trainerId", "trainerFee"::float8 AS "trainerFee" FROM members WHERE status <> 'ARCHIVED'
         `,
       ]);
 
     const trainerNameById = new Map(trainers.map((t) => [t.id, t.name]));
-    const trainerIdByMemberId = new Map(trainerRows.map((r) => [r.id, r.trainerId]));
+    const trainerMetaByMemberId = new Map(
+      trainerRows.map((r) => [r.id, { trainerId: r.trainerId, trainerFee: Number(r.trainerFee ?? 0) }])
+    );
 
     return NextResponse.json({
       role: session.role,
       trainers,
       members: members.map((m) => {
-        const assignedTrainerId = trainerIdByMemberId.get(m.id) ?? null;
+        const meta = trainerMetaByMemberId.get(m.id);
+        const assignedTrainerId = meta?.trainerId ?? null;
         return {
           id: m.id,
           memberCode: m.memberCode,
@@ -98,6 +102,7 @@ export async function GET(request: Request) {
           joinedAt: m.joinedAt,
           trainerId: assignedTrainerId,
           trainerName: assignedTrainerId ? trainerNameById.get(assignedTrainerId) ?? null : null,
+          trainerFee: meta?.trainerFee ?? 0,
           currentPlan: m.memberships[0]?.planNameSnapshot ?? null,
           expiryDate: m.memberships[0]?.endDate ?? null,
           hasActiveQr: m.qrCredentials.length > 0,
@@ -163,6 +168,11 @@ export async function POST(request: Request) {
         }
       }
 
+      const defaultPortalHash = await bcrypt.hash("Member@2026!", 10);
+      const assignedTrainerId =
+        session.role === "TRAINER" ? session.userId : data.trainerId || null;
+      const trainerFee = Number(data.trainerFee ?? 0);
+
       const member = await tx.member.create({
         data: {
           memberCode,
@@ -174,10 +184,15 @@ export async function POST(request: Request) {
           emergencyContactPhone: data.emergencyContactPhone || null,
           address: data.address || null,
           notes: data.notes || null,
-          trainerId: data.trainerId || null,
+          passwordHash: defaultPortalHash,
+          portalActivatedAt: new Date(),
           status: assignedPlan ? "ACTIVE" : "EXPIRED",
         },
       });
+
+      await tx.$executeRaw`
+        UPDATE members SET "trainerId" = ${assignedTrainerId}, "trainerFee" = ${trainerFee} WHERE id = ${member.id}
+      `;
 
       if (assignedPlan) {
         const startDate = new Date();

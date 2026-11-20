@@ -596,7 +596,7 @@ export default function MemberPortalDashboardPage() {
               </section>
 
               {/* 4 Client KPIs in 1 Horizontal Row (md:grid-cols-4) */}
-              <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-4">
                 <KpiCard
                   label="Current Plan"
                   value={
@@ -889,6 +889,7 @@ export default function MemberPortalDashboardPage() {
               </div>
 
               <div className="overflow-hidden rounded-xl border border-[#242934] bg-[#111318]">
+                <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="border-b border-[#242934] bg-[#171A21] text-[10px] font-medium uppercase tracking-wider text-[#8A93A2]">
                     <tr>
@@ -927,6 +928,7 @@ export default function MemberPortalDashboardPage() {
                     )}
                   </tbody>
                 </table>
+                </div>
                 {data.attendance.length > 0 && (
                   <div className="border-t border-[#242934] px-3.5 py-2">
                     <PaginationBar
@@ -992,6 +994,7 @@ export default function MemberPortalDashboardPage() {
                 <div className="border-b border-[#242934] px-3.5 py-2.5">
                   <h2 className="text-xs font-semibold text-[#F5F6F8]">Payment Receipts</h2>
                 </div>
+                <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="border-b border-[#242934] bg-[#171A21] text-[10px] font-medium uppercase tracking-wider text-[#8A93A2]">
                     <tr>
@@ -1032,6 +1035,7 @@ export default function MemberPortalDashboardPage() {
                     )}
                   </tbody>
                 </table>
+                </div>
                 {data.payments.length > 0 && (
                   <div className="border-t border-[#242934] px-3.5 py-2">
                     <PaginationBar

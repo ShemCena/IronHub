@@ -103,6 +103,16 @@ async function main() {
 
   const plans = [
     {
+      name: "Daily Pass",
+      description: "Single-day walk-in gym floor access with locker use.",
+      price: 150,
+      enrollmentFee: 0,
+      durationValue: 1,
+      durationUnit: "DAYS" as const,
+      benefits: ["1-Day Gym Access", "Locker Access"],
+      isPopular: false,
+    },
+    {
       name: "Basic",
       description: "Full gym floor access and standard strength equipment.",
       price: 499,
@@ -145,14 +155,14 @@ async function main() {
   }
 
   const sampleMembers = [
-    { code: "IH-1001", first: "Juan", last: "Dela Cruz", email: "juan@ironhub.ph", phone: "+63 917 111 0001", planIdx: 2, trainerIdx: 0, status: "ACTIVE" as const },
-    { code: "IH-1002", first: "Maria", last: "Santos", email: "maria@ironhub.ph", phone: "+63 917 111 0002", planIdx: 1, trainerIdx: 0, status: "ACTIVE" as const },
-    { code: "IH-1003", first: "Mark", last: "Reyes", email: "mark@ironhub.ph", phone: "+63 917 111 0003", planIdx: 0, trainerIdx: 1, status: "ACTIVE" as const },
-    { code: "IH-1004", first: "Ana", last: "Garcia", email: "ana@ironhub.ph", phone: "+63 917 111 0004", planIdx: 2, trainerIdx: 0, status: "ACTIVE" as const },
-    { code: "IH-1005", first: "Carlos", last: "Villanueva", email: "carlos@ironhub.ph", phone: "+63 917 111 0005", planIdx: 1, trainerIdx: 2, status: "EXPIRED" as const },
-    { code: "IH-1006", first: "Bea", last: "Mendoza", email: "bea@ironhub.ph", phone: "+63 917 111 0006", planIdx: 2, trainerIdx: 1, status: "ACTIVE" as const },
-    { code: "IH-1007", first: "Rafael", last: "Torres", email: "rafael@ironhub.ph", phone: "+63 917 111 0007", planIdx: 1, trainerIdx: 2, status: "SUSPENDED" as const },
-    { code: "IH-1008", first: "Sofia", last: "Lim", email: "sofia@ironhub.ph", phone: "+63 917 111 0008", planIdx: 0, trainerIdx: 0, status: "ACTIVE" as const },
+    { code: "IH-1001", first: "Juan", last: "Dela Cruz", email: "juan@ironhub.ph", phone: "+63 917 111 0001", planIdx: 3, trainerIdx: 0, trainerFee: 1200, status: "ACTIVE" as const },
+    { code: "IH-1002", first: "Maria", last: "Santos", email: "maria@ironhub.ph", phone: "+63 917 111 0002", planIdx: 2, trainerIdx: 0, trainerFee: 800, status: "ACTIVE" as const },
+    { code: "IH-1003", first: "Mark", last: "Reyes", email: "mark@ironhub.ph", phone: "+63 917 111 0003", planIdx: 1, trainerIdx: 1, trainerFee: 600, status: "ACTIVE" as const },
+    { code: "IH-1004", first: "Ana", last: "Garcia", email: "ana@ironhub.ph", phone: "+63 917 111 0004", planIdx: 3, trainerIdx: 0, trainerFee: 1200, status: "ACTIVE" as const },
+    { code: "IH-1005", first: "Carlos", last: "Villanueva", email: "carlos@ironhub.ph", phone: "+63 917 111 0005", planIdx: 0, trainerIdx: 2, trainerFee: 500, status: "EXPIRED" as const },
+    { code: "IH-1006", first: "Bea", last: "Mendoza", email: "bea@ironhub.ph", phone: "+63 917 111 0006", planIdx: 3, trainerIdx: 1, trainerFee: 1000, status: "ACTIVE" as const },
+    { code: "IH-1007", first: "Rafael", last: "Torres", email: "rafael@ironhub.ph", phone: "+63 917 111 0007", planIdx: 2, trainerIdx: 2, trainerFee: 750, status: "SUSPENDED" as const },
+    { code: "IH-1008", first: "Sofia", last: "Lim", email: "sofia@ironhub.ph", phone: "+63 917 111 0008", planIdx: 0, trainerIdx: 0, trainerFee: 500, status: "ACTIVE" as const },
   ];
 
   const now = new Date();
@@ -166,6 +176,7 @@ async function main() {
         where: { id: existing.id },
         data: {
           trainerId: existing.trainerId ?? assignedTrainer.id,
+          trainerFee: Number(existing.trainerFee) > 0 ? existing.trainerFee : m.trainerFee,
           ...(existing.passwordHash ? {} : { passwordHash: memberPassword, portalActivatedAt: now }),
         },
       });
@@ -192,6 +203,7 @@ async function main() {
         phone: m.phone,
         status: m.status,
         trainerId: assignedTrainer.id,
+        trainerFee: m.trainerFee,
         passwordHash: memberPassword,
         portalActivatedAt: startDate,
         joinedAt: startDate,

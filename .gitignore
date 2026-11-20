@@ -50,3 +50,8 @@ GEMINI.md
 .cursor/
 .gemini/
 .windsurf/
+
+# local design references & planning docs
+IRONHUB_product.md
+IRONHUB_design_technical_guide.md
+IronHub Fitness Dashboard Showcase.png

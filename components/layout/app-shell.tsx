@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -9,7 +9,6 @@ import {
   CreditCard,
   BarChart3,
   Settings,
-  Search,
   Bell,
   LogOut,
   Menu,
@@ -43,11 +42,6 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Settings", href: "/settings", icon: Settings, permission: "account:self" },
 ];
 
-interface SearchResult {
-  members: { id: string; memberCode: string; name: string; status: string }[];
-  plans: { id: string; name: string; price: number }[];
-}
-
 interface NotificationItem {
   id: string;
   title: string;
@@ -66,14 +60,8 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
-  const [searchOpen, setSearchOpen] = useState(false);
-
   const [notifOpen, setNotifOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -88,17 +76,6 @@ export function AppShell({
   );
 
   useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
-
-  useEffect(() => {
     fetch("/api/notifications")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -109,27 +86,6 @@ export function AppShell({
       })
       .catch(() => {});
   }, [pathname]);
-
-  useEffect(() => {
-    const trimmed = searchQuery.trim();
-    if (trimmed.length < 2) {
-      setSearchResults(null);
-      return;
-    }
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}`);
-        if (res.ok) {
-          const data = await res.json();
-          setSearchResults(data);
-          setSearchOpen(true);
-        }
-      } catch {
-        // Ignore transient search errors
-      }
-    }, 180);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -252,7 +208,7 @@ export function AppShell({
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Compact Top Bar */}
         <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-3 border-b border-[#1F232C] bg-[#090A0D]/90 px-4 backdrop-blur-md print:hidden lg:px-5">
-          <div className="flex flex-1 items-center gap-2.5">
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
@@ -261,61 +217,9 @@ export function AppShell({
             >
               <Menu className="h-4 w-4" />
             </button>
-
-            <div className="relative w-full max-w-xs">
-              <Search
-                className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8A93A2]"
-                aria-hidden="true"
-              />
-              <input
-                ref={searchInputRef}
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => searchResults && setSearchOpen(true)}
-                onBlur={() => setTimeout(() => setSearchOpen(false), 180)}
-                placeholder="Search members, plans..."
-                className="h-9 w-full rounded-lg border border-[#242934] bg-[#111318] pl-8 pr-12 text-xs text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]/40"
-                aria-label="Global search"
-                aria-expanded={searchOpen}
-              />
-              <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-[#292E38] bg-[#171A21] px-1 py-0.5 text-[9px] font-medium text-[#8A93A2] sm:inline-block">
-                Ctrl K
-              </kbd>
-
-              {searchOpen && searchResults && (
-                <div className="absolute left-0 right-0 top-11 z-50 rounded-xl border border-[#292E38] bg-[#171A21] p-1.5 shadow-2xl">
-                  {searchResults.members.length === 0 && searchResults.plans.length === 0 ? (
-                    <p className="px-3 py-2 text-xs text-[#8A93A2]">
-                      No matching members or plans.
-                    </p>
-                  ) : (
-                    <>
-                      {searchResults.members.map((m) => (
-                        <Link
-                          key={m.id}
-                          href={`/members/${m.id}`}
-                          className="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs hover:bg-[#20242D]"
-                        >
-                          <span>{m.name}</span>
-                          <span className="font-mono text-[11px] text-[#8A93A2]">{m.memberCode}</span>
-                        </Link>
-                      ))}
-                      {searchResults.plans.map((p) => (
-                        <Link
-                          key={p.id}
-                          href="/plans-payments"
-                          className="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs hover:bg-[#20242D]"
-                        >
-                          <span>{p.name} Plan</span>
-                          <span className="text-[11px] text-[#A4AAB5] tabular-nums">₱{p.price}</span>
-                        </Link>
-                      ))}
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
+            <span className="text-xs font-medium text-[#A4AAB5]">
+              IronHub Fitness · {getRoleLabel(session.role)} Workspace
+            </span>
           </div>
 
           <div className="flex items-center gap-2.5">

@@ -110,11 +110,7 @@ export async function POST(request: Request) {
 
     if (!member || !member.passwordHash) {
       return NextResponse.json(
-        {
-          error: member
-            ? "Member account not activated yet. Switch to 'Activate Member Account' below."
-            : "Invalid email/Member ID or password.",
-        },
+        { error: "Invalid email/Member ID or password." },
         { status: 401 }
       );
     }
