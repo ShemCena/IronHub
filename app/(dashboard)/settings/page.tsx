@@ -579,9 +579,7 @@ export default function SettingsPage() {
             <div>
               <h2 className="text-sm font-semibold text-[#F5F6F8]">Staff Accounts &amp; Roles</h2>
               <p className="text-xs text-[#8A93A2]">
-                {currentUser.role === "OWNER"
-                  ? "As Owner, you can add and manage Admins, Front Desk staff, and Trainers."
-                  : "As Admin, you can add and manage Front Desk staff and Trainers."}
+                Add and manage Administrators, Front Desk staff, and Trainers.
               </p>
             </div>
             {permissions.assignableRoles.length > 0 && (

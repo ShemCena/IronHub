@@ -98,7 +98,8 @@ describe("RBAC permissions & staff hierarchy", () => {
     expect(canManageStaffRole("OWNER", "ADMIN")).toBe(true);
     expect(canManageStaffRole("ADMIN", "FRONT_DESK")).toBe(true);
     expect(canManageStaffRole("ADMIN", "TRAINER")).toBe(true);
-    expect(canManageStaffRole("ADMIN", "ADMIN")).toBe(false);
+    expect(canManageStaffRole("ADMIN", "ADMIN")).toBe(true);
+    expect(canManageStaffRole("ADMIN", "OWNER")).toBe(false);
     expect(hasPermission("FRONT_DESK", "payments:record")).toBe(true);
     expect(hasPermission("FRONT_DESK", "payments:refund_void")).toBe(false);
     expect(hasPermission("TRAINER", "reports:view")).toBe(false);

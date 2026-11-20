@@ -88,10 +88,11 @@ export function assertPermission(role: StaffRole, permission: Permission): void 
   }
 }
 
-/** Roles an actor is allowed to create or manage. Nobody can create another Owner. */
+/** Roles an actor is allowed to create or manage. */
 export function getAssignableRoles(actor: StaffRole): StaffRole[] {
-  if (actor === "OWNER") return ["ADMIN", "FRONT_DESK", "TRAINER"];
-  if (actor === "ADMIN") return ["FRONT_DESK", "TRAINER"];
+  if (actor === "OWNER" || actor === "ADMIN") {
+    return ["ADMIN", "FRONT_DESK", "TRAINER"];
+  }
   return [];
 }
 
