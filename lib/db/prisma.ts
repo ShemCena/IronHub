@@ -8,15 +8,19 @@ const globalForPrisma = globalThis as unknown as {
 
 function createPrismaClient(): PrismaClient {
   const connectionString =
-    process.env.DATABASE_URL ??
+    process.env.DATABASE_URL ||
+    process.env.DIRECT_URL ||
     "postgresql://postgres:postgres@localhost:5432/postgres";
+
   const isLocal =
     connectionString.includes("localhost") || connectionString.includes("127.0.0.1");
 
   const pool = new Pool({
     connectionString,
     ssl: isLocal ? false : { rejectUnauthorized: false },
-    max: 5,
+    max: 10,
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000,
   });
 
   const adapter = new PrismaPg(pool);
@@ -28,6 +32,4 @@ function createPrismaClient(): PrismaClient {
 
 export const prisma = globalForPrisma.prismaV2 ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prismaV2 = prisma;
-}
+globalForPrisma.prismaV2 = prisma;

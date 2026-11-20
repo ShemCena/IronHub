@@ -143,8 +143,12 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Login error:", error);
+    const msg = error instanceof Error ? error.message : "Unable to sign in right now.";
     return NextResponse.json(
-      { error: "Unable to sign in right now." },
+      {
+        error: "Unable to sign in right now. Please check system status or credentials.",
+        debug: process.env.NODE_ENV !== "production" ? msg : undefined,
+      },
       { status: 500 }
     );
   }

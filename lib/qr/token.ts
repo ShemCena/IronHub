@@ -34,8 +34,9 @@ function getEncryptionKey(): Buffer {
   const material =
     process.env.QR_ENCRYPTION_KEY ??
     process.env.AUTH_SECRET ??
-    (process.env.NODE_ENV === "production" ? "" : "ironhub-local-dev-qr-key");
-  if (!material) throw new Error("QR_ENCRYPTION_KEY or AUTH_SECRET must be configured.");
+    (process.env.DATABASE_URL
+      ? `ironhub-qr-${process.env.DATABASE_URL.slice(0, 32)}`
+      : "ironhub-local-dev-qr-key-32chars!");
   return crypto.createHash("sha256").update(`ironhub-qr:${material}`).digest();
 }
 
