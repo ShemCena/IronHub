@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Lock, Mail, AlertCircle } from "lucide-react";
+import { Lock, Mail, AlertCircle, QrCode, ArrowRight } from "lucide-react";
 import { BrandMark } from "@/components/ui/brand-mark";
 
 export default function LoginPage() {
@@ -37,16 +38,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#090A0D] px-4 py-12">
-      <div className="w-full max-w-md rounded-2xl border border-[#292E38] bg-[#111318] p-8">
-        <div className="mb-8 flex flex-col gap-3">
+    <div className="flex min-h-screen items-center justify-center bg-[#090A0D] px-4 py-10">
+      <div className="w-full max-w-sm rounded-2xl border border-[#242934] bg-[#111318] p-6 animate-panel-enter">
+        <div className="mb-6 flex flex-col gap-2.5">
           <BrandMark />
-          <div className="mt-2">
-            <h1 className="text-2xl font-semibold tracking-tight text-[#F5F6F8]">
-              Staff Sign In
+          <div className="mt-1">
+            <h1 className="text-xl font-semibold tracking-tight text-[#F5F6F8]">
+              Staff Workspace Sign In
             </h1>
-            <p className="mt-1 text-sm text-[#A4AAB5]">
-              Access member records, QR check-in, and over-the-counter payments.
+            <p className="mt-0.5 text-xs text-[#A4AAB5]">
+              Owner, Admin, Front Desk, and Trainer access.
             </p>
           </div>
         </div>
@@ -54,23 +55,20 @@ export default function LoginPage() {
         {error && (
           <div
             role="alert"
-            className="mb-5 flex items-start gap-2.5 rounded-lg border border-[#F05252]/30 bg-[#F05252]/10 px-3.5 py-2.5 text-sm text-[#F05252]"
+            className="mb-4 flex items-start gap-2 rounded-lg border border-[#F05252]/30 bg-[#F05252]/10 px-3 py-2 text-xs text-[#F05252]"
           >
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
-            <label
-              htmlFor="email"
-              className="mb-1.5 block text-xs font-medium text-[#A4AAB5]"
-            >
+            <label htmlFor="email" className="mb-1 block text-xs font-medium text-[#A4AAB5]">
               Staff Email
             </label>
             <div className="relative">
-              <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#747C89]" />
+              <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8A93A2]" />
               <input
                 id="email"
                 type="email"
@@ -79,20 +77,17 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="owner@ironhub.ph"
-                className="h-11 w-full rounded-lg border border-[#292E38] bg-[#171A21] pl-10 pr-3 text-sm text-[#F5F6F8] placeholder:text-[#747C89] focus:border-[#E32935] focus:outline-none"
+                className="h-10 w-full rounded-lg border border-[#242934] bg-[#171A21] pl-9 pr-3 text-sm text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none"
               />
             </div>
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              className="mb-1.5 block text-xs font-medium text-[#A4AAB5]"
-            >
+            <label htmlFor="password" className="mb-1 block text-xs font-medium text-[#A4AAB5]">
               Password
             </label>
             <div className="relative">
-              <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#747C89]" />
+              <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8A93A2]" />
               <input
                 id="password"
                 type="password"
@@ -101,7 +96,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
-                className="h-11 w-full rounded-lg border border-[#292E38] bg-[#171A21] pl-10 pr-3 text-sm text-[#F5F6F8] placeholder:text-[#747C89] focus:border-[#E32935] focus:outline-none"
+                className="h-10 w-full rounded-lg border border-[#242934] bg-[#171A21] pl-9 pr-3 text-sm text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none"
               />
             </div>
           </div>
@@ -109,15 +104,24 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 flex h-11 w-full items-center justify-center rounded-lg bg-[#E32935] px-4 text-sm font-semibold text-white transition-colors duration-150 hover:bg-[#F13A46] disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-1 flex h-10 w-full items-center justify-center rounded-lg bg-[#E32935] px-4 text-xs font-semibold text-white transition-colors duration-150 hover:bg-[#F13A46] disabled:opacity-60"
           >
             {loading ? "Signing in..." : "Sign In to Workspace"}
           </button>
         </form>
 
-        <p className="mt-6 border-t border-[#292E38] pt-4 text-xs text-[#747C89]">
-          Authorized gym personnel only. All actions are recorded in the audit log.
-        </p>
+        <div className="mt-5 border-t border-[#242934] pt-4">
+          <Link
+            href="/portal/login"
+            className="group flex items-center justify-between rounded-xl border border-[#242934] bg-[#171A21] px-3.5 py-2.5 text-xs transition-colors hover:border-[#E32935]/40 hover:bg-[#1D2029]"
+          >
+            <span className="flex items-center gap-2 font-medium text-[#F5F6F8]">
+              <QrCode className="h-4 w-4 text-[#E32935]" />
+              Gym Member? Generate Your QR Pass
+            </span>
+            <ArrowRight className="h-3.5 w-3.5 text-[#8A93A2] transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        </div>
       </div>
     </div>
   );

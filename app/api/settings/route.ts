@@ -3,18 +3,22 @@ import { prisma } from "@/lib/db/prisma";
 import { requireStaffSession } from "@/lib/auth/session";
 import { gymSettingsSchema } from "@/lib/validation/schemas";
 import { DEFAULT_BUSINESS_HOURS } from "@/lib/domain/membership";
-import { hasPermission } from "@/lib/permissions/rbac";
+import { getAssignableRoles, getRoleLabel, hasPermission } from "@/lib/permissions/rbac";
 import { writeAuditLog } from "@/lib/audit/log";
 
 export async function GET() {
   try {
-    const session = await requireStaffSession("settings:view");
-    const canViewStaff = hasPermission(session.role, "staff:manage");
+    const session = await requireStaffSession("account:self");
+    const canViewGymSettings = hasPermission(session.role, "settings:view");
+    const canManageGymSettings = hasPermission(session.role, "settings:manage");
+    const canManageStaff = hasPermission(session.role, "staff:manage");
     const canViewAudit = hasPermission(session.role, "audit:view");
 
     const [settings, staff, auditLogs] = await Promise.all([
-      prisma.gymSetting.findUnique({ where: { id: "default" } }),
-      canViewStaff
+      canViewGymSettings
+        ? prisma.gymSetting.findUnique({ where: { id: "default" } })
+        : Promise.resolve(null),
+      canManageStaff
         ? prisma.user.findMany({
             orderBy: { createdAt: "asc" },
             select: {
@@ -29,7 +33,7 @@ export async function GET() {
         : Promise.resolve([]),
       canViewAudit
         ? prisma.auditLog.findMany({
-            take: 25,
+            take: 30,
             orderBy: { createdAt: "desc" },
             include: { actor: { select: { name: true, role: true } } },
           })
@@ -37,19 +41,35 @@ export async function GET() {
     ]);
 
     return NextResponse.json({
-      settings: settings ?? {
-        id: "default",
-        gymName: "IronHub Fitness",
-        email: "support@ironhub.ph",
-        phone: "+63 917 000 0000",
-        address: "123 Fitness Street, Cadiz City",
-        timezone: "Asia/Manila",
-        currency: "PHP",
-        businessHours: DEFAULT_BUSINESS_HOURS,
-        allowMultipleCheckInsPerDay: false,
-        duplicateCheckInWindowMinutes: 30,
-        expiryReminderDays: 7,
+      currentUser: {
+        id: session.userId,
+        name: session.name,
+        email: session.email,
+        role: session.role,
+        roleLabel: getRoleLabel(session.role),
       },
+      permissions: {
+        canViewGymSettings,
+        canManageGymSettings,
+        canManageStaff,
+        canViewAudit,
+        assignableRoles: getAssignableRoles(session.role),
+      },
+      settings: canViewGymSettings
+        ? settings ?? {
+            id: "default",
+            gymName: "IronHub Fitness",
+            email: "support@ironhub.ph",
+            phone: "+63 917 000 0000",
+            address: "123 Fitness Street, Cadiz City",
+            timezone: "Asia/Manila",
+            currency: "PHP",
+            businessHours: DEFAULT_BUSINESS_HOURS,
+            allowMultipleCheckInsPerDay: false,
+            duplicateCheckInWindowMinutes: 30,
+            expiryReminderDays: 7,
+          }
+        : null,
       staff,
       auditLogs,
     });

@@ -1,6 +1,6 @@
 # IRONHUB — Gym Management System
 
-IRONHUB is a web-based gym management platform for daily front-desk operations, member administration, QR-based check-in, over-the-counter payment recording, and business reporting.
+IRONHUB is a web-based gym management platform for daily front-desk operations, member administration, client self-service QR check-in passes, over-the-counter payment recording, and business reporting.
 
 ## Stack
 
@@ -8,7 +8,7 @@ IRONHUB is a web-based gym management platform for daily front-desk operations, 
 - **Styling:** Tailwind CSS
 - **Database:** Supabase PostgreSQL + Prisma ORM
 - **Charts & Tables:** Recharts, Lucide React
-- **QR Credentials:** Server-side `qrcode` generation (opaque hashed tokens) + `@zxing/browser` camera scanner with manual fallback
+- **QR Credentials:** Client self-service QR generation (`/portal`) with opaque SHA-256 hashed tokens + `@zxing/browser` front-desk camera scanner (`/check-in`) with manual fallback
 - **Validation & Auth:** Zod, `bcryptjs`, HTTP-only signed sessions (`jose`), server-enforced RBAC
 
 ## Setup
@@ -26,8 +26,8 @@ Copy `.env.example` to `.env` and add your Supabase PostgreSQL connection string
 3. Push schema & seed initial data:
 
 ```bash
-npx prisma generate
-npx prisma db push
+npm run db:generate
+npm run db:push
 npm run db:seed
 ```
 
@@ -37,7 +37,13 @@ npm run db:seed
 npm run dev
 ```
 
-## Seeded Staff Accounts
+## Seeded Accounts
 
-- **Owner:** `owner@ironhub.ph` / `IronHub@2026!`
-- **Front Desk:** `desk@ironhub.ph` / `FrontDesk@2026!`
+### Staff Workspace (`/login`)
+- **Owner (Full Access):** `owner@ironhub.ph` / `IronHub@2026!`
+- **Admin (Operations & Staff Management):** `admin@ironhub.ph` / `Admin@2026!`
+- **Front Desk (Members, Check-In, OTC Payments):** `desk@ironhub.ph` / `FrontDesk@2026!`
+- **Trainer (Dashboard, Members, Check-In):** `trainer@ironhub.ph` / `Trainer@2026!`
+
+### Client QR Pass Portal (`/portal/login`)
+- **Sample Active Member:** `IH-1001` (or `juan@ironhub.ph`) / `Member@2026!`

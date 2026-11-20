@@ -5,8 +5,14 @@ import {
   evaluateCheckInEligibility,
   isGymCurrentlyOpen,
 } from "@/lib/domain/membership";
-import { generateOpaqueQrToken, hashQrToken, isValidQrTokenFormat } from "@/lib/qr/token";
-import { hasPermission } from "@/lib/permissions/rbac";
+import {
+  decryptQrToken,
+  encryptQrToken,
+  generateOpaqueQrToken,
+  hashQrToken,
+  isValidQrTokenFormat,
+} from "@/lib/qr/token";
+import { canManageStaffRole, hasPermission } from "@/lib/permissions/rbac";
 
 describe("Membership domain logic", () => {
   it("calculates end date for months, weeks, and days", () => {
@@ -74,18 +80,25 @@ describe("Membership domain logic", () => {
 });
 
 describe("QR token security", () => {
-  it("generates opaque tokens with consistent SHA-256 hashes", () => {
+  it("generates opaque tokens with SHA-256 hashes and AES-256-GCM portal encryption", () => {
     const { rawToken, tokenHash, tokenLast4 } = generateOpaqueQrToken();
     expect(isValidQrTokenFormat(rawToken)).toBe(true);
     expect(hashQrToken(rawToken)).toBe(tokenHash);
     expect(tokenLast4).toHaveLength(4);
+
+    const encrypted = encryptQrToken(rawToken);
+    expect(decryptQrToken(encrypted)).toBe(rawToken);
   });
 });
 
-describe("RBAC permissions", () => {
-  it("restricts financial void/refund and settings management to Owner/Admin", () => {
+describe("RBAC permissions & staff hierarchy", () => {
+  it("allows Owner and Admin to manage staff according to hierarchy", () => {
     expect(hasPermission("OWNER", "settings:manage")).toBe(true);
-    expect(hasPermission("ADMIN", "payments:refund_void")).toBe(true);
+    expect(hasPermission("ADMIN", "staff:manage")).toBe(true);
+    expect(canManageStaffRole("OWNER", "ADMIN")).toBe(true);
+    expect(canManageStaffRole("ADMIN", "FRONT_DESK")).toBe(true);
+    expect(canManageStaffRole("ADMIN", "TRAINER")).toBe(true);
+    expect(canManageStaffRole("ADMIN", "ADMIN")).toBe(false);
     expect(hasPermission("FRONT_DESK", "payments:record")).toBe(true);
     expect(hasPermission("FRONT_DESK", "payments:refund_void")).toBe(false);
     expect(hasPermission("TRAINER", "reports:view")).toBe(false);

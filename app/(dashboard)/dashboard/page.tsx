@@ -115,9 +115,9 @@ export default function DashboardPage() {
     : "";
 
   return (
-    <div className="space-y-6">
-      {/* Athletic Hero Banner matching the Reference Showcase */}
-      <section className="animate-panel-enter relative min-h-[210px] overflow-hidden rounded-2xl border border-[#242934] bg-[#0D0F14]">
+    <div className="space-y-4">
+      {/* Compressed Athletic Hero Banner */}
+      <section className="animate-panel-enter relative min-h-[164px] overflow-hidden rounded-2xl border border-[#242934] bg-[#0D0F14]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/images/hero-athlete.jpg"
@@ -134,27 +134,27 @@ export default function DashboardPage() {
           aria-hidden="true"
         />
 
-        <div className="relative flex min-h-[210px] flex-col justify-between gap-6 p-6 md:flex-row md:items-center md:p-8">
+        <div className="relative flex min-h-[164px] flex-col justify-between gap-4 p-5 md:flex-row md:items-center md:px-6">
           <div className="max-w-md">
-            <h1 className="text-3xl font-bold leading-[1.1] tracking-tight text-white sm:text-4xl">
+            <h1 className="text-2xl font-bold leading-[1.1] tracking-tight text-white sm:text-3xl">
               Welcome back,
               <span className="mt-0.5 block italic text-[#E32935]">{firstName}!</span>
             </h1>
-            <p className="mt-2.5 text-sm text-[#A4AAB5]">
+            <p className="mt-1.5 text-xs text-[#A4AAB5]">
               Here&apos;s what&apos;s happening at {data?.gymName ?? "your gym"} today.
             </p>
           </div>
 
-          <div className="flex flex-col items-start gap-2 md:items-end">
+          <div className="flex flex-col items-start gap-1.5 md:items-end">
             {dateLabel && (
-              <p className="text-xs font-medium text-[#A4AAB5]">{dateLabel}</p>
+              <p className="text-[11px] font-medium text-[#A4AAB5]">{dateLabel}</p>
             )}
             {timeLabel && (
-              <p className="text-3xl font-bold tracking-tight text-white tabular-nums sm:text-4xl">
+              <p className="text-2xl font-bold tracking-tight text-white tabular-nums sm:text-3xl">
                 {timeLabel}
               </p>
             )}
-            <div className="flex flex-wrap items-center gap-3 pt-0.5">
+            <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
               {data && (
                 <span
                   className={cn(
@@ -180,7 +180,7 @@ export default function DashboardPage() {
                     type="button"
                     onClick={() => setDays(d)}
                     className={cn(
-                      "rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors",
+                      "rounded-md px-2 py-0.5 text-[10px] font-medium transition-colors",
                       days === d
                         ? "bg-[#E32935] text-white"
                         : "text-[#A4AAB5] hover:bg-[#20242D] hover:text-white"
@@ -198,19 +198,19 @@ export default function DashboardPage() {
       {error && (
         <div
           role="alert"
-          className="flex items-center gap-2.5 rounded-xl border border-[#F05252]/30 bg-[#F05252]/10 p-4 text-sm text-[#F05252]"
+          className="flex items-center gap-2 rounded-xl border border-[#F05252]/30 bg-[#F05252]/10 p-3 text-xs text-[#F05252]"
         >
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* KPI Row (4 Reference Cards) */}
-      <div className="animate-stagger-1 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {/* Compressed KPI Row */}
+      <div className="animate-stagger-1 grid grid-cols-2 gap-3.5 xl:grid-cols-4">
         <KpiCard
           label="Total Members"
           value={loading ? "—" : data?.kpis.totalMembers ?? 0}
-          helper="Registered active & expired"
+          helper="Registered profiles"
           icon={Users}
           tone="blue"
           href="/members"
@@ -219,7 +219,7 @@ export default function DashboardPage() {
           label="Active Today"
           value={loading ? "—" : data?.kpis.activeMembers ?? 0}
           helper={
-            loading ? "Checking validity..." : `${data?.kpis.expiringSoonCount ?? 0} expiring soon`
+            loading ? "Checking..." : `${data?.kpis.expiringSoonCount ?? 0} expiring soon`
           }
           icon={CalendarCheck}
           tone="green"
@@ -229,7 +229,7 @@ export default function DashboardPage() {
           <KpiCard
             label="Revenue Today"
             value={loading ? "—" : formatCurrency(data?.kpis.revenueToday ?? 0)}
-            helper="Posted over-the-counter"
+            helper="Posted OTC today"
             icon={Banknote}
             tone="purple"
             href="/plans-payments"
@@ -254,12 +254,12 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Reference 3-Column Row: Membership Overview | Membership Plans | Quick Actions */}
-      <div className="animate-stagger-2 grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <div className="rounded-2xl border border-[#242934] bg-[#111318] p-5 xl:col-span-5">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-base font-semibold text-[#F5F6F8]">Membership Overview</h2>
-            <div className="flex items-center gap-3.5 text-xs text-[#A4AAB5]">
+      {/* Compressed 3-Column Row */}
+      <div className="animate-stagger-2 grid grid-cols-1 gap-3.5 xl:grid-cols-12">
+        <div className="rounded-xl border border-[#242934] bg-[#111318] p-4 xl:col-span-5">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold text-[#F5F6F8]">Membership Overview</h2>
+            <div className="flex items-center gap-3 text-[11px] text-[#A4AAB5]">
               <span className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-[#4B91F1]" />
                 New Members
@@ -271,7 +271,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="h-56 w-full">
+          <div className="h-48 w-full">
             {loading ? (
               <div className="flex h-full items-center justify-center text-xs text-[#8A93A2]">
                 Loading activity chart...
@@ -322,10 +322,10 @@ export default function DashboardPage() {
                     dataKey="newMembers"
                     name="New Members"
                     stroke="#4B91F1"
-                    strokeWidth={2.25}
+                    strokeWidth={2}
                     fill="url(#newMembersFill)"
-                    dot={{ r: 3, strokeWidth: 2, fill: "#111318" }}
-                    activeDot={{ r: 5 }}
+                    dot={{ r: 2.5, strokeWidth: 2, fill: "#111318" }}
+                    activeDot={{ r: 4 }}
                     isAnimationActive={false}
                   />
                   <Area
@@ -333,10 +333,10 @@ export default function DashboardPage() {
                     dataKey="renewals"
                     name="Renewals"
                     stroke="#E32935"
-                    strokeWidth={2.25}
+                    strokeWidth={2}
                     fill="url(#renewalsFill)"
-                    dot={{ r: 3, strokeWidth: 2, fill: "#111318" }}
-                    activeDot={{ r: 5 }}
+                    dot={{ r: 2.5, strokeWidth: 2, fill: "#111318" }}
+                    activeDot={{ r: 4 }}
                     isAnimationActive={false}
                   />
                 </AreaChart>
@@ -346,90 +346,93 @@ export default function DashboardPage() {
         </div>
 
         {/* Membership Plans Donut */}
-        <div className="flex flex-col justify-between rounded-2xl border border-[#242934] bg-[#111318] p-5 xl:col-span-4">
-          <h2 className="text-base font-semibold text-[#F5F6F8]">Membership Plans</h2>
-          <div className="my-auto py-3">
+        <div className="flex flex-col justify-between rounded-xl border border-[#242934] bg-[#111318] p-4 xl:col-span-4">
+          <h2 className="text-sm font-semibold text-[#F5F6F8]">Membership Plans</h2>
+          <div className="my-auto py-2">
             <PlanDistributionDonut data={data?.planDistribution ?? []} loading={loading} />
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="rounded-2xl border border-[#242934] bg-[#111318] p-5 xl:col-span-3">
-          <h2 className="mb-3.5 text-base font-semibold text-[#F5F6F8]">Quick Actions</h2>
-          <div className="space-y-2.5">
+        {/* Role-Scoped Quick Actions */}
+        <div className="rounded-xl border border-[#242934] bg-[#111318] p-4 xl:col-span-3">
+          <h2 className="mb-3 text-sm font-semibold text-[#F5F6F8]">Quick Actions</h2>
+          <div className="space-y-2">
             <Link
               href="/check-in"
-              className="group flex items-center justify-between rounded-xl border border-[#E32935]/30 bg-[#171A21] p-3 transition-colors hover:border-[#E32935]/60 hover:bg-[#1D2029]"
+              className="group flex items-center justify-between rounded-xl border border-[#E32935]/30 bg-[#171A21] p-2.5 transition-colors hover:border-[#E32935]/60 hover:bg-[#1D2029]"
             >
-              <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#E32935]/18 text-[#E32935]">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#E32935]/18 text-[#E32935]">
                   <ScanLine className="h-4 w-4" />
                 </span>
                 <div>
-                  <p className="text-xs font-semibold text-[#F5F6F8]">Scan Now</p>
-                  <p className="text-[11px] text-[#8A93A2]">Check-In Members</p>
+                  <p className="text-xs font-semibold text-[#F5F6F8]">Scan Client QR</p>
+                  <p className="text-[10px] text-[#8A93A2]">Check-In Member Pass</p>
                 </div>
               </div>
-              <ChevronRight className="h-4 w-4 text-[#8A93A2] transition-transform group-hover:translate-x-0.5" />
-            </Link>
-
-            <Link
-              href="/qr-generator"
-              className="group flex items-center justify-between rounded-xl border border-[#242934] bg-[#171A21] p-3 transition-colors hover:border-[#363D4A] hover:bg-[#1D2029]"
-            >
-              <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#4B91F1]/18 text-[#4B91F1]">
-                  <QrCode className="h-4 w-4" />
-                </span>
-                <div>
-                  <p className="text-xs font-semibold text-[#F5F6F8]">Generate QR</p>
-                  <p className="text-[11px] text-[#8A93A2]">For Members</p>
-                </div>
-              </div>
-              <ChevronRight className="h-4 w-4 text-[#8A93A2] transition-transform group-hover:translate-x-0.5" />
+              <ChevronRight className="h-3.5 w-3.5 text-[#8A93A2] transition-transform group-hover:translate-x-0.5" />
             </Link>
 
             <Link
               href="/members"
-              className="group flex items-center justify-between rounded-xl border border-[#242934] bg-[#171A21] p-3 transition-colors hover:border-[#363D4A] hover:bg-[#1D2029]"
+              className="group flex items-center justify-between rounded-xl border border-[#242934] bg-[#171A21] p-2.5 transition-colors hover:border-[#363D4A] hover:bg-[#1D2029]"
             >
-              <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#8B5CF6]/18 text-[#A78BFA]">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#8B5CF6]/18 text-[#A78BFA]">
                   <UserPlus className="h-4 w-4" />
                 </span>
                 <div>
                   <p className="text-xs font-semibold text-[#F5F6F8]">Add Member</p>
-                  <p className="text-[11px] text-[#8A93A2]">New Registration</p>
+                  <p className="text-[10px] text-[#8A93A2]">New Registration</p>
                 </div>
               </div>
-              <ChevronRight className="h-4 w-4 text-[#8A93A2] transition-transform group-hover:translate-x-0.5" />
+              <ChevronRight className="h-3.5 w-3.5 text-[#8A93A2] transition-transform group-hover:translate-x-0.5" />
             </Link>
 
+            {data?.kpis.revenueToday !== null && (
+              <Link
+                href="/plans-payments"
+                className="group flex items-center justify-between rounded-xl border border-[#242934] bg-[#171A21] p-2.5 transition-colors hover:border-[#363D4A] hover:bg-[#1D2029]"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#2BCB83]/18 text-[#2BCB83]">
+                    <CreditCard className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <p className="text-xs font-semibold text-[#F5F6F8]">Record Payment</p>
+                    <p className="text-[10px] text-[#8A93A2]">Over-the-Counter</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-3.5 w-3.5 text-[#8A93A2] transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            )}
+
             <Link
-              href="/plans-payments"
-              className="group flex items-center justify-between rounded-xl border border-[#242934] bg-[#171A21] p-3 transition-colors hover:border-[#363D4A] hover:bg-[#1D2029]"
+              href="/portal/login"
+              target="_blank"
+              className="group flex items-center justify-between rounded-xl border border-[#242934] bg-[#171A21] p-2.5 transition-colors hover:border-[#363D4A] hover:bg-[#1D2029]"
             >
-              <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#2BCB83]/18 text-[#2BCB83]">
-                  <CreditCard className="h-4 w-4" />
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#4B91F1]/18 text-[#4B91F1]">
+                  <QrCode className="h-4 w-4" />
                 </span>
                 <div>
-                  <p className="text-xs font-semibold text-[#F5F6F8]">Record Payment</p>
-                  <p className="text-[11px] text-[#8A93A2]">Over-the-Counter</p>
+                  <p className="text-xs font-semibold text-[#F5F6F8]">Client QR Portal</p>
+                  <p className="text-[10px] text-[#8A93A2]">Self-Service Pass</p>
                 </div>
               </div>
-              <ChevronRight className="h-4 w-4 text-[#8A93A2] transition-transform group-hover:translate-x-0.5" />
+              <ChevronRight className="h-3.5 w-3.5 text-[#8A93A2] transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
         </div>
       </div>
 
-      {/* Recent Check-Ins */}
-      <div className="animate-stagger-3 rounded-2xl border border-[#242934] bg-[#111318] p-5">
-        <div className="mb-3 flex items-center justify-between">
+      {/* Compressed Recent Check-Ins */}
+      <div className="animate-stagger-3 rounded-xl border border-[#242934] bg-[#111318] p-4">
+        <div className="mb-2.5 flex items-center justify-between">
           <div>
-            <h2 className="text-base font-semibold text-[#F5F6F8]">Recent Check-Ins</h2>
-            <p className="text-xs text-[#8A93A2]">Latest QR and manual desk entries</p>
+            <h2 className="text-sm font-semibold text-[#F5F6F8]">Recent Check-Ins</h2>
+            <p className="text-[11px] text-[#8A93A2]">Latest scanned client QR and manual entries</p>
           </div>
           <Link
             href="/check-in"
@@ -440,20 +443,20 @@ export default function DashboardPage() {
         </div>
 
         {loading ? (
-          <p className="py-8 text-center text-xs text-[#8A93A2]">Loading check-ins...</p>
+          <p className="py-6 text-center text-xs text-[#8A93A2]">Loading check-ins...</p>
         ) : !data?.recentCheckIns.length ? (
-          <p className="py-8 text-center text-xs text-[#8A93A2]">
+          <p className="py-6 text-center text-xs text-[#8A93A2]">
             No check-ins recorded yet today.
           </p>
         ) : (
-          <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             {data.recentCheckIns.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-[#242934] bg-[#171A21]/60 px-3.5 py-2.5 text-sm"
+                className="flex items-center justify-between gap-2.5 rounded-lg border border-[#242934] bg-[#171A21]/60 px-3 py-2 text-xs"
               >
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#292E38] bg-[#111318] text-xs font-semibold text-[#F5F6F8]">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#292E38] bg-[#111318] text-[11px] font-semibold text-[#F5F6F8]">
                     {item.memberName
                       .split(" ")
                       .map((n) => n[0])
@@ -468,7 +471,7 @@ export default function DashboardPage() {
                     >
                       {item.memberName}
                     </Link>
-                    <p className="truncate text-xs text-[#8A93A2]">
+                    <p className="truncate text-[11px] text-[#8A93A2]">
                       {item.memberCode} · {item.method} · {formatTime(item.checkedInAt)}
                     </p>
                   </div>

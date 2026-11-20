@@ -1,7 +1,9 @@
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import type { StaffRole } from "@prisma/client";
+import { prisma } from "@/lib/db/prisma";
 import { assertPermission, type Permission } from "@/lib/permissions/rbac";
+import { getAuthSecretKey } from "@/lib/auth/secret";
 
 const COOKIE_NAME = "ironhub_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 12; // 12 hours
@@ -13,47 +15,20 @@ export interface StaffSession {
   role: StaffRole;
 }
 
-function getSecretKey(): Uint8Array {
-  const secret = process.env.AUTH_SECRET;
-  if (!secret || secret.length < 16) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("AUTH_SECRET environment variable must be configured.");
-    }
-    return new TextEncoder().encode("ironhub-local-dev-secret-change-in-prod");
-  }
-  return new TextEncoder().encode(secret);
-}
-
 export async function signSessionToken(session: StaffSession): Promise<string> {
-  return new SignJWT({
-    sub: session.userId,
-    email: session.email,
-    name: session.name,
-    role: session.role,
-  })
+  return new SignJWT({ typ: "staff" })
     .setProtectedHeader({ alg: "HS256" })
+    .setSubject(session.userId)
     .setIssuedAt()
     .setExpirationTime(`${SESSION_DURATION_SECONDS}s`)
-    .sign(getSecretKey());
+    .sign(getAuthSecretKey());
 }
 
-export async function verifySessionToken(token: string): Promise<StaffSession | null> {
+async function readStaffUserId(token: string): Promise<string | null> {
   try {
-    const { payload } = await jwtVerify(token, getSecretKey());
-    if (
-      typeof payload.sub !== "string" ||
-      typeof payload.email !== "string" ||
-      typeof payload.name !== "string" ||
-      typeof payload.role !== "string"
-    ) {
-      return null;
-    }
-    return {
-      userId: payload.sub,
-      email: payload.email,
-      name: payload.name,
-      role: payload.role as StaffRole,
-    };
+    const { payload } = await jwtVerify(token, getAuthSecretKey());
+    if (payload.typ !== "staff" || typeof payload.sub !== "string") return null;
+    return payload.sub;
   } catch {
     return null;
   }
@@ -76,16 +51,28 @@ export async function clearSessionCookie(): Promise<void> {
   store.delete(COOKIE_NAME);
 }
 
+/**
+ * Resolves the signed-in staff member and re-reads role/active state from the
+ * database so deactivations and role changes take effect immediately.
+ */
 export async function getStaffSession(): Promise<StaffSession | null> {
   const store = await cookies();
   const token = store.get(COOKIE_NAME)?.value;
   if (!token) return null;
-  return verifySessionToken(token);
+
+  const userId = await readStaffUserId(token);
+  if (!userId) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true, name: true, role: true, isActive: true },
+  });
+  if (!user || !user.isActive) return null;
+
+  return { userId: user.id, email: user.email, name: user.name, role: user.role };
 }
 
-export async function requireStaffSession(
-  permission?: Permission
-): Promise<StaffSession> {
+export async function requireStaffSession(permission?: Permission): Promise<StaffSession> {
   const session = await getStaffSession();
   if (!session) {
     throw new Error("Unauthorized: please sign in.");

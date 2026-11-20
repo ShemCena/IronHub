@@ -231,13 +231,13 @@ export default function PlansAndPaymentsPage() {
   }
 
   return (
-    <div className="space-y-6 animate-panel-enter">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-4 animate-panel-enter">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-[#F5F6F8]">
+          <h1 className="text-2xl font-semibold tracking-tight text-[#F5F6F8]">
             Plans &amp; Payments
           </h1>
-          <p className="mt-1 text-sm text-[#A4AAB5]">
+          <p className="mt-0.5 text-xs text-[#A4AAB5]">
             Configure membership tiers and record over-the-counter payments with full audit history.
           </p>
         </div>
@@ -246,17 +246,17 @@ export default function PlansAndPaymentsPage() {
           <button
             type="button"
             onClick={() => openRecordPayment()}
-            className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#E32935] px-4 text-sm font-semibold text-white hover:bg-[#F13A46]"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46]"
           >
-            <CreditCard className="h-4 w-4" />
+            <CreditCard className="h-3.5 w-3.5" />
             <span>Record Payment</span>
           </button>
           <button
             type="button"
             onClick={() => setPlanModal(true)}
-            className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#292E38] bg-[#111318] px-4 text-sm font-medium text-[#F5F6F8] hover:bg-[#20242D]"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#242934] bg-[#111318] px-3.5 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-3.5 w-3.5" />
             <span>Add Plan</span>
           </button>
         </div>

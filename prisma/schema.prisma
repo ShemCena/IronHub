@@ -100,6 +100,9 @@ model Member {
   address               String?
   status                MemberStatus @default(EXPIRED)
   notes                 String?
+  passwordHash          String?
+  portalActivatedAt     DateTime?    @db.Timestamptz(6)
+  lastPortalLoginAt     DateTime?    @db.Timestamptz(6)
   joinedAt              DateTime     @default(now()) @db.Timestamptz(6)
   archivedAt            DateTime?    @db.Timestamptz(6)
   createdAt             DateTime     @default(now()) @db.Timestamptz(6)
@@ -163,6 +166,7 @@ model QRCredential {
   memberId      String
   tokenHash     String    @unique
   tokenLast4    String
+  tokenCiphertext String?
   isActive      Boolean   @default(true)
   issuedById    String?
   issuedAt      DateTime  @default(now()) @db.Timestamptz(6)

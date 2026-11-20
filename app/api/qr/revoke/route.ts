@@ -11,7 +11,7 @@ const revokeSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const session = await requireStaffSession("qr:manage");
+    const session = await requireStaffSession("qr:revoke");
     const body = await request.json();
     const parsed = revokeSchema.safeParse(body);
     if (!parsed.success) {

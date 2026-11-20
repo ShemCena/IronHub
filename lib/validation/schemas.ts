@@ -70,6 +70,34 @@ export const manualCheckInSchema = z.object({
   deviceLabel: z.string().trim().max(80).optional(),
 });
 
+export const staffCreateSchema = z.object({
+  name: z.string().trim().min(2, "Staff name is required.").max(100),
+  email: z.string().trim().email("Enter a valid email address."),
+  password: z.string().min(8, "Password must be at least 8 characters.").max(100),
+  role: z.enum(["ADMIN", "FRONT_DESK", "TRAINER"]),
+});
+
+export const staffUpdateSchema = z.object({
+  role: z.enum(["ADMIN", "FRONT_DESK", "TRAINER"]).optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const passwordChangeSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required."),
+  newPassword: z.string().min(8, "New password must be at least 8 characters.").max(100),
+});
+
+export const memberPortalLoginSchema = z.object({
+  identifier: z.string().trim().min(2, "Enter your Member ID (e.g. IH-1001) or email."),
+  password: z.string().min(6, "Password must be at least 6 characters."),
+});
+
+export const memberPortalActivateSchema = z.object({
+  memberCode: z.string().trim().min(3, "Enter your Member ID (e.g. IH-1001)."),
+  emailOrPhone: z.string().trim().min(3, "Enter the email or phone on your profile."),
+  password: z.string().min(8, "Choose a password of at least 8 characters.").max(100),
+});
+
 export const gymSettingsSchema = z.object({
   gymName: z.string().trim().min(2).max(120),
   email: z.string().trim().email(),

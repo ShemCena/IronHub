@@ -59,13 +59,13 @@ export default function ReportsPage() {
     data?.paymentMethodBreakdown.reduce((acc, item) => acc + item.total, 0) ?? 0;
 
   return (
-    <div className="space-y-6 animate-panel-enter">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-4 animate-panel-enter">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-[#F5F6F8]">
+          <h1 className="text-2xl font-semibold tracking-tight text-[#F5F6F8]">
             Reports
           </h1>
-          <p className="mt-1 text-sm text-[#A4AAB5]">
+          <p className="mt-0.5 text-xs text-[#A4AAB5]">
             Reconciled revenue, membership growth, and check-in activity.
           </p>
         </div>

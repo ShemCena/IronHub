@@ -194,19 +194,19 @@ export default function CheckInPage() {
   const scanning = scanState === "scanning";
 
   return (
-    <div className="space-y-6 animate-panel-enter">
+    <div className="space-y-4 animate-panel-enter">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-[#F5F6F8]">
+        <h1 className="text-2xl font-semibold tracking-tight text-[#F5F6F8]">
           Check-In
         </h1>
-        <p className="mt-1 text-sm text-[#A4AAB5]">
-          Validate member QR credentials or record a manual front-desk check-in.
+        <p className="mt-0.5 text-xs text-[#A4AAB5]">
+          Scan a client&apos;s self-generated QR pass or record a manual front-desk check-in.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
         {/* Scanner Panel */}
-        <div className="rounded-xl border border-[#292E38] bg-[#111318] p-5 lg:col-span-5">
+        <div className="rounded-xl border border-[#242934] bg-[#111318] p-4 lg:col-span-5">
           <div className="mb-4 flex items-center justify-between gap-2">
             <div>
               <h2 className="text-base font-semibold text-[#F5F6F8]">QR Scanner</h2>

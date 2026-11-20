@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { DEFAULT_BUSINESS_HOURS } from "../lib/domain/membership";
-import { generateOpaqueQrToken } from "../lib/qr/token";
+import { encryptQrToken, generateOpaqueQrToken } from "../lib/qr/token";
 
 const adapter = new PrismaPg({
   connectionString: process.env.DIRECT_URL ?? process.env.DATABASE_URL ?? "",
@@ -12,7 +12,10 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const ownerPassword = await bcrypt.hash("IronHub@2026!", 12);
+  const adminPassword = await bcrypt.hash("Admin@2026!", 12);
   const staffPassword = await bcrypt.hash("FrontDesk@2026!", 12);
+  const trainerPassword = await bcrypt.hash("Trainer@2026!", 12);
+  const memberPassword = await bcrypt.hash("Member@2026!", 12);
 
   const owner = await prisma.user.upsert({
     where: { email: "owner@ironhub.ph" },
@@ -26,6 +29,18 @@ async function main() {
     },
   });
 
+  await prisma.user.upsert({
+    where: { email: "admin@ironhub.ph" },
+    update: {},
+    create: {
+      email: "admin@ironhub.ph",
+      name: "Dante Morales",
+      passwordHash: adminPassword,
+      role: "ADMIN",
+      isActive: true,
+    },
+  });
+
   const frontDesk = await prisma.user.upsert({
     where: { email: "desk@ironhub.ph" },
     update: {},
@@ -34,6 +49,18 @@ async function main() {
       name: "Ella Santos",
       passwordHash: staffPassword,
       role: "FRONT_DESK",
+      isActive: true,
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "trainer@ironhub.ph" },
+    update: {},
+    create: {
+      email: "trainer@ironhub.ph",
+      name: "Liam Cruz",
+      passwordHash: trainerPassword,
+      role: "TRAINER",
       isActive: true,
     },
   });
@@ -115,7 +142,15 @@ async function main() {
   for (let i = 0; i < sampleMembers.length; i++) {
     const m = sampleMembers[i];
     const existing = await prisma.member.findUnique({ where: { memberCode: m.code } });
-    if (existing) continue;
+    if (existing) {
+      if (!existing.passwordHash) {
+        await prisma.member.update({
+          where: { id: existing.id },
+          data: { passwordHash: memberPassword, portalActivatedAt: now },
+        });
+      }
+      continue;
+    }
 
     const plan = createdPlans[m.planIdx];
     const startDate = new Date(now);
@@ -136,6 +171,8 @@ async function main() {
         email: m.email,
         phone: m.phone,
         status: m.status,
+        passwordHash: memberPassword,
+        portalActivatedAt: startDate,
         joinedAt: startDate,
       },
     });
@@ -167,14 +204,14 @@ async function main() {
       },
     });
 
-    const { tokenHash, tokenLast4 } = generateOpaqueQrToken();
+    const { rawToken, tokenHash, tokenLast4 } = generateOpaqueQrToken();
     await prisma.qRCredential.create({
       data: {
         memberId: member.id,
         tokenHash,
         tokenLast4,
+        tokenCiphertext: encryptQrToken(rawToken),
         isActive: m.status === "ACTIVE",
-        issuedById: owner.id,
       },
     });
 
@@ -189,26 +226,6 @@ async function main() {
         },
       });
     }
-  }
-
-  const existingNotif = await prisma.notification.count();
-  if (existingNotif === 0) {
-    await prisma.notification.createMany({
-      data: [
-        {
-          type: "EXPIRY_REMINDER",
-          title: "1 membership expired recently",
-          message: "Carlos Villanueva (IH-1005) Standard plan expired 3 days ago.",
-          href: "/members?status=EXPIRED",
-        },
-        {
-          type: "SYSTEM",
-          title: "Over-the-counter ledger active",
-          message: "All manual cash, card, and e-wallet payments are audited.",
-          href: "/plans-payments",
-        },
-      ],
-    });
   }
 
   console.log("IronHub seed completed.");
