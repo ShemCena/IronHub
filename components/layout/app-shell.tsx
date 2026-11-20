@@ -156,10 +156,10 @@ export function AppShell({
         />
       )}
 
-      {/* Compressed, strictly fixed-size 208px x 100vh Sidebar */}
+      {/* Compressed, strictly fixed-size 196px x 100vh Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex h-screen w-[208px] shrink-0 flex-col border-r border-[#1F232C] bg-[#0D0F14] transition-transform duration-200 ease-[var(--ease-out)] print:hidden lg:sticky lg:top-0 lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex h-screen w-[196px] shrink-0 flex-col border-r border-[#1F232C] bg-[#0D0F14] transition-transform duration-200 ease-[var(--ease-out)] print:hidden lg:sticky lg:top-0 lg:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -418,7 +418,7 @@ export function AppShell({
         </header>
 
         {/* Compressed Main Content Container */}
-        <main className="mx-auto w-full max-w-[1220px] flex-1 p-4 md:p-5">
+        <main className="mx-auto w-full max-w-[1040px] flex-1 p-3.5 md:p-4">
           {children}
         </main>
       </div>

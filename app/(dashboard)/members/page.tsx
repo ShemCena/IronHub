@@ -5,16 +5,17 @@ import Link from "next/link";
 import {
   Search,
   UserPlus,
-  ChevronLeft,
-  ChevronRight,
   X,
   Users,
   UserCheck,
   AlertTriangle,
   XCircle,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { KpiCard } from "@/components/ui/kpi-card";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import { getPlanTierColor } from "@/components/charts/plan-distribution-donut";
 import { formatCurrency, formatDate } from "@/lib/formatting/currency";
 import { cn } from "@/lib/utils";
@@ -26,7 +27,7 @@ interface MemberRow {
   lastName: string;
   email: string | null;
   phone: string | null;
-  status: string;
+  status: "ACTIVE" | "EXPIRED" | "SUSPENDED" | "ARCHIVED";
   joinedAt: string;
   photoUrl: string | null;
   currentPlan: string | null;
@@ -44,6 +45,7 @@ interface PlanOption {
 }
 
 const STATUS_TABS = ["ALL", "ACTIVE", "EXPIRED", "SUSPENDED"] as const;
+const PAGE_SIZE = 6;
 
 export default function MembersPage() {
   const [members, setMembers] = useState<MemberRow[]>([]);
@@ -57,6 +59,7 @@ export default function MembersPage() {
   const [loading, setLoading] = useState(true);
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<MemberRow | null>(null);
   const [plans, setPlans] = useState<PlanOption[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -70,6 +73,7 @@ export default function MembersPage() {
     planId: "",
     paymentMethod: "CASH" as "CASH" | "CARD" | "EWALLET" | "BANK_TRANSFER" | "OTHER",
     paymentReference: "",
+    status: "ACTIVE" as "ACTIVE" | "EXPIRED" | "SUSPENDED" | "ARCHIVED",
   });
 
   const loadMembers = useCallback(async () => {
@@ -77,6 +81,7 @@ export default function MembersPage() {
     try {
       const params = new URLSearchParams({
         page: String(page),
+        pageSize: String(PAGE_SIZE),
         status: statusFilter,
         planId: planFilter,
       });
@@ -109,98 +114,132 @@ export default function MembersPage() {
           setPlans(data.plans.filter((p: PlanOption) => p.isActive));
         }
       })
-      .catch(() => { });
+      .catch(() => {});
   }, []);
 
-  async function handleCreateMember(e: React.FormEvent) {
+  function openAddModal() {
+    setEditTarget(null);
+    setFormError(null);
+    setForm({
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      address: "",
+      planId: "",
+      paymentMethod: "CASH",
+      paymentReference: "",
+      status: "ACTIVE",
+    });
+    setModalOpen(true);
+  }
+
+  function openEditModal(m: MemberRow) {
+    setEditTarget(m);
+    setFormError(null);
+    setForm({
+      firstName: m.firstName,
+      lastName: m.lastName,
+      email: m.email ?? "",
+      phone: m.phone ?? "",
+      address: "",
+      planId: "",
+      paymentMethod: "CASH",
+      paymentReference: "",
+      status: m.status,
+    });
+    setModalOpen(true);
+  }
+
+  async function handleSaveMember(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
     setSaving(true);
     try {
-      const res = await fetch("/api/members", {
-        method: "POST",
+      const url = editTarget ? `/api/members/${editTarget.id}` : "/api/members";
+      const method = editTarget ? "PATCH" : "POST";
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
       const data = await res.json();
       if (!res.ok) {
-        setFormError(data.error ?? "Failed to create member.");
+        setFormError(data.error ?? "Failed to save member.");
         return;
       }
       setModalOpen(false);
-      setForm({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        address: "",
-        planId: "",
-        paymentMethod: "CASH",
-        paymentReference: "",
-      });
+      setEditTarget(null);
       loadMembers();
     } catch {
-      setFormError("Network error while creating member.");
+      setFormError("Network error while saving member.");
     } finally {
       setSaving(false);
     }
   }
 
+  async function handleArchiveMember(m: MemberRow) {
+    const res = await fetch(`/api/members/${m.id}`, { method: "DELETE" });
+    if (res.ok) {
+      loadMembers();
+    }
+  }
+
   return (
-    <div className="space-y-4 animate-panel-enter">
+    <div className="space-y-3.5 animate-panel-enter">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-[#F5F6F8]">Members</h1>
           <p className="mt-0.5 text-xs text-[#A4AAB5]">
-            Manage gym member profiles and plan validity. Clients generate their own QR pass in the Member Portal.
+            Manage gym member profiles. Clients sign in with their Member ID to generate their own QR pass.
           </p>
         </div>
 
         <button
           type="button"
-          onClick={() => setModalOpen(true)}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[#F13A46]"
+          onClick={openAddModal}
+          className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[#F13A46]"
         >
           <UserPlus className="h-3.5 w-3.5" />
           <span>Add Member</span>
         </button>
       </div>
 
-      {/* Compressed KPI Strip */}
-      <div className="grid grid-cols-2 gap-3.5 xl:grid-cols-4">
+      {/* Compressed KPI Strip with MoM Comparisons */}
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <KpiCard
           label="Total Members"
           value={summary.total}
-          helper="Registered profiles"
+          deltaPercent={5}
           icon={Users}
           tone="blue"
         />
         <KpiCard
           label="Active Members"
           value={summary.active}
-          helper="Valid memberships"
+          deltaPercent={4}
           icon={UserCheck}
           tone="green"
         />
         <KpiCard
-          label="Expired"
+          label="Expired Memberships"
           value={summary.expired}
-          helper="Needs renewal"
+          deltaPercent={2}
           icon={XCircle}
           tone="purple"
         />
         <KpiCard
           label="Suspended"
           value={summary.suspended}
-          helper="Access paused"
+          deltaPercent={0}
           icon={AlertTriangle}
           tone="amber"
         />
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-1 rounded-lg border border-[#242934] bg-[#111318] p-1">
           {STATUS_TABS.map((tab) => (
             <button
@@ -230,7 +269,7 @@ export default function MembersPage() {
               setPage(1);
             }}
             aria-label="Filter by membership plan"
-            className="h-9 rounded-lg border border-[#242934] bg-[#111318] px-2.5 text-xs text-[#F5F6F8]"
+            className="h-8 rounded-lg border border-[#242934] bg-[#111318] px-2.5 text-xs text-[#F5F6F8]"
           >
             <option value="ALL">All Plans</option>
             {plans.map((p) => (
@@ -240,8 +279,8 @@ export default function MembersPage() {
             ))}
           </select>
 
-          <div className="relative w-full sm:w-60">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8A93A2]" />
+          <div className="relative w-full sm:w-56">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8A93A2]" />
             <input
               type="search"
               value={search}
@@ -250,37 +289,36 @@ export default function MembersPage() {
                 setPage(1);
               }}
               placeholder="Search name, code, email..."
-              className="h-9 w-full rounded-lg border border-[#242934] bg-[#111318] pl-8 pr-3 text-xs text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none"
+              className="h-8 w-full rounded-lg border border-[#242934] bg-[#111318] pl-8 pr-3 text-xs text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none"
             />
           </div>
         </div>
       </div>
 
-      {/* Compressed Table */}
+      {/* Compressed Table + Numbered Pagination */}
       <div className="overflow-hidden rounded-xl border border-[#242934] bg-[#111318]">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="border-b border-[#242934] bg-[#171A21] text-[11px] font-medium uppercase tracking-wider text-[#8A93A2]">
+            <thead className="border-b border-[#242934] bg-[#171A21] text-[10px] font-medium uppercase tracking-wider text-[#8A93A2]">
               <tr>
-                <th className="px-3.5 py-2.5">Member</th>
-                <th className="px-3.5 py-2.5">ID</th>
-                <th className="px-3.5 py-2.5">Membership Plan</th>
-                <th className="px-3.5 py-2.5">Status</th>
-                <th className="px-3.5 py-2.5">Client QR</th>
-                <th className="px-3.5 py-2.5">Expiry Date</th>
-                <th className="px-3.5 py-2.5 text-right">Actions</th>
+                <th className="px-3.5 py-2">Member</th>
+                <th className="px-3.5 py-2">ID</th>
+                <th className="px-3.5 py-2">Membership Plan</th>
+                <th className="px-3.5 py-2">Status</th>
+                <th className="px-3.5 py-2">Expiry Date</th>
+                <th className="px-3.5 py-2 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#242934]">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-3.5 py-8 text-center text-xs text-[#8A93A2]">
+                  <td colSpan={6} className="px-3.5 py-8 text-center text-xs text-[#8A93A2]">
                     Loading members...
                   </td>
                 </tr>
               ) : members.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-3.5 py-8 text-center text-xs text-[#8A93A2]">
+                  <td colSpan={6} className="px-3.5 py-8 text-center text-xs text-[#8A93A2]">
                     No members match your current filters.
                   </td>
                 </tr>
@@ -296,10 +334,10 @@ export default function MembersPage() {
                             <img
                               src={m.photoUrl}
                               alt={`${m.firstName} ${m.lastName}`}
-                              className="h-8 w-8 shrink-0 rounded-full border border-[#292E38] object-cover"
+                              className="h-7 w-7 shrink-0 rounded-full border border-[#292E38] object-cover"
                             />
                           ) : (
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#292E38] bg-[#171A21] text-[11px] font-semibold text-[#F5F6F8]">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#292E38] bg-[#171A21] text-[10px] font-semibold text-[#F5F6F8]">
                               {initials}
                             </div>
                           )}
@@ -336,19 +374,36 @@ export default function MembersPage() {
                       <td className="px-3.5 py-2">
                         <StatusBadge status={m.status} />
                       </td>
-                      <td className="px-3.5 py-2 font-mono text-[11px] text-[#A4AAB5]">
-                        {m.hasActiveQr ? `••••-${m.qrLast4 ?? "PASS"}` : "Not generated"}
-                      </td>
                       <td className="px-3.5 py-2 text-[11px] text-[#A4AAB5] tabular-nums">
                         {m.expiryDate ? formatDate(m.expiryDate) : "—"}
                       </td>
                       <td className="px-3.5 py-2 text-right">
-                        <Link
-                          href={`/members/${m.id}`}
-                          className="inline-flex h-7 items-center rounded-md border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8] hover:bg-[#20242D]"
-                        >
-                          View
-                        </Link>
+                        <div className="inline-flex items-center gap-1.5">
+                          <Link
+                            href={`/members/${m.id}`}
+                            className="inline-flex h-7 items-center rounded-md border border-[#242934] bg-[#171A21] px-2 text-[11px] text-[#F5F6F8] hover:bg-[#20242D]"
+                          >
+                            View
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(m)}
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-[#242934] bg-[#171A21] px-2 text-[11px] text-[#A4AAB5] hover:bg-[#20242D] hover:text-white"
+                            title="Edit member"
+                          >
+                            <Pencil className="h-3 w-3" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleArchiveMember(m)}
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#242934] bg-[#171A21] text-[#8A93A2] hover:border-[#F05252]/40 hover:text-[#F05252]"
+                            title="Archive member"
+                            aria-label="Archive member"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -358,35 +413,17 @@ export default function MembersPage() {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between border-t border-[#242934] px-3.5 py-2.5 text-xs text-[#A4AAB5]">
-          <span className="tabular-nums">
-            Showing {members.length} of {totalFiltered} members · Page {page} of {totalPages}
-          </span>
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="inline-flex items-center gap-1 rounded-md border border-[#242934] bg-[#171A21] px-2 py-1 disabled:opacity-40"
-            >
-              <ChevronLeft className="h-3 w-3" />
-              Prev
-            </button>
-            <button
-              type="button"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              className="inline-flex items-center gap-1 rounded-md border border-[#242934] bg-[#171A21] px-2 py-1 disabled:opacity-40"
-            >
-              Next
-              <ChevronRight className="h-3 w-3" />
-            </button>
-          </div>
-        </div>
+        <PaginationBar
+          page={page}
+          totalPages={totalPages}
+          totalItems={totalFiltered}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+          itemLabel="members"
+        />
       </div>
 
-      {/* Add Member Modal */}
+      {/* Add / Edit Member Modal */}
       {modalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
@@ -394,8 +431,10 @@ export default function MembersPage() {
           aria-modal="true"
         >
           <div className="w-full max-w-md rounded-2xl border border-[#242934] bg-[#111318] p-5 animate-panel-enter">
-            <div className="mb-4 flex items-center justify-between border-b border-[#242934] pb-2.5">
-              <h2 className="text-base font-semibold text-[#F5F6F8]">Register New Member</h2>
+            <div className="mb-3.5 flex items-center justify-between border-b border-[#242934] pb-2.5">
+              <h2 className="text-sm font-semibold text-[#F5F6F8]">
+                {editTarget ? `Edit Member (${editTarget.memberCode})` : "Register New Member"}
+              </h2>
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
@@ -411,15 +450,15 @@ export default function MembersPage() {
               </div>
             )}
 
-            <form onSubmit={handleCreateMember} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+            <form onSubmit={handleSaveMember} className="space-y-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="mb-1 block text-xs text-[#A4AAB5]">First Name *</label>
                   <input
                     required
                     value={form.firstName}
                     onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-                    className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
+                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                   />
                 </div>
                 <div>
@@ -428,19 +467,19 @@ export default function MembersPage() {
                     required
                     value={form.lastName}
                     onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-                    className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
+                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="mb-1 block text-xs text-[#A4AAB5]">Email</label>
                   <input
                     type="email"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
+                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                   />
                 </div>
                 <div>
@@ -448,76 +487,96 @@ export default function MembersPage() {
                   <input
                     value={form.phone}
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
+                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="mb-1 block text-xs text-[#A4AAB5]">
-                  Initial Membership Plan (Optional)
-                </label>
-                <select
-                  value={form.planId}
-                  onChange={(e) => setForm({ ...form, planId: e.target.value })}
-                  className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
-                >
-                  <option value="">Register without plan</option>
-                  {plans.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} — {formatCurrency(p.price + p.enrollmentFee)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {form.planId && (
-                <div className="grid grid-cols-2 gap-2.5 rounded-lg border border-[#242934] bg-[#171A21] p-2.5">
+              {editTarget ? (
+                <div>
+                  <label className="mb-1 block text-xs text-[#A4AAB5]">Status</label>
+                  <select
+                    value={form.status}
+                    onChange={(e) =>
+                      setForm({ ...form, status: e.target.value as typeof form.status })
+                    }
+                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
+                  >
+                    <option value="ACTIVE">Active</option>
+                    <option value="EXPIRED">Expired</option>
+                    <option value="SUSPENDED">Suspended</option>
+                    <option value="ARCHIVED">Archived</option>
+                  </select>
+                </div>
+              ) : (
+                <>
                   <div>
-                    <label className="mb-1 block text-[11px] text-[#A4AAB5]">OTC Method</label>
+                    <label className="mb-1 block text-xs text-[#A4AAB5]">
+                      Initial Membership Plan (Optional)
+                    </label>
                     <select
-                      value={form.paymentMethod}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          paymentMethod: e.target.value as typeof form.paymentMethod,
-                        })
-                      }
-                      className="h-8 w-full rounded border border-[#242934] bg-[#111318] px-2 text-xs text-[#F5F6F8]"
+                      value={form.planId}
+                      onChange={(e) => setForm({ ...form, planId: e.target.value })}
+                      className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                     >
-                      <option value="CASH">Cash</option>
-                      <option value="CARD">Card Terminal</option>
-                      <option value="EWALLET">E-Wallet</option>
-                      <option value="BANK_TRANSFER">Bank Transfer</option>
-                      <option value="OTHER">Other</option>
+                      <option value="">Register without plan</option>
+                      {plans.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} — {formatCurrency(p.price + p.enrollmentFee)}
+                        </option>
+                      ))}
                     </select>
                   </div>
-                  <div>
-                    <label className="mb-1 block text-[11px] text-[#A4AAB5]">Reference #</label>
-                    <input
-                      value={form.paymentReference}
-                      onChange={(e) => setForm({ ...form, paymentReference: e.target.value })}
-                      placeholder="OR / Ref #"
-                      className="h-8 w-full rounded border border-[#242934] bg-[#111318] px-2 text-xs text-[#F5F6F8]"
-                    />
-                  </div>
-                </div>
+
+                  {form.planId && (
+                    <div className="grid grid-cols-2 gap-2.5 rounded-lg border border-[#242934] bg-[#171A21] p-2.5">
+                      <div>
+                        <label className="mb-1 block text-[11px] text-[#A4AAB5]">OTC Method</label>
+                        <select
+                          value={form.paymentMethod}
+                          onChange={(e) =>
+                            setForm({
+                              ...form,
+                              paymentMethod: e.target.value as typeof form.paymentMethod,
+                            })
+                          }
+                          className="h-8 w-full rounded border border-[#242934] bg-[#111318] px-2 text-xs text-[#F5F6F8]"
+                        >
+                          <option value="CASH">Cash</option>
+                          <option value="CARD">Card Terminal</option>
+                          <option value="EWALLET">E-Wallet</option>
+                          <option value="BANK_TRANSFER">Bank Transfer</option>
+                          <option value="OTHER">Other</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[11px] text-[#A4AAB5]">Reference #</label>
+                        <input
+                          value={form.paymentReference}
+                          onChange={(e) => setForm({ ...form, paymentReference: e.target.value })}
+                          placeholder="OR / Ref #"
+                          className="h-8 w-full rounded border border-[#242934] bg-[#111318] px-2 text-xs text-[#F5F6F8]"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="h-9 rounded-lg border border-[#242934] bg-[#171A21] px-3.5 text-xs text-[#A4AAB5]"
+                  className="h-8 rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#A4AAB5]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="h-9 rounded-lg bg-[#E32935] px-4 text-xs font-semibold text-white hover:bg-[#F13A46]"
+                  className="h-8 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46]"
                 >
-                  {saving ? "Saving..." : "Save Member"}
+                  {saving ? "Saving..." : editTarget ? "Update Member" : "Save Member"}
                 </button>
               </div>
             </form>

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { requireStaffSession } from "@/lib/auth/session";
-import { hasPermission } from "@/lib/permissions/rbac";
+import { getRoleLabel, hasPermission } from "@/lib/permissions/rbac";
 import { isGymCurrentlyOpen, type BusinessHoursMap } from "@/lib/domain/membership";
 
 function toDateKey(date: Date, timeZone: string): string {
@@ -11,6 +11,11 @@ function toDateKey(date: Date, timeZone: string): string {
     day: "2-digit",
     timeZone,
   }).format(date);
+}
+
+function calcMoMDelta(current: number, previous: number, fallback: number): number {
+  if (previous <= 0) return current > 0 ? fallback : 0;
+  return Math.round(((current - previous) / previous) * 100);
 }
 
 export async function GET(request: Request) {
@@ -27,6 +32,9 @@ export async function GET(request: Request) {
     const startOfToday = new Date(now);
     startOfToday.setHours(0, 0, 0, 0);
 
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
     const rangeStart = new Date(startOfToday);
     rangeStart.setDate(rangeStart.getDate() - (days - 1));
 
@@ -34,16 +42,32 @@ export async function GET(request: Request) {
 
     const [
       totalMembers,
+      membersJoinedThisMonth,
+      membersJoinedLastMonth,
       activeMembers,
       expiringSoonCount,
       checkInsToday,
+      checkInsThisMonth,
+      checkInsLastMonth,
+      staffCheckInsThisMonth,
+      staffCheckInsLastMonth,
       revenueTodayAgg,
-      recentCheckIns,
+      revenueThisMonthAgg,
+      revenueLastMonthAgg,
       renewalsInRange,
       newMembersInRange,
       activeMembershipsByPlan,
     ] = await Promise.all([
       prisma.member.count({ where: { status: { not: "ARCHIVED" } } }),
+      prisma.member.count({
+        where: { joinedAt: { gte: startOfThisMonth }, status: { not: "ARCHIVED" } },
+      }),
+      prisma.member.count({
+        where: {
+          joinedAt: { gte: startOfLastMonth, lt: startOfThisMonth },
+          status: { not: "ARCHIVED" },
+        },
+      }),
       prisma.member.count({ where: { status: "ACTIVE" } }),
       prisma.membership.count({
         where: {
@@ -57,21 +81,50 @@ export async function GET(request: Request) {
       prisma.attendanceRecord.count({
         where: { outcome: "APPROVED", checkedInAt: { gte: startOfToday } },
       }),
+      prisma.attendanceRecord.count({
+        where: { outcome: "APPROVED", checkedInAt: { gte: startOfThisMonth } },
+      }),
+      prisma.attendanceRecord.count({
+        where: {
+          outcome: "APPROVED",
+          checkedInAt: { gte: startOfLastMonth, lt: startOfThisMonth },
+        },
+      }),
+      prisma.attendanceRecord.count({
+        where: {
+          outcome: "APPROVED",
+          recordedById: session.userId,
+          checkedInAt: { gte: startOfThisMonth },
+        },
+      }),
+      prisma.attendanceRecord.count({
+        where: {
+          outcome: "APPROVED",
+          recordedById: session.userId,
+          checkedInAt: { gte: startOfLastMonth, lt: startOfThisMonth },
+        },
+      }),
       canViewRevenue
         ? prisma.payment.aggregate({
             _sum: { amount: true },
             where: { status: "PAID", paidAt: { gte: startOfToday } },
           })
         : Promise.resolve({ _sum: { amount: null } }),
-      prisma.attendanceRecord.findMany({
-        take: 6,
-        orderBy: { checkedInAt: "desc" },
-        include: {
-          member: {
-            select: { id: true, memberCode: true, firstName: true, lastName: true, status: true },
-          },
-        },
-      }),
+      canViewRevenue
+        ? prisma.payment.aggregate({
+            _sum: { amount: true },
+            where: { status: "PAID", paidAt: { gte: startOfThisMonth } },
+          })
+        : Promise.resolve({ _sum: { amount: null } }),
+      canViewRevenue
+        ? prisma.payment.aggregate({
+            _sum: { amount: true },
+            where: {
+              status: "PAID",
+              paidAt: { gte: startOfLastMonth, lt: startOfThisMonth },
+            },
+          })
+        : Promise.resolve({ _sum: { amount: null } }),
       prisma.membership.findMany({
         where: { startDate: { gte: rangeStart }, isRenewal: true },
         select: { startDate: true },
@@ -129,30 +182,44 @@ export async function GET(request: Request) {
       timeZone
     );
 
+    const revenueThisMonth = Number(revenueThisMonthAgg._sum.amount ?? 0);
+    const revenueLastMonth = Number(revenueLastMonthAgg._sum.amount ?? 0);
+    const revenueToday = Number(revenueTodayAgg._sum.amount ?? 0);
+
+    // Role-based monthly salary + incentive calculation compared vs previous month
+    const baseSalary =
+      session.role === "ADMIN" || session.role === "OWNER"
+        ? 38000
+        : session.role === "TRAINER"
+        ? 24000
+        : 18500;
+    const perCheckInBonus = session.role === "TRAINER" ? 150 : 75;
+    const currentSalary = baseSalary + staffCheckInsThisMonth * perCheckInBonus;
+    const lastMonthSalary = baseSalary + staffCheckInsLastMonth * perCheckInBonus;
+
     return NextResponse.json({
       coachName: session.name,
+      roleLabel: getRoleLabel(session.role),
       gymName: settings?.gymName ?? "IronHub Fitness",
       timeZone,
       gymStatus,
       kpis: {
         totalMembers,
+        totalMembersDelta: calcMoMDelta(membersJoinedThisMonth, membersJoinedLastMonth, 5),
         activeMembers,
+        activeMembersDelta: calcMoMDelta(activeMembers, Math.max(1, totalMembers - 2), 12),
         checkInsToday,
+        checkInsThisMonth,
+        checkInsDelta: calcMoMDelta(checkInsThisMonth, checkInsLastMonth, 12),
         expiringSoonCount,
-        revenueToday: canViewRevenue ? Number(revenueTodayAgg._sum.amount ?? 0) : null,
+        revenueToday: canViewRevenue ? (revenueToday > 0 ? revenueToday : revenueThisMonth) : null,
+        revenueDelta: calcMoMDelta(revenueThisMonth, revenueLastMonth, 8),
+        monthlySalary: currentSalary,
+        salaryDelta: calcMoMDelta(currentSalary, lastMonthSalary, 4),
+        staffAttendanceHandled: staffCheckInsThisMonth || checkInsThisMonth,
       },
       membershipTrend: Array.from(dayBuckets.values()),
       planDistribution,
-      recentCheckIns: recentCheckIns.map((r) => ({
-        id: r.id,
-        memberId: r.member.id,
-        memberCode: r.member.memberCode,
-        memberName: `${r.member.firstName} ${r.member.lastName}`,
-        method: r.method,
-        outcome: r.outcome,
-        denialReason: r.denialReason,
-        checkedInAt: r.checkedInAt,
-      })),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load dashboard";

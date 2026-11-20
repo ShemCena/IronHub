@@ -12,7 +12,7 @@ import {
   hashQrToken,
   isValidQrTokenFormat,
 } from "@/lib/qr/token";
-import { canManageStaffRole, hasPermission } from "@/lib/permissions/rbac";
+import { canManageStaffRole, getRoleLabel, hasPermission } from "@/lib/permissions/rbac";
 
 describe("Membership domain logic", () => {
   it("calculates end date for months, weeks, and days", () => {
@@ -91,15 +91,22 @@ describe("QR token security", () => {
   });
 });
 
-describe("RBAC permissions & staff hierarchy", () => {
-  it("allows Owner and Admin to manage staff according to hierarchy", () => {
+describe("RBAC permissions & 4-role hierarchy", () => {
+  it("maps roles strictly to Admin, Staff, and Trainor and allows Admin to manage all staff roles", () => {
+    expect(getRoleLabel("ADMIN")).toBe("Admin");
+    expect(getRoleLabel("OWNER")).toBe("Admin");
+    expect(getRoleLabel("FRONT_DESK")).toBe("Staff");
+    expect(getRoleLabel("TRAINER")).toBe("Trainor");
+
     expect(hasPermission("OWNER", "settings:manage")).toBe(true);
+    expect(hasPermission("ADMIN", "settings:manage")).toBe(true);
     expect(hasPermission("ADMIN", "staff:manage")).toBe(true);
     expect(canManageStaffRole("OWNER", "ADMIN")).toBe(true);
     expect(canManageStaffRole("ADMIN", "FRONT_DESK")).toBe(true);
     expect(canManageStaffRole("ADMIN", "TRAINER")).toBe(true);
     expect(canManageStaffRole("ADMIN", "ADMIN")).toBe(true);
-    expect(canManageStaffRole("ADMIN", "OWNER")).toBe(false);
+    expect(canManageStaffRole("FRONT_DESK", "ADMIN")).toBe(false);
+    expect(canManageStaffRole("TRAINER", "FRONT_DESK")).toBe(false);
     expect(hasPermission("FRONT_DESK", "payments:record")).toBe(true);
     expect(hasPermission("FRONT_DESK", "payments:refund_void")).toBe(false);
     expect(hasPermission("TRAINER", "reports:view")).toBe(false);

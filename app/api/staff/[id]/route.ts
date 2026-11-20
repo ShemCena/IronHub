@@ -83,3 +83,36 @@ export async function PATCH(
     return NextResponse.json({ error: message }, { status });
   }
 }
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await requireStaffSession("staff:manage");
+    const { id } = await params;
+
+    if (id === session.userId) {
+      return NextResponse.json(
+        { error: "You cannot delete your own account." },
+        { status: 400 }
+      );
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.user.delete({ where: { id } });
+      await writeAuditLog(tx, {
+        actorId: session.userId,
+        action: "STAFF_USER_DELETED",
+        entityType: "User",
+        entityId: id,
+      });
+    });
+
+    return NextResponse.json({ deleted: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to delete staff";
+    const status = message.startsWith("Unauthorized") ? 401 : message.startsWith("Forbidden") ? 403 : 400;
+    return NextResponse.json({ error: message }, { status });
+  }
+}

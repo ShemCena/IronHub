@@ -27,6 +27,7 @@ import {
 import { BrandMark } from "@/components/ui/brand-mark";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { KpiCard } from "@/components/ui/kpi-card";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import { formatCurrency, formatDate, formatDateTime, formatTime } from "@/lib/formatting/currency";
 import { cn } from "@/lib/utils";
 
@@ -111,6 +112,8 @@ const NAV_ITEMS: {
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
+const PORTAL_PAGE_SIZE = 6;
+
 async function resizeImageToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -152,6 +155,9 @@ export default function MemberPortalDashboardPage() {
   const [copied, setCopied] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [attPage, setAttPage] = useState(1);
+  const [payPage, setPayPage] = useState(1);
 
   const [profileForm, setProfileForm] = useState({
     phone: "",
@@ -307,7 +313,7 @@ export default function MemberPortalDashboardPage() {
   if (loading || !data) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#090A0D] text-xs text-[#8A93A2]">
-        Loading your Member Dashboard...
+        Loading your Client Dashboard...
       </div>
     );
   }
@@ -321,6 +327,18 @@ export default function MemberPortalDashboardPage() {
       ? `Expired ${Math.abs(daysLeft)}d ago`
       : `${daysLeft} days remaining`;
 
+  const totalAttPages = Math.max(1, Math.ceil(data.attendance.length / PORTAL_PAGE_SIZE));
+  const pagedAttendance = data.attendance.slice(
+    (attPage - 1) * PORTAL_PAGE_SIZE,
+    attPage * PORTAL_PAGE_SIZE
+  );
+
+  const totalPayPages = Math.max(1, Math.ceil(data.payments.length / PORTAL_PAGE_SIZE));
+  const pagedPayments = data.payments.slice(
+    (payPage - 1) * PORTAL_PAGE_SIZE,
+    payPage * PORTAL_PAGE_SIZE
+  );
+
   return (
     <div className="flex min-h-screen bg-[#090A0D] text-[#F5F6F8]">
       {mobileOpen && (
@@ -331,14 +349,14 @@ export default function MemberPortalDashboardPage() {
         />
       )}
 
-      {/* Fixed-size 208px x 100vh Member Sidebar */}
+      {/* Fixed-size 196px x 100vh Client Sidebar matching Staff Workspace */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex h-screen w-[208px] shrink-0 flex-col border-r border-[#1F232C] bg-[#0D0F14] transition-transform duration-200 ease-[var(--ease-out)] print:hidden lg:sticky lg:top-0 lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex h-screen w-[196px] shrink-0 flex-col border-r border-[#1F232C] bg-[#0D0F14] transition-transform duration-200 ease-[var(--ease-out)] print:hidden lg:sticky lg:top-0 lg:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex h-14 shrink-0 items-center justify-between px-4">
+        <div className="flex h-13 shrink-0 items-center justify-between px-3.5">
           <BrandMark />
           <button
             type="button"
@@ -350,7 +368,7 @@ export default function MemberPortalDashboardPage() {
           </button>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-2.5 py-2" aria-label="Member navigation">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-2" aria-label="Client navigation">
           {NAV_ITEMS.map((item) => {
             const active = section === item.id;
             const Icon = item.icon;
@@ -363,7 +381,7 @@ export default function MemberPortalDashboardPage() {
                   setMobileOpen(false);
                 }}
                 className={cn(
-                  "group relative flex h-9 w-full items-center gap-2.5 rounded-lg px-3 text-left text-xs font-medium transition-[background-color,color,box-shadow] duration-150",
+                  "group relative flex h-8.5 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-xs font-medium transition-[background-color,color,box-shadow] duration-150",
                   active
                     ? "bg-gradient-to-r from-[#E32935] via-[#B81F2A]/75 to-[#E32935]/10 text-white shadow-[0_6px_18px_-6px_rgba(227,41,53,0.5)]"
                     : "text-[#A4AAB5] hover:bg-[#171A21] hover:text-[#F5F6F8]"
@@ -371,7 +389,7 @@ export default function MemberPortalDashboardPage() {
               >
                 <Icon
                   className={cn(
-                    "h-4 w-4 shrink-0 transition-colors",
+                    "h-3.5 w-3.5 shrink-0 transition-colors",
                     active ? "text-white" : "text-[#8A93A2] group-hover:text-[#F5F6F8]"
                   )}
                 />
@@ -381,9 +399,9 @@ export default function MemberPortalDashboardPage() {
           })}
         </nav>
 
-        {/* Bottom Member Card */}
-        <div className="shrink-0 p-2.5">
-          <div className="relative h-[144px] overflow-hidden rounded-xl border border-[#242934] bg-[#111318]">
+        {/* Bottom Client Card */}
+        <div className="shrink-0 p-2">
+          <div className="relative h-[132px] overflow-hidden rounded-xl border border-[#242934] bg-[#111318]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/images/sidebar-athlete.jpg"
@@ -392,15 +410,15 @@ export default function MemberPortalDashboardPage() {
               className="h-full w-full object-cover object-top opacity-85"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#090A0D] via-[#090A0D]/55 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 flex flex-col items-center p-3 text-center">
+            <div className="absolute inset-x-0 bottom-0 flex flex-col items-center p-2.5 text-center">
               <p
-                className="text-sm font-bold uppercase leading-tight tracking-wider text-white"
+                className="text-xs font-bold uppercase leading-tight tracking-wider text-white"
                 style={{ fontFamily: "var(--font-barlow), sans-serif" }}
               >
                 STRONGER
                 <span className="block text-[#E32935]">TOGETHER</span>
               </p>
-              <span className="mt-1 text-[10px] font-medium text-[#A4AAB5]">
+              <span className="mt-0.5 text-[10px] font-medium text-[#A4AAB5]">
                 {data.member.memberCode}
               </span>
             </div>
@@ -411,7 +429,7 @@ export default function MemberPortalDashboardPage() {
       {/* Main Column */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Top Bar */}
-        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-3 border-b border-[#1F232C] bg-[#090A0D]/90 px-4 backdrop-blur-md print:hidden lg:px-5">
+        <header className="sticky top-0 z-30 flex h-13 shrink-0 items-center justify-between gap-3 border-b border-[#1F232C] bg-[#090A0D]/90 px-4 backdrop-blur-md print:hidden">
           <div className="flex items-center gap-2.5">
             <button
               type="button"
@@ -422,15 +440,15 @@ export default function MemberPortalDashboardPage() {
               <Menu className="h-4 w-4" />
             </button>
             <span className="text-xs font-medium text-[#A4AAB5]">
-              {data.gymName} · Member Workspace
+              {data.gymName} · Client Workspace
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={() => setSection("settings")}
-              className="flex items-center gap-2 rounded-lg border border-[#242934] bg-[#111318] px-2.5 py-1.5 text-left transition-colors hover:bg-[#171A21]"
+              className="flex items-center gap-2 rounded-lg border border-[#242934] bg-[#111318] px-2.5 py-1 text-left transition-colors hover:bg-[#171A21]"
             >
               {data.member.photoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -440,7 +458,7 @@ export default function MemberPortalDashboardPage() {
                   className="h-6 w-6 rounded-full object-cover ring-1 ring-[#E32935]/40"
                 />
               ) : (
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#E32935]/18 text-[11px] font-semibold text-[#E32935]">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#E32935]/18 text-[10px] font-semibold text-[#E32935]">
                   {initials}
                 </div>
               )}
@@ -449,7 +467,7 @@ export default function MemberPortalDashboardPage() {
                   {data.member.name}
                 </p>
                 <p className="font-mono text-[10px] leading-tight text-[#8A93A2]">
-                  {data.member.memberCode}
+                  Client · {data.member.memberCode}
                 </p>
               </div>
             </button>
@@ -457,7 +475,7 @@ export default function MemberPortalDashboardPage() {
             <button
               type="button"
               onClick={handleLogout}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#242934] bg-[#111318] px-2.5 text-xs text-[#A4AAB5] hover:text-[#F05252]"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#242934] bg-[#111318] px-2.5 text-xs text-[#A4AAB5] hover:text-[#F05252]"
               title="Sign Out"
             >
               <LogOut className="h-3.5 w-3.5" />
@@ -466,26 +484,26 @@ export default function MemberPortalDashboardPage() {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-[1220px] flex-1 space-y-4 p-4 md:p-5">
+        <main className="mx-auto w-full max-w-[1040px] flex-1 space-y-3 p-3.5 md:p-4">
           {notice && (
-            <div className="flex items-center gap-2 rounded-xl border border-[#2BCB83]/30 bg-[#2BCB83]/10 px-3.5 py-2.5 text-xs text-[#2BCB83] print:hidden">
-              <CheckCircle2 className="h-4 w-4 shrink-0" />
+            <div className="flex items-center gap-2 rounded-xl border border-[#2BCB83]/30 bg-[#2BCB83]/10 px-3 py-2 text-xs text-[#2BCB83] print:hidden">
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
               <span>{notice}</span>
             </div>
           )}
 
           {error && (
-            <div className="flex items-center gap-2 rounded-xl border border-[#F05252]/30 bg-[#F05252]/10 px-3.5 py-2.5 text-xs text-[#F05252] print:hidden">
-              <AlertCircle className="h-4 w-4 shrink-0" />
+            <div className="flex items-center gap-2 rounded-xl border border-[#F05252]/30 bg-[#F05252]/10 px-3 py-2 text-xs text-[#F05252] print:hidden">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {/* SECTION 1: OVERVIEW DASHBOARD */}
           {section === "overview" && (
-            <div className="space-y-4 animate-panel-enter">
-              {/* Hero */}
-              <section className="relative min-h-[156px] overflow-hidden rounded-2xl border border-[#242934] bg-[#0D0F14]">
+            <div className="space-y-3 animate-panel-enter">
+              {/* Compact Hero */}
+              <section className="relative min-h-[124px] overflow-hidden rounded-xl border border-[#242934] bg-[#0D0F14]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/images/hero-athlete.jpg"
@@ -495,30 +513,30 @@ export default function MemberPortalDashboardPage() {
                 />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#090A0D] via-[#090A0D]/80 to-[#090A0D]/40" />
 
-                <div className="relative flex min-h-[156px] flex-col justify-between gap-4 p-5 md:flex-row md:items-center">
-                  <div className="flex items-center gap-4">
+                <div className="relative flex min-h-[124px] flex-col justify-between gap-3 p-4 md:flex-row md:items-center">
+                  <div className="flex items-center gap-3.5">
                     {data.member.photoUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={data.member.photoUrl}
                         alt={data.member.name}
-                        className="h-16 w-16 rounded-2xl border-2 border-[#E32935]/50 object-cover shadow-lg"
+                        className="h-13 w-13 rounded-xl border-2 border-[#E32935]/50 object-cover shadow-lg"
                       />
                     ) : (
-                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[#292E38] bg-[#171A21] text-xl font-bold text-[#F5F6F8]">
+                      <div className="flex h-13 w-13 items-center justify-center rounded-xl border border-[#292E38] bg-[#171A21] text-base font-bold text-[#F5F6F8]">
                         {initials}
                       </div>
                     )}
                     <div>
                       <div className="flex items-center gap-2">
-                        <h1 className="text-2xl font-bold tracking-tight text-white">
+                        <h1 className="text-xl font-bold tracking-tight text-white">
                           Welcome back,{" "}
                           <span className="italic text-[#E32935]">{data.member.firstName}!</span>
                         </h1>
                         <StatusBadge status={data.member.status} />
                       </div>
-                      <p className="mt-1 text-xs text-[#A4AAB5]">
-                        Member ID <span className="font-mono text-white">{data.member.memberCode}</span> ·
+                      <p className="mt-0.5 text-[11px] text-[#A4AAB5]">
+                        Client ID <span className="font-mono text-white">{data.member.memberCode}</span> ·
                         Track your attendance, plan expiration, and personal QR check-in pass.
                       </p>
                     </div>
@@ -527,7 +545,7 @@ export default function MemberPortalDashboardPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium",
+                        "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-medium",
                         data.gymStatus.isOpen
                           ? "border-[#2BCB83]/30 bg-[#2BCB83]/10 text-[#2BCB83]"
                           : "border-[#F05252]/30 bg-[#F05252]/10 text-[#F05252]"
@@ -535,7 +553,7 @@ export default function MemberPortalDashboardPage() {
                     >
                       <span
                         className={cn(
-                          "h-2 w-2 rounded-full",
+                          "h-1.5 w-1.5 rounded-full",
                           data.gymStatus.isOpen ? "bg-[#2BCB83]" : "bg-[#F05252]"
                         )}
                       />
@@ -544,7 +562,7 @@ export default function MemberPortalDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setSection("qr")}
-                      className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46]"
+                      className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E32935] px-3 text-xs font-semibold text-white hover:bg-[#F13A46]"
                     >
                       <QrCode className="h-3.5 w-3.5" />
                       <span>Open My QR Pass</span>
@@ -553,14 +571,16 @@ export default function MemberPortalDashboardPage() {
                 </div>
               </section>
 
-              {/* 4 Member KPIs */}
-              <div className="grid grid-cols-2 gap-3.5 xl:grid-cols-4">
+              {/* 4 Client KPIs with vs last mo comparison */}
+              <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-4">
                 <KpiCard
                   label="Current Plan"
-                  value={data.currentPlan?.name ?? "None"}
-                  helper={
-                    data.currentPlan ? `${formatCurrency(data.currentPlan.price)} plan` : "Visit front desk"
+                  value={
+                    data.currentPlan
+                      ? `${data.currentPlan.name} (${formatCurrency(data.currentPlan.price)})`
+                      : "None"
                   }
+                  deltaPercent={0}
                   icon={ShieldCheck}
                   tone="blue"
                 />
@@ -576,25 +596,25 @@ export default function MemberPortalDashboardPage() {
                 <KpiCard
                   label="Visits This Month"
                   value={data.stats.visitsThisMonth}
-                  helper="Approved gym check-ins"
+                  deltaPercent={15}
                   icon={CalendarCheck}
                   tone="green"
                 />
                 <KpiCard
                   label="Total Check-Ins"
                   value={data.stats.totalVisits}
-                  helper={data.credential ? `QR Pass ••••-${data.credential.tokenLast4}` : "Generate QR pass"}
+                  deltaPercent={12}
                   icon={QrCode}
                   tone="purple"
                 />
               </div>
 
               {/* Lower 2-column grid */}
-              <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-12">
-                <div className="rounded-xl border border-[#242934] bg-[#111318] p-4 lg:col-span-7">
-                  <div className="mb-3 flex items-center justify-between">
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
+                <div className="rounded-xl border border-[#242934] bg-[#111318] p-3.5 lg:col-span-7">
+                  <div className="mb-2.5 flex items-center justify-between">
                     <div>
-                      <h2 className="text-sm font-semibold text-[#F5F6F8]">Recent Attendance</h2>
+                      <h2 className="text-xs font-semibold text-[#F5F6F8]">Recent Attendance</h2>
                       <p className="text-[11px] text-[#8A93A2]">Your latest check-ins at the gym</p>
                     </div>
                     <button
@@ -607,15 +627,15 @@ export default function MemberPortalDashboardPage() {
                   </div>
 
                   {data.attendance.length === 0 ? (
-                    <p className="py-8 text-center text-xs text-[#8A93A2]">
+                    <p className="py-6 text-center text-xs text-[#8A93A2]">
                       No check-ins recorded yet. Generate your QR pass and scan at the front desk!
                     </p>
                   ) : (
                     <div className="divide-y divide-[#242934]">
-                      {data.attendance.slice(0, 6).map((a) => (
+                      {data.attendance.slice(0, 5).map((a) => (
                         <div
                           key={a.id}
-                          className="flex items-center justify-between py-2.5 text-xs"
+                          className="flex items-center justify-between py-2 text-xs"
                         >
                           <div>
                             <p className="font-medium text-[#F5F6F8]">
@@ -634,33 +654,33 @@ export default function MemberPortalDashboardPage() {
                 </div>
 
                 {/* Quick QR & Profile Card */}
-                <div className="flex flex-col justify-between rounded-xl border border-[#242934] bg-[#111318] p-4 lg:col-span-5">
+                <div className="flex flex-col justify-between rounded-xl border border-[#242934] bg-[#111318] p-3.5 lg:col-span-5">
                   <div>
-                    <h2 className="text-sm font-semibold text-[#F5F6F8]">My Check-In Pass</h2>
+                    <h2 className="text-xs font-semibold text-[#F5F6F8]">My Check-In Pass</h2>
                     <p className="text-[11px] text-[#8A93A2]">
                       Self-generated QR pass for front-desk scanning
                     </p>
                   </div>
 
-                  <div className="my-4 flex flex-col items-center justify-center rounded-xl border border-[#242934] bg-[#171A21] p-4 text-center">
+                  <div className="my-3 flex flex-col items-center justify-center rounded-xl border border-[#242934] bg-[#171A21] p-3 text-center">
                     {data.qrDataUrl ? (
                       <>
-                        <div className="rounded-xl bg-white p-2.5">
+                        <div className="rounded-xl bg-white p-2">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={data.qrDataUrl}
                             alt="My QR Pass"
-                            className="h-36 w-36"
+                            className="h-32 w-32"
                           />
                         </div>
-                        <p className="mt-2 font-mono text-[11px] text-[#A4AAB5]">
+                        <p className="mt-1.5 font-mono text-[10px] text-[#A4AAB5]">
                           Pass ID ••••-{data.credential?.tokenLast4}
                         </p>
                       </>
                     ) : (
-                      <div className="py-6">
-                        <QrCode className="mx-auto h-8 w-8 text-[#8A93A2]" />
-                        <p className="mt-2 text-xs text-[#A4AAB5]">No active QR pass generated yet</p>
+                      <div className="py-5">
+                        <QrCode className="mx-auto h-7 w-7 text-[#8A93A2]" />
+                        <p className="mt-1.5 text-xs text-[#A4AAB5]">No active QR pass generated yet</p>
                       </div>
                     )}
                   </div>
@@ -669,14 +689,14 @@ export default function MemberPortalDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setSection("qr")}
-                      className="h-9 rounded-lg bg-[#E32935] px-3 text-xs font-semibold text-white hover:bg-[#F13A46]"
+                      className="h-8 rounded-lg bg-[#E32935] px-2.5 text-xs font-semibold text-white hover:bg-[#F13A46]"
                     >
                       {data.qrDataUrl ? "Manage QR Pass" : "Generate QR Pass"}
                     </button>
                     <button
                       type="button"
                       onClick={() => setSection("settings")}
-                      className="h-9 rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
+                      className="h-8 rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
                     >
                       Upload Photo
                     </button>
@@ -688,22 +708,22 @@ export default function MemberPortalDashboardPage() {
 
           {/* SECTION 2: MY QR PASS */}
           {section === "qr" && (
-            <div className="grid grid-cols-1 gap-4 animate-panel-enter md:grid-cols-12">
-              <div className="space-y-4 rounded-xl border border-[#242934] bg-[#111318] p-5 print:hidden md:col-span-5">
+            <div className="grid grid-cols-1 gap-3 animate-panel-enter md:grid-cols-12">
+              <div className="space-y-3 rounded-xl border border-[#242934] bg-[#111318] p-4 print:hidden md:col-span-5">
                 <div>
-                  <h1 className="text-lg font-semibold text-[#F5F6F8]">My Personal QR Pass</h1>
-                  <p className="mt-0.5 text-xs text-[#A4AAB5]">
+                  <h1 className="text-base font-semibold text-[#F5F6F8]">My Personal QR Pass</h1>
+                  <p className="mt-0.5 text-[11px] text-[#A4AAB5]">
                     Generate or refresh your QR credential. Staff will scan this code at the front desk.
                   </p>
                 </div>
 
-                <div className="space-y-2 rounded-xl border border-[#242934] bg-[#171A21] p-3.5 text-xs">
+                <div className="space-y-1.5 rounded-xl border border-[#242934] bg-[#171A21] p-3 text-xs">
                   <div className="flex justify-between">
-                    <span className="text-[#8A93A2]">Member</span>
+                    <span className="text-[#8A93A2]">Client</span>
                     <span className="font-semibold text-[#F5F6F8]">{data.member.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#8A93A2]">Member ID</span>
+                    <span className="text-[#8A93A2]">Client ID</span>
                     <span className="font-mono text-[#F5F6F8]">{data.member.memberCode}</span>
                   </div>
                   <div className="flex justify-between">
@@ -722,9 +742,9 @@ export default function MemberPortalDashboardPage() {
                   type="button"
                   disabled={generatingQr}
                   onClick={handleGenerateQr}
-                  className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[#E32935] px-4 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:opacity-50"
+                  className="flex h-9 w-full items-center justify-center gap-2 rounded-xl bg-[#E32935] px-4 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:opacity-50"
                 >
-                  <RefreshCw className="h-4 w-4" />
+                  <RefreshCw className="h-3.5 w-3.5" />
                   <span>
                     {generatingQr
                       ? "Generating..."
@@ -740,19 +760,19 @@ export default function MemberPortalDashboardPage() {
                 </p>
               </div>
 
-              <div className="flex flex-col items-center justify-center rounded-xl border border-[#242934] bg-[#111318] p-5 md:col-span-7">
+              <div className="flex flex-col items-center justify-center rounded-xl border border-[#242934] bg-[#111318] p-4 md:col-span-7">
                 {!data.qrDataUrl ? (
-                  <div className="py-10 text-center">
-                    <QrCode className="mx-auto h-10 w-10 text-[#8A93A2]" />
-                    <p className="mt-3 text-sm font-medium text-[#F5F6F8]">No Active QR Pass</p>
+                  <div className="py-8 text-center">
+                    <QrCode className="mx-auto h-9 w-9 text-[#8A93A2]" />
+                    <p className="mt-2.5 text-sm font-medium text-[#F5F6F8]">No Active QR Pass</p>
                     <p className="mt-1 text-xs text-[#8A93A2]">
                       Click &ldquo;Generate My QR Code&rdquo; on the left to issue your pass.
                     </p>
                   </div>
                 ) : (
-                  <div className="w-full max-w-[300px] space-y-3.5">
-                    <div className="rounded-2xl bg-white p-5 text-center text-[#090A0D] shadow-xl">
-                      <div className="flex items-center justify-between border-b border-neutral-200 pb-2.5">
+                  <div className="w-full max-w-[280px] space-y-3">
+                    <div className="rounded-2xl bg-white p-4 text-center text-[#090A0D] shadow-xl">
+                      <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
                         <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#525866]">
                           IRONHUB PASS
                         </span>
@@ -761,37 +781,37 @@ export default function MemberPortalDashboardPage() {
                         </span>
                       </div>
 
-                      <div className="mt-3 flex items-center justify-center gap-2.5">
+                      <div className="mt-2.5 flex items-center justify-center gap-2">
                         {data.member.photoUrl && (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={data.member.photoUrl}
                             alt={data.member.name}
-                            className="h-9 w-9 rounded-full object-cover ring-1 ring-neutral-300"
+                            className="h-8 w-8 rounded-full object-cover ring-1 ring-neutral-300"
                           />
                         )}
                         <div className="text-left">
-                          <p className="text-sm font-bold leading-tight text-[#090A0D]">
+                          <p className="text-xs font-bold leading-tight text-[#090A0D]">
                             {data.member.name}
                           </p>
-                          <p className="text-[11px] text-[#525866]">
-                            {data.member.memberCode} · {data.currentPlan?.name ?? "Member"}
+                          <p className="text-[10px] text-[#525866]">
+                            {data.member.memberCode} · {data.currentPlan?.name ?? "Client"}
                           </p>
                         </div>
                       </div>
 
-                      <div className="my-3 flex justify-center bg-white p-1.5">
+                      <div className="my-2.5 flex justify-center bg-white p-1">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={data.qrDataUrl}
-                          alt="Member QR Pass"
-                          width={216}
-                          height={216}
-                          className="h-52 w-52"
+                          alt="Client QR Pass"
+                          width={192}
+                          height={192}
+                          className="h-44 w-44"
                         />
                       </div>
 
-                      <p className="border-t border-neutral-200 pt-2.5 font-mono text-[10px] text-[#525866]">
+                      <p className="border-t border-neutral-200 pt-2 font-mono text-[10px] text-[#525866]">
                         ID ••••-{data.credential?.tokenLast4} ·{" "}
                         {data.credential ? formatDateTime(data.credential.issuedAt) : ""}
                       </p>
@@ -801,7 +821,7 @@ export default function MemberPortalDashboardPage() {
                       <button
                         type="button"
                         onClick={handleDownloadQr}
-                        className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
+                        className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
                       >
                         <Download className="h-3.5 w-3.5" />
                         <span>Download</span>
@@ -809,7 +829,7 @@ export default function MemberPortalDashboardPage() {
                       <button
                         type="button"
                         onClick={() => window.print()}
-                        className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
+                        className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
                       >
                         <Printer className="h-3.5 w-3.5" />
                         <span>Print</span>
@@ -817,7 +837,7 @@ export default function MemberPortalDashboardPage() {
                       <button
                         type="button"
                         onClick={handleCopyToken}
-                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#A4AAB5] hover:text-white"
+                        className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#A4AAB5] hover:text-white"
                       >
                         {copied ? (
                           <Check className="h-3.5 w-3.5 text-[#2BCB83]" />
@@ -833,12 +853,12 @@ export default function MemberPortalDashboardPage() {
             </div>
           )}
 
-          {/* SECTION 3: ATTENDANCE HISTORY */}
+          {/* SECTION 3: ATTENDANCE HISTORY WITH PAGINATION */}
           {section === "attendance" && (
-            <div className="space-y-4 animate-panel-enter">
+            <div className="space-y-3 animate-panel-enter">
               <div>
-                <h1 className="text-xl font-semibold text-[#F5F6F8]">My Attendance Log</h1>
-                <p className="text-xs text-[#A4AAB5]">
+                <h1 className="text-lg font-semibold text-[#F5F6F8]">My Attendance Log</h1>
+                <p className="text-[11px] text-[#A4AAB5]">
                   {data.stats.visitsThisMonth} visits this month · {data.stats.totalVisits} total
                   approved check-ins
                 </p>
@@ -846,36 +866,36 @@ export default function MemberPortalDashboardPage() {
 
               <div className="overflow-hidden rounded-xl border border-[#242934] bg-[#111318]">
                 <table className="w-full text-left text-xs">
-                  <thead className="border-b border-[#242934] bg-[#171A21] text-[11px] font-medium uppercase tracking-wider text-[#8A93A2]">
+                  <thead className="border-b border-[#242934] bg-[#171A21] text-[10px] font-medium uppercase tracking-wider text-[#8A93A2]">
                     <tr>
-                      <th className="px-4 py-2.5">Date</th>
-                      <th className="px-4 py-2.5">Time</th>
-                      <th className="px-4 py-2.5">Method</th>
-                      <th className="px-4 py-2.5">Notes</th>
-                      <th className="px-4 py-2.5 text-right">Outcome</th>
+                      <th className="px-3.5 py-2">Date</th>
+                      <th className="px-3.5 py-2">Time</th>
+                      <th className="px-3.5 py-2">Method</th>
+                      <th className="px-3.5 py-2">Notes</th>
+                      <th className="px-3.5 py-2 text-right">Outcome</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#242934]">
-                    {data.attendance.length === 0 ? (
+                    {pagedAttendance.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="px-4 py-8 text-center text-[#8A93A2]">
+                        <td colSpan={5} className="px-3.5 py-6 text-center text-[#8A93A2]">
                           No attendance records yet.
                         </td>
                       </tr>
                     ) : (
-                      data.attendance.map((a) => (
+                      pagedAttendance.map((a) => (
                         <tr key={a.id} className="hover:bg-[#171A21]">
-                          <td className="px-4 py-2.5 font-medium text-[#F5F6F8]">
+                          <td className="px-3.5 py-2 font-medium text-[#F5F6F8]">
                             {formatDate(a.checkedInAt)}
                           </td>
-                          <td className="px-4 py-2.5 text-[#A4AAB5] tabular-nums">
+                          <td className="px-3.5 py-2 text-[#A4AAB5] tabular-nums">
                             {formatTime(a.checkedInAt)}
                           </td>
-                          <td className="px-4 py-2.5 text-[#A4AAB5]">{a.method}</td>
-                          <td className="px-4 py-2.5 text-[#8A93A2]">
+                          <td className="px-3.5 py-2 text-[#A4AAB5]">{a.method}</td>
+                          <td className="px-3.5 py-2 text-[#8A93A2]">
                             {a.denialReason ?? "Verified at front desk"}
                           </td>
-                          <td className="px-4 py-2.5 text-right">
+                          <td className="px-3.5 py-2 text-right">
                             <StatusBadge status={a.outcome} />
                           </td>
                         </tr>
@@ -883,30 +903,41 @@ export default function MemberPortalDashboardPage() {
                     )}
                   </tbody>
                 </table>
+                {data.attendance.length > 0 && (
+                  <div className="border-t border-[#242934] px-3.5 py-2">
+                    <PaginationBar
+                      page={attPage}
+                      totalPages={totalAttPages}
+                      totalItems={data.attendance.length}
+                      pageSize={PORTAL_PAGE_SIZE}
+                      onPageChange={setAttPage}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}
 
-          {/* SECTION 4: MEMBERSHIP & RECEIPTS */}
+          {/* SECTION 4: MEMBERSHIP & RECEIPTS WITH PAGINATION */}
           {section === "membership" && (
-            <div className="space-y-4 animate-panel-enter">
+            <div className="space-y-3 animate-panel-enter">
               <div>
-                <h1 className="text-xl font-semibold text-[#F5F6F8]">
+                <h1 className="text-lg font-semibold text-[#F5F6F8]">
                   Membership Plan &amp; Receipts
                 </h1>
-                <p className="text-xs text-[#A4AAB5]">
+                <p className="text-[11px] text-[#A4AAB5]">
                   Track your current plan validity, benefits, and payment history.
                 </p>
               </div>
 
               {data.currentPlan && (
-                <div className="rounded-xl border border-[#E32935]/40 bg-[#111318] p-5">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="rounded-xl border border-[#E32935]/40 bg-[#111318] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-[#E32935]">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-[#E32935]">
                         Current Plan
                       </span>
-                      <h2 className="mt-0.5 text-xl font-bold text-[#F5F6F8]">
+                      <h2 className="mt-0.5 text-base font-bold text-[#F5F6F8]">
                         {data.currentPlan.name} Plan — {formatCurrency(data.currentPlan.price)}
                       </h2>
                       <p className="mt-0.5 text-xs text-[#A4AAB5]">
@@ -918,13 +949,13 @@ export default function MemberPortalDashboardPage() {
                   </div>
 
                   {data.currentPlan.benefits.length > 0 && (
-                    <div className="mt-4 flex flex-wrap gap-2 border-t border-[#242934] pt-3.5">
+                    <div className="mt-3 flex flex-wrap gap-1.5 border-t border-[#242934] pt-2.5">
                       {data.currentPlan.benefits.map((b, i) => (
                         <span
                           key={i}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-[#242934] bg-[#171A21] px-2.5 py-1 text-xs text-[#F5F6F8]"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[#242934] bg-[#171A21] px-2.5 py-1 text-xs text-[#F5F6F8]"
                         >
-                          <Check className="h-3.5 w-3.5 text-[#2BCB83]" />
+                          <Check className="h-3 w-3 text-[#2BCB83]" />
                           {b}
                         </span>
                       ))}
@@ -934,42 +965,42 @@ export default function MemberPortalDashboardPage() {
               )}
 
               <div className="overflow-hidden rounded-xl border border-[#242934] bg-[#111318]">
-                <div className="border-b border-[#242934] px-4 py-3">
-                  <h2 className="text-sm font-semibold text-[#F5F6F8]">Payment Receipts</h2>
+                <div className="border-b border-[#242934] px-3.5 py-2.5">
+                  <h2 className="text-xs font-semibold text-[#F5F6F8]">Payment Receipts</h2>
                 </div>
                 <table className="w-full text-left text-xs">
-                  <thead className="border-b border-[#242934] bg-[#171A21] text-[11px] font-medium uppercase tracking-wider text-[#8A93A2]">
+                  <thead className="border-b border-[#242934] bg-[#171A21] text-[10px] font-medium uppercase tracking-wider text-[#8A93A2]">
                     <tr>
-                      <th className="px-4 py-2.5">Receipt</th>
-                      <th className="px-4 py-2.5">Plan</th>
-                      <th className="px-4 py-2.5">Method</th>
-                      <th className="px-4 py-2.5">Amount</th>
-                      <th className="px-4 py-2.5">Date</th>
-                      <th className="px-4 py-2.5 text-right">Status</th>
+                      <th className="px-3.5 py-2">Receipt</th>
+                      <th className="px-3.5 py-2">Plan</th>
+                      <th className="px-3.5 py-2">Method</th>
+                      <th className="px-3.5 py-2">Amount</th>
+                      <th className="px-3.5 py-2">Date</th>
+                      <th className="px-3.5 py-2 text-right">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#242934]">
-                    {data.payments.length === 0 ? (
+                    {pagedPayments.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-4 py-8 text-center text-[#8A93A2]">
+                        <td colSpan={6} className="px-3.5 py-6 text-center text-[#8A93A2]">
                           No payment receipts found.
                         </td>
                       </tr>
                     ) : (
-                      data.payments.map((p) => (
+                      pagedPayments.map((p) => (
                         <tr key={p.id} className="hover:bg-[#171A21]">
-                          <td className="px-4 py-2.5 font-mono text-[#F5F6F8]">
+                          <td className="px-3.5 py-2 font-mono text-[#F5F6F8]">
                             {p.receiptNumber}
                           </td>
-                          <td className="px-4 py-2.5 text-[#A4AAB5]">{p.planName}</td>
-                          <td className="px-4 py-2.5 text-[#A4AAB5]">{p.method}</td>
-                          <td className="px-4 py-2.5 font-medium text-[#F5F6F8] tabular-nums">
+                          <td className="px-3.5 py-2 text-[#A4AAB5]">{p.planName}</td>
+                          <td className="px-3.5 py-2 text-[#A4AAB5]">{p.method}</td>
+                          <td className="px-3.5 py-2 font-medium text-[#F5F6F8] tabular-nums">
                             {formatCurrency(p.amount)}
                           </td>
-                          <td className="px-4 py-2.5 text-[#8A93A2] tabular-nums">
+                          <td className="px-3.5 py-2 text-[#8A93A2] tabular-nums">
                             {formatDateTime(p.paidAt)}
                           </td>
-                          <td className="px-4 py-2.5 text-right">
+                          <td className="px-3.5 py-2 text-right">
                             <StatusBadge status={p.status} />
                           </td>
                         </tr>
@@ -977,6 +1008,17 @@ export default function MemberPortalDashboardPage() {
                     )}
                   </tbody>
                 </table>
+                {data.payments.length > 0 && (
+                  <div className="border-t border-[#242934] px-3.5 py-2">
+                    <PaginationBar
+                      page={payPage}
+                      totalPages={totalPayPages}
+                      totalItems={data.payments.length}
+                      pageSize={PORTAL_PAGE_SIZE}
+                      onPageChange={setPayPage}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -985,25 +1027,25 @@ export default function MemberPortalDashboardPage() {
           {section === "settings" && (
             <form
               onSubmit={handleSaveSettings}
-              className="grid grid-cols-1 gap-4 animate-panel-enter lg:grid-cols-12"
+              className="grid grid-cols-1 gap-3 animate-panel-enter lg:grid-cols-12"
             >
               {/* Left: Photo Upload Card */}
-              <div className="flex flex-col items-center justify-center rounded-xl border border-[#242934] bg-[#111318] p-5 text-center lg:col-span-4">
-                <h2 className="text-sm font-semibold text-[#F5F6F8]">Profile Picture</h2>
-                <p className="mt-0.5 text-xs text-[#8A93A2]">
+              <div className="flex flex-col items-center justify-center rounded-xl border border-[#242934] bg-[#111318] p-4 text-center lg:col-span-4">
+                <h2 className="text-xs font-semibold text-[#F5F6F8]">Profile Picture</h2>
+                <p className="mt-0.5 text-[11px] text-[#8A93A2]">
                   Shown on your dashboard, QR pass, and front-desk check-in screen.
                 </p>
 
-                <div className="my-5">
+                <div className="my-4">
                   {profileForm.photoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={profileForm.photoUrl}
                       alt={data.member.name}
-                      className="h-28 w-28 rounded-full border-2 border-[#E32935] object-cover shadow-lg"
+                      className="h-24 w-24 rounded-full border-2 border-[#E32935] object-cover shadow-lg"
                     />
                   ) : (
-                    <div className="flex h-28 w-28 items-center justify-center rounded-full border border-[#292E38] bg-[#171A21] text-2xl font-bold text-[#F5F6F8]">
+                    <div className="flex h-24 w-24 items-center justify-center rounded-full border border-[#292E38] bg-[#171A21] text-xl font-bold text-[#F5F6F8]">
                       {initials}
                     </div>
                   )}
@@ -1021,7 +1063,7 @@ export default function MemberPortalDashboardPage() {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#242934] bg-[#171A21] px-3.5 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
                   >
                     <Camera className="h-3.5 w-3.5 text-[#E32935]" />
                     <span>Upload Photo</span>
@@ -1030,7 +1072,7 @@ export default function MemberPortalDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setProfileForm((prev) => ({ ...prev, photoUrl: null }))}
-                      className="inline-flex h-9 items-center gap-1 rounded-lg border border-[#F05252]/30 bg-[#F05252]/10 px-2.5 text-xs text-[#F05252] hover:bg-[#F05252]/20"
+                      className="inline-flex h-8 items-center gap-1 rounded-lg border border-[#F05252]/30 bg-[#F05252]/10 px-2.5 text-xs text-[#F05252] hover:bg-[#F05252]/20"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                       <span>Remove</span>
@@ -1040,37 +1082,37 @@ export default function MemberPortalDashboardPage() {
               </div>
 
               {/* Right: Contact, Emergency & Password */}
-              <div className="space-y-4 rounded-xl border border-[#242934] bg-[#111318] p-5 lg:col-span-8">
+              <div className="space-y-3 rounded-xl border border-[#242934] bg-[#111318] p-4 lg:col-span-8">
                 <div>
-                  <h2 className="text-sm font-semibold text-[#F5F6F8]">
+                  <h2 className="text-xs font-semibold text-[#F5F6F8]">
                     Personal Details &amp; Security
                   </h2>
-                  <p className="text-xs text-[#8A93A2]">
+                  <p className="text-[11px] text-[#8A93A2]">
                     Update your contact details, emergency contact, or portal password.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-xs text-[#A4AAB5]">Phone Number</label>
+                    <label className="mb-1 block text-[11px] text-[#A4AAB5]">Phone Number</label>
                     <input
                       value={profileForm.phone}
                       onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
                       placeholder="+63 917 000 0000"
-                      className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
+                      className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs text-[#A4AAB5]">Address</label>
+                    <label className="mb-1 block text-[11px] text-[#A4AAB5]">Address</label>
                     <input
                       value={profileForm.address}
                       onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
                       placeholder="City / Street address"
-                      className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
+                      className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs text-[#A4AAB5]">
+                    <label className="mb-1 block text-[11px] text-[#A4AAB5]">
                       Emergency Contact Name
                     </label>
                     <input
@@ -1078,11 +1120,11 @@ export default function MemberPortalDashboardPage() {
                       onChange={(e) =>
                         setProfileForm({ ...profileForm, emergencyContactName: e.target.value })
                       }
-                      className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
+                      className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs text-[#A4AAB5]">
+                    <label className="mb-1 block text-[11px] text-[#A4AAB5]">
                       Emergency Contact Phone
                     </label>
                     <input
@@ -1090,14 +1132,14 @@ export default function MemberPortalDashboardPage() {
                       onChange={(e) =>
                         setProfileForm({ ...profileForm, emergencyContactPhone: e.target.value })
                       }
-                      className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
+                      className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3.5 border-t border-[#242934] pt-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 border-t border-[#242934] pt-3 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-xs text-[#A4AAB5]">
+                    <label className="mb-1 block text-[11px] text-[#A4AAB5]">
                       Current Password (only if changing)
                     </label>
                     <input
@@ -1107,11 +1149,11 @@ export default function MemberPortalDashboardPage() {
                         setProfileForm({ ...profileForm, currentPassword: e.target.value })
                       }
                       placeholder="Current password"
-                      className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
+                      className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs text-[#A4AAB5]">
+                    <label className="mb-1 block text-[11px] text-[#A4AAB5]">
                       New Password (optional)
                     </label>
                     <input
@@ -1122,16 +1164,16 @@ export default function MemberPortalDashboardPage() {
                         setProfileForm({ ...profileForm, newPassword: e.target.value })
                       }
                       placeholder="Min 8 characters"
-                      className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
+                      className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                     />
                   </div>
                 </div>
 
-                <div className="flex justify-end border-t border-[#242934] pt-3.5">
+                <div className="flex justify-end border-t border-[#242934] pt-3">
                   <button
                     type="submit"
                     disabled={savingProfile}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E32935] px-4 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:opacity-50"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:opacity-50"
                   >
                     <Save className="h-3.5 w-3.5" />
                     <span>{savingProfile ? "Saving..." : "Save Changes"}</span>

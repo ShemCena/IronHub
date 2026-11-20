@@ -11,9 +11,13 @@ import {
   Search,
   Banknote,
   Clock,
+  Pencil,
+  Trash2,
+  Ban,
 } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { KpiCard } from "@/components/ui/kpi-card";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import { formatCompactCurrency, formatCurrency, formatDateTime } from "@/lib/formatting/currency";
 import { cn } from "@/lib/utils";
 
@@ -24,7 +28,7 @@ interface PlanItem {
   price: number;
   enrollmentFee: number;
   durationValue: number;
-  durationUnit: string;
+  durationUnit: "DAYS" | "WEEKS" | "MONTHS";
   benefits: string[];
   isPopular: boolean;
   isActive: boolean;
@@ -61,6 +65,8 @@ const METHOD_LABELS: Record<string, string> = {
   OTHER: "Other",
 };
 
+const PAY_PAGE_SIZE = 6;
+
 function formatPlanPrice(price: number): string {
   return Number.isInteger(price) ? formatCompactCurrency(price) : formatCurrency(price);
 }
@@ -80,11 +86,17 @@ export default function PlansAndPaymentsPage() {
   const [paySearch, setPaySearch] = useState("");
   const [payMethodFilter, setPayMethodFilter] = useState("ALL");
   const [payStatusFilter, setPayStatusFilter] = useState("ALL");
+  const [payPage, setPayPage] = useState(1);
 
   const [paymentModal, setPaymentModal] = useState(false);
   const [planModal, setPlanModal] = useState(false);
-  const [refundTarget, setRefundTarget] = useState<{ id: string; receipt: string } | null>(null);
-  const [refundReason, setRefundReason] = useState("");
+  const [editingPlan, setEditingPlan] = useState<PlanItem | null>(null);
+  const [auditTarget, setAuditTarget] = useState<{
+    id: string;
+    receipt: string;
+    action: "REFUND" | "VOID";
+  } | null>(null);
+  const [auditReason, setAuditReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -105,6 +117,8 @@ export default function PlansAndPaymentsPage() {
     durationValue: 1,
     durationUnit: "MONTHS" as "DAYS" | "WEEKS" | "MONTHS",
     benefitsText: "Gym Access, Locker Access",
+    isPopular: false,
+    isActive: true,
   });
 
   const loadPayments = useCallback(async () => {
@@ -156,6 +170,82 @@ export default function PlansAndPaymentsPage() {
     setPaymentModal(true);
   }
 
+  function openAddPlan() {
+    setEditingPlan(null);
+    setError(null);
+    setPlanForm({
+      name: "",
+      description: "",
+      price: 799,
+      durationValue: 1,
+      durationUnit: "MONTHS",
+      benefitsText: "Gym Access, Locker Access",
+      isPopular: false,
+      isActive: true,
+    });
+    setPlanModal(true);
+  }
+
+  function openEditPlan(p: PlanItem) {
+    setEditingPlan(p);
+    setError(null);
+    setPlanForm({
+      name: p.name,
+      description: p.description ?? "",
+      price: p.price,
+      durationValue: p.durationValue,
+      durationUnit: p.durationUnit,
+      benefitsText: p.benefits.join(", "),
+      isPopular: p.isPopular,
+      isActive: p.isActive,
+    });
+    setPlanModal(true);
+  }
+
+  async function handleSavePlan(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSaving(true);
+    try {
+      const url = editingPlan ? `/api/plans/${editingPlan.id}` : "/api/plans";
+      const method = editingPlan ? "PATCH" : "POST";
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: planForm.name,
+          description: planForm.description,
+          price: planForm.price,
+          durationValue: planForm.durationValue,
+          durationUnit: planForm.durationUnit,
+          benefits: planForm.benefitsText
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean),
+          isPopular: planForm.isPopular,
+          isActive: planForm.isActive,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Failed to save plan.");
+        return;
+      }
+      setPlanModal(false);
+      setEditingPlan(null);
+      loadAll();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeletePlan(p: PlanItem) {
+    const res = await fetch(`/api/plans/${p.id}`, { method: "DELETE" });
+    if (res.ok) {
+      loadAll();
+    }
+  }
+
   async function handleRecordPayment(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -178,51 +268,19 @@ export default function PlansAndPaymentsPage() {
     }
   }
 
-  async function handleCreatePlan(e: React.FormEvent) {
+  async function handleConfirmAuditAction(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
+    if (!auditTarget || auditReason.trim().length < 4) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/plans", {
+      const res = await fetch(`/api/payments/${auditTarget.id}/action`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: planForm.name,
-          description: planForm.description,
-          price: planForm.price,
-          durationValue: planForm.durationValue,
-          durationUnit: planForm.durationUnit,
-          benefits: planForm.benefitsText
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean),
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Failed to create plan.");
-        return;
-      }
-      setPlanModal(false);
-      loadAll();
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleConfirmRefund(e: React.FormEvent) {
-    e.preventDefault();
-    if (!refundTarget || refundReason.trim().length < 4) return;
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/payments/${refundTarget.id}/action`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "REFUND", reason: refundReason }),
+        body: JSON.stringify({ action: auditTarget.action, reason: auditReason }),
       });
       if (res.ok) {
-        setRefundTarget(null);
-        setRefundReason("");
+        setAuditTarget(null);
+        setAuditReason("");
         loadAll();
       }
     } finally {
@@ -230,15 +288,21 @@ export default function PlansAndPaymentsPage() {
     }
   }
 
+  const totalPayPages = Math.max(1, Math.ceil(payments.length / PAY_PAGE_SIZE));
+  const pagedPayments = payments.slice(
+    (payPage - 1) * PAY_PAGE_SIZE,
+    payPage * PAY_PAGE_SIZE
+  );
+
   return (
-    <div className="space-y-4 animate-panel-enter">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-3.5 animate-panel-enter">
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-[#F5F6F8]">
             Plans &amp; Payments
           </h1>
           <p className="mt-0.5 text-xs text-[#A4AAB5]">
-            Configure membership tiers and record over-the-counter payments with full audit history.
+            Manage membership plans and over-the-counter payments.
           </p>
         </div>
 
@@ -246,15 +310,15 @@ export default function PlansAndPaymentsPage() {
           <button
             type="button"
             onClick={() => openRecordPayment()}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46]"
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E32935] px-3 text-xs font-semibold text-white hover:bg-[#F13A46]"
           >
             <CreditCard className="h-3.5 w-3.5" />
             <span>Record Payment</span>
           </button>
           <button
             type="button"
-            onClick={() => setPlanModal(true)}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#242934] bg-[#111318] px-3.5 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
+            onClick={openAddPlan}
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#242934] bg-[#111318] px-3 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
           >
             <Plus className="h-3.5 w-3.5" />
             <span>Add Plan</span>
@@ -263,14 +327,14 @@ export default function PlansAndPaymentsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-[#292E38]" role="tablist">
+      <div className="flex gap-2 border-b border-[#242934]" role="tablist">
         <button
           type="button"
           role="tab"
           aria-selected={tab === "plans"}
           onClick={() => setTab("plans")}
           className={cn(
-            "border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+            "border-b-2 px-3.5 py-2 text-xs font-medium transition-colors",
             tab === "plans"
               ? "border-[#E32935] text-[#F5F6F8]"
               : "border-transparent text-[#8A93A2] hover:text-[#A4AAB5]"
@@ -284,7 +348,7 @@ export default function PlansAndPaymentsPage() {
           aria-selected={tab === "payments"}
           onClick={() => setTab("payments")}
           className={cn(
-            "border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+            "border-b-2 px-3.5 py-2 text-xs font-medium transition-colors",
             tab === "payments"
               ? "border-[#E32935] text-[#F5F6F8]"
               : "border-transparent text-[#8A93A2] hover:text-[#A4AAB5]"
@@ -295,27 +359,45 @@ export default function PlansAndPaymentsPage() {
       </div>
 
       {tab === "plans" ? (
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {plans.map((p) => (
             <div
               key={p.id}
               className={cn(
-                "flex flex-col justify-between rounded-2xl border p-6 transition-colors",
+                "flex flex-col justify-between rounded-2xl border p-5 transition-colors",
                 p.isPopular
                   ? "border-[#E32935]/70 bg-gradient-to-b from-[#E32935]/[0.08] to-[#111318] shadow-[0_0_0_1px_rgba(227,41,53,0.18)]"
-                  : "border-[#292E38] bg-[#111318]"
+                  : "border-[#242934] bg-[#111318]"
               )}
             >
               <div>
                 <div className="flex items-center justify-between gap-2">
-                  <h2 className="text-lg font-semibold text-[#F5F6F8]">{p.name}</h2>
-                  {p.isPopular && (
-                    <span className="rounded-md bg-[#E32935] px-2.5 py-0.5 text-[11px] font-semibold text-white">
-                      Most Popular
-                    </span>
-                  )}
+                  <h2 className="text-base font-semibold text-[#F5F6F8]">{p.name}</h2>
+                  <div className="flex items-center gap-1">
+                    {p.isPopular && (
+                      <span className="rounded-md bg-[#E32935] px-2 py-0.5 text-[10px] font-semibold text-white">
+                        Most Popular
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => openEditPlan(p)}
+                      className="rounded p-1 text-[#8A93A2] hover:bg-[#20242D] hover:text-white"
+                      title="Edit plan"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeletePlan(p)}
+                      className="rounded p-1 text-[#8A93A2] hover:bg-[#20242D] hover:text-[#F05252]"
+                      title="Deactivate or delete plan"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
-                <p className="mt-3 text-3xl font-bold text-[#F5F6F8] tabular-nums">
+                <p className="mt-2.5 text-2xl font-bold text-[#F5F6F8] tabular-nums">
                   {formatPlanPrice(p.price)}
                   <span className="text-xs font-normal text-[#8A93A2]">
                     {" "}
@@ -323,10 +405,10 @@ export default function PlansAndPaymentsPage() {
                   </span>
                 </p>
                 {p.description && (
-                  <p className="mt-2 text-xs text-[#A4AAB5]">{p.description}</p>
+                  <p className="mt-1.5 text-xs text-[#A4AAB5]">{p.description}</p>
                 )}
 
-                <ul className="mt-5 space-y-2.5 border-t border-[#292E38] pt-4 text-xs text-[#A4AAB5]">
+                <ul className="mt-4 space-y-2 border-t border-[#242934] pt-3.5 text-xs text-[#A4AAB5]">
                   {p.benefits.map((b, i) => (
                     <li key={i} className="flex items-center gap-2">
                       <Check className="h-3.5 w-3.5 shrink-0 text-[#2BCB83]" />
@@ -336,8 +418,8 @@ export default function PlansAndPaymentsPage() {
                 </ul>
               </div>
 
-              <div className="mt-6 space-y-3 border-t border-[#292E38] pt-4">
-                <div className="flex items-center justify-between text-xs text-[#8A93A2]">
+              <div className="mt-5 space-y-2.5 border-t border-[#242934] pt-3.5">
+                <div className="flex items-center justify-between text-[11px] text-[#8A93A2]">
                   <span className="inline-flex items-center gap-1.5">
                     <Users className="h-3.5 w-3.5" />
                     {p.activeSubscribers} active
@@ -349,62 +431,68 @@ export default function PlansAndPaymentsPage() {
                   disabled={!p.isActive}
                   onClick={() => openRecordPayment(p)}
                   className={cn(
-                    "h-10 w-full rounded-lg text-xs font-semibold transition-colors",
+                    "h-9 w-full rounded-lg text-xs font-semibold transition-colors",
                     p.isPopular
                       ? "bg-[#E32935] text-white hover:bg-[#F13A46]"
-                      : "border border-[#292E38] bg-[#171A21] text-[#F5F6F8] hover:bg-[#20242D]"
+                      : "border border-[#242934] bg-[#171A21] text-[#F5F6F8] hover:bg-[#20242D]"
                   )}
                 >
-                  Select Plan &amp; Record Payment
+                  Select Plan
                 </button>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="space-y-3.5">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <KpiCard
               label="Total Collected"
               value={formatCurrency(totals.collected)}
-              helper="Posted OTC payments"
+              deltaPercent={8}
               icon={Banknote}
               tone="green"
             />
             <KpiCard
               label="Pending"
               value={formatCurrency(totals.pending)}
-              helper="Awaiting confirmation"
+              deltaPercent={0}
               icon={Clock}
               tone="amber"
             />
             <KpiCard
               label="Refunded"
               value={formatCurrency(totals.refunded)}
-              helper="Audited reversals"
+              deltaPercent={-2}
               icon={RotateCcw}
-              tone="blue"
+              tone="purple"
             />
           </div>
 
           {/* Payment Filters */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative w-full sm:w-72">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8A93A2]" />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative w-full sm:w-64">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8A93A2]" />
               <input
                 type="search"
                 value={paySearch}
-                onChange={(e) => setPaySearch(e.target.value)}
+                onChange={(e) => {
+                  setPaySearch(e.target.value);
+                  setPayPage(1);
+                }}
                 placeholder="Search receipt, ref #, member..."
-                className="h-10 w-full rounded-lg border border-[#292E38] bg-[#111318] pl-9 pr-3 text-sm text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none"
+                className="h-8 w-full rounded-lg border border-[#242934] bg-[#111318] pl-8 pr-3 text-xs text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none"
               />
             </div>
             <div className="flex gap-2">
               <select
                 value={payMethodFilter}
-                onChange={(e) => setPayMethodFilter(e.target.value)}
+                onChange={(e) => {
+                  setPayMethodFilter(e.target.value);
+                  setPayPage(1);
+                }}
                 aria-label="Filter by payment method"
-                className="h-10 rounded-lg border border-[#292E38] bg-[#111318] px-3 text-xs text-[#F5F6F8]"
+                className="h-8 rounded-lg border border-[#242934] bg-[#111318] px-2.5 text-xs text-[#F5F6F8]"
               >
                 <option value="ALL">All Methods</option>
                 <option value="CASH">Cash</option>
@@ -414,9 +502,12 @@ export default function PlansAndPaymentsPage() {
               </select>
               <select
                 value={payStatusFilter}
-                onChange={(e) => setPayStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  setPayStatusFilter(e.target.value);
+                  setPayPage(1);
+                }}
                 aria-label="Filter by payment status"
-                className="h-10 rounded-lg border border-[#292E38] bg-[#111318] px-3 text-xs text-[#F5F6F8]"
+                className="h-8 rounded-lg border border-[#242934] bg-[#111318] px-2.5 text-xs text-[#F5F6F8]"
               >
                 <option value="ALL">All Statuses</option>
                 <option value="PAID">Paid</option>
@@ -426,69 +517,90 @@ export default function PlansAndPaymentsPage() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-[#292E38] bg-[#111318]">
+          <div className="overflow-hidden rounded-xl border border-[#242934] bg-[#111318]">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b border-[#292E38] bg-[#171A21] text-xs font-medium uppercase tracking-wider text-[#8A93A2]">
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-[#242934] bg-[#171A21] text-[10px] font-medium uppercase tracking-wider text-[#8A93A2]">
                   <tr>
-                    <th className="px-4 py-3">Receipt</th>
-                    <th className="px-4 py-3">Member</th>
-                    <th className="px-4 py-3">Plan</th>
-                    <th className="px-4 py-3">Method</th>
-                    <th className="px-4 py-3">Amount</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Date</th>
-                    <th className="px-4 py-3 text-right">Audit</th>
+                    <th className="px-3.5 py-2">Receipt</th>
+                    <th className="px-3.5 py-2">Member</th>
+                    <th className="px-3.5 py-2">Plan</th>
+                    <th className="px-3.5 py-2">Method</th>
+                    <th className="px-3.5 py-2">Amount</th>
+                    <th className="px-3.5 py-2">Status</th>
+                    <th className="px-3.5 py-2">Date</th>
+                    <th className="px-3.5 py-2 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#292E38]">
-                  {payments.length === 0 ? (
+                <tbody className="divide-y divide-[#242934]">
+                  {pagedPayments.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-4 py-10 text-center text-xs text-[#8A93A2]">
+                      <td colSpan={8} className="px-3.5 py-8 text-center text-xs text-[#8A93A2]">
                         No payment records match your filters.
                       </td>
                     </tr>
                   ) : (
-                    payments.map((p) => (
+                    pagedPayments.map((p) => (
                       <tr key={p.id} className="hover:bg-[#171A21]">
-                        <td className="px-4 py-3 font-mono text-xs text-[#F5F6F8]">
+                        <td className="px-3.5 py-2 font-mono text-[11px] text-[#F5F6F8]">
                           {p.receiptNumber}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3.5 py-2">
                           <p className="font-medium text-[#F5F6F8]">{p.memberName}</p>
-                          <p className="text-xs text-[#8A93A2]">{p.memberCode}</p>
+                          <p className="text-[11px] text-[#8A93A2]">{p.memberCode}</p>
                         </td>
-                        <td className="px-4 py-3 text-[#A4AAB5]">{p.planName}</td>
-                        <td className="px-4 py-3 text-xs text-[#A4AAB5]">
+                        <td className="px-3.5 py-2 text-[#A4AAB5]">{p.planName}</td>
+                        <td className="px-3.5 py-2 text-[#A4AAB5]">
                           <span>{METHOD_LABELS[p.method] ?? p.method}</span>
                           {p.referenceNumber && (
-                            <p className="font-mono text-[11px] text-[#8A93A2]">
+                            <p className="font-mono text-[10px] text-[#8A93A2]">
                               Ref: {p.referenceNumber}
                             </p>
                           )}
                         </td>
-                        <td className="px-4 py-3 font-medium text-[#F5F6F8] tabular-nums">
+                        <td className="px-3.5 py-2 font-medium text-[#F5F6F8] tabular-nums">
                           {formatCurrency(p.amount)}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3.5 py-2">
                           <StatusBadge status={p.status} />
                         </td>
-                        <td className="px-4 py-3 text-xs text-[#8A93A2] tabular-nums">
+                        <td className="px-3.5 py-2 text-[11px] text-[#8A93A2] tabular-nums">
                           {formatDateTime(p.paidAt)}
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-3.5 py-2 text-right">
                           {p.status === "PAID" && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setRefundTarget({ id: p.id, receipt: p.receiptNumber });
-                                setRefundReason("");
-                              }}
-                              className="inline-flex items-center gap-1 rounded-md border border-[#292E38] bg-[#171A21] px-2.5 py-1 text-xs text-[#A4AAB5] hover:text-white"
-                            >
-                              <RotateCcw className="h-3 w-3" />
-                              Refund
-                            </button>
+                            <div className="inline-flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAuditTarget({
+                                    id: p.id,
+                                    receipt: p.receiptNumber,
+                                    action: "REFUND",
+                                  });
+                                  setAuditReason("");
+                                }}
+                                className="inline-flex h-7 items-center gap-1 rounded-md border border-[#242934] bg-[#171A21] px-2 text-[11px] text-[#A4AAB5] hover:text-white"
+                              >
+                                <RotateCcw className="h-3 w-3" />
+                                Refund
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAuditTarget({
+                                    id: p.id,
+                                    receipt: p.receiptNumber,
+                                    action: "VOID",
+                                  });
+                                  setAuditReason("");
+                                }}
+                                className="inline-flex h-7 items-center gap-1 rounded-md border border-[#242934] bg-[#171A21] px-2 text-[11px] text-[#8A93A2] hover:text-[#F05252]"
+                              >
+                                <Ban className="h-3 w-3" />
+                                Void
+                              </button>
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -497,6 +609,15 @@ export default function PlansAndPaymentsPage() {
                 </tbody>
               </table>
             </div>
+
+            <PaginationBar
+              page={payPage}
+              totalPages={totalPayPages}
+              totalItems={payments.length}
+              pageSize={PAY_PAGE_SIZE}
+              onPageChange={setPayPage}
+              itemLabel="payments"
+            />
           </div>
         </div>
       )}
@@ -504,13 +625,13 @@ export default function PlansAndPaymentsPage() {
       {/* Record Over-the-Counter Payment Modal */}
       {paymentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-[#292E38] bg-[#111318] p-6 animate-panel-enter">
-            <div className="mb-4 flex items-center justify-between border-b border-[#292E38] pb-3">
-              <h2 className="text-lg font-semibold text-[#F5F6F8]">
+          <div className="w-full max-w-md rounded-2xl border border-[#242934] bg-[#111318] p-5 animate-panel-enter">
+            <div className="mb-3.5 flex items-center justify-between border-b border-[#242934] pb-2.5">
+              <h2 className="text-sm font-semibold text-[#F5F6F8]">
                 Record Over-the-Counter Payment
               </h2>
               <button type="button" onClick={() => setPaymentModal(false)} aria-label="Close">
-                <X className="h-5 w-5 text-[#8A93A2]" />
+                <X className="h-4 w-4 text-[#8A93A2]" />
               </button>
             </div>
             {error && (
@@ -518,14 +639,14 @@ export default function PlansAndPaymentsPage() {
                 {error}
               </p>
             )}
-            <form onSubmit={handleRecordPayment} className="space-y-3.5">
+            <form onSubmit={handleRecordPayment} className="space-y-3">
               <div>
                 <label className="mb-1 block text-xs text-[#A4AAB5]">Member</label>
                 <select
                   required
                   value={payForm.memberId}
                   onChange={(e) => setPayForm({ ...payForm, memberId: e.target.value })}
-                  className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-sm text-[#F5F6F8]"
+                  className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                 >
                   {members.map((m) => (
                     <option key={m.id} value={m.id}>
@@ -547,7 +668,7 @@ export default function PlansAndPaymentsPage() {
                       amount: selected ? selected.price : payForm.amount,
                     });
                   }}
-                  className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-sm text-[#F5F6F8]"
+                  className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                 >
                   {plans
                     .filter((p) => p.isActive)
@@ -558,7 +679,7 @@ export default function PlansAndPaymentsPage() {
                     ))}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="mb-1 block text-xs text-[#A4AAB5]">Amount (PHP)</label>
                   <input
@@ -567,7 +688,7 @@ export default function PlansAndPaymentsPage() {
                     required
                     value={payForm.amount}
                     onChange={(e) => setPayForm({ ...payForm, amount: Number(e.target.value) })}
-                    className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-sm text-[#F5F6F8] tabular-nums"
+                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8] tabular-nums"
                   />
                 </div>
                 <div>
@@ -577,7 +698,7 @@ export default function PlansAndPaymentsPage() {
                     onChange={(e) =>
                       setPayForm({ ...payForm, method: e.target.value as typeof payForm.method })
                     }
-                    className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-sm text-[#F5F6F8]"
+                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                   >
                     <option value="CASH">Cash</option>
                     <option value="CARD">Card Terminal</option>
@@ -592,21 +713,21 @@ export default function PlansAndPaymentsPage() {
                 <input
                   value={payForm.referenceNumber}
                   onChange={(e) => setPayForm({ ...payForm, referenceNumber: e.target.value })}
-                  className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-sm text-[#F5F6F8]"
+                  className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setPaymentModal(false)}
-                  className="h-10 rounded-lg border border-[#292E38] bg-[#171A21] px-4 text-sm text-[#A4AAB5]"
+                  className="h-8 rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#A4AAB5]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="h-10 rounded-lg bg-[#E32935] px-4 text-sm font-semibold text-white hover:bg-[#F13A46]"
+                  className="h-8 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46]"
                 >
                   {saving ? "Posting..." : "Confirm Payment"}
                 </button>
@@ -616,24 +737,26 @@ export default function PlansAndPaymentsPage() {
         </div>
       )}
 
-      {/* Add Plan Modal */}
+      {/* Add / Edit Plan Modal */}
       {planModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-[#292E38] bg-[#111318] p-6 animate-panel-enter">
-            <div className="mb-4 flex items-center justify-between border-b border-[#292E38] pb-3">
-              <h2 className="text-lg font-semibold text-[#F5F6F8]">Create Membership Plan</h2>
+          <div className="w-full max-w-md rounded-2xl border border-[#242934] bg-[#111318] p-5 animate-panel-enter">
+            <div className="mb-3.5 flex items-center justify-between border-b border-[#242934] pb-2.5">
+              <h2 className="text-sm font-semibold text-[#F5F6F8]">
+                {editingPlan ? `Edit ${editingPlan.name} Plan` : "Create Membership Plan"}
+              </h2>
               <button type="button" onClick={() => setPlanModal(false)} aria-label="Close">
-                <X className="h-5 w-5 text-[#8A93A2]" />
+                <X className="h-4 w-4 text-[#8A93A2]" />
               </button>
             </div>
-            <form onSubmit={handleCreatePlan} className="space-y-3.5">
+            <form onSubmit={handleSavePlan} className="space-y-3">
               <div>
                 <label className="mb-1 block text-xs text-[#A4AAB5]">Plan Name</label>
                 <input
                   required
                   value={planForm.name}
                   onChange={(e) => setPlanForm({ ...planForm, name: e.target.value })}
-                  className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-sm text-[#F5F6F8]"
+                  className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                 />
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -644,7 +767,7 @@ export default function PlansAndPaymentsPage() {
                     required
                     value={planForm.price}
                     onChange={(e) => setPlanForm({ ...planForm, price: Number(e.target.value) })}
-                    className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-sm text-[#F5F6F8]"
+                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                   />
                 </div>
                 <div>
@@ -657,7 +780,7 @@ export default function PlansAndPaymentsPage() {
                     onChange={(e) =>
                       setPlanForm({ ...planForm, durationValue: Number(e.target.value) })
                     }
-                    className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-sm text-[#F5F6F8]"
+                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                   />
                 </div>
                 <div>
@@ -670,7 +793,7 @@ export default function PlansAndPaymentsPage() {
                         durationUnit: e.target.value as typeof planForm.durationUnit,
                       })
                     }
-                    className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-sm text-[#F5F6F8]"
+                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                   >
                     <option value="DAYS">Days</option>
                     <option value="WEEKS">Weeks</option>
@@ -685,23 +808,43 @@ export default function PlansAndPaymentsPage() {
                 <input
                   value={planForm.benefitsText}
                   onChange={(e) => setPlanForm({ ...planForm, benefitsText: e.target.value })}
-                  className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-sm text-[#F5F6F8]"
+                  className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                 />
+              </div>
+              <div className="flex items-center gap-4 pt-1 text-xs text-[#A4AAB5]">
+                <label className="inline-flex items-center gap-1.5">
+                  <input
+                    type="checkbox"
+                    checked={planForm.isPopular}
+                    onChange={(e) => setPlanForm({ ...planForm, isPopular: e.target.checked })}
+                    className="accent-[#E32935]"
+                  />
+                  Mark as Most Popular
+                </label>
+                <label className="inline-flex items-center gap-1.5">
+                  <input
+                    type="checkbox"
+                    checked={planForm.isActive}
+                    onChange={(e) => setPlanForm({ ...planForm, isActive: e.target.checked })}
+                    className="accent-[#E32935]"
+                  />
+                  Active
+                </label>
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setPlanModal(false)}
-                  className="h-10 rounded-lg border border-[#292E38] bg-[#171A21] px-4 text-sm text-[#A4AAB5]"
+                  className="h-8 rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#A4AAB5]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="h-10 rounded-lg bg-[#E32935] px-4 text-sm font-semibold text-white hover:bg-[#F13A46]"
+                  className="h-8 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46]"
                 >
-                  Create Plan
+                  {editingPlan ? "Save Changes" : "Create Plan"}
                 </button>
               </div>
             </form>
@@ -709,40 +852,40 @@ export default function PlansAndPaymentsPage() {
         </div>
       )}
 
-      {/* Refund Confirmation Modal */}
-      {refundTarget && (
+      {/* Refund / Void Confirmation Modal */}
+      {auditTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
-          <div className="w-full max-w-sm rounded-2xl border border-[#292E38] bg-[#111318] p-6 animate-panel-enter">
-            <h2 className="text-base font-semibold text-[#F5F6F8]">
-              Refund Payment {refundTarget.receipt}
+          <div className="w-full max-w-sm rounded-2xl border border-[#242934] bg-[#111318] p-5 animate-panel-enter">
+            <h2 className="text-sm font-semibold text-[#F5F6F8]">
+              {auditTarget.action === "REFUND" ? "Refund" : "Void"} Payment {auditTarget.receipt}
             </h2>
             <p className="mt-1 text-xs text-[#A4AAB5]">
-              Provide an audit reason for refunding this over-the-counter transaction.
+              Provide an audit reason for this transaction update.
             </p>
-            <form onSubmit={handleConfirmRefund} className="mt-4 space-y-3">
+            <form onSubmit={handleConfirmAuditAction} className="mt-3.5 space-y-3">
               <textarea
                 required
                 minLength={4}
                 rows={3}
-                value={refundReason}
-                onChange={(e) => setRefundReason(e.target.value)}
-                placeholder="Reason for refund..."
-                className="w-full rounded-lg border border-[#292E38] bg-[#171A21] p-3 text-sm text-[#F5F6F8] focus-visible:border-[#E32935] focus-visible:outline-none"
+                value={auditReason}
+                onChange={(e) => setAuditReason(e.target.value)}
+                placeholder="Reason..."
+                className="w-full rounded-lg border border-[#242934] bg-[#171A21] p-2.5 text-xs text-[#F5F6F8] focus-visible:border-[#E32935] focus-visible:outline-none"
               />
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setRefundTarget(null)}
-                  className="h-9 rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs text-[#A4AAB5]"
+                  onClick={() => setAuditTarget(null)}
+                  className="h-8 rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#A4AAB5]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={saving || refundReason.trim().length < 4}
-                  className="h-9 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:opacity-50"
+                  disabled={saving || auditReason.trim().length < 4}
+                  className="h-8 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:opacity-50"
                 >
-                  Confirm Refund
+                  Confirm {auditTarget.action === "REFUND" ? "Refund" : "Void"}
                 </button>
               </div>
             </form>

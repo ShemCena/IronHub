@@ -97,3 +97,33 @@ export async function PATCH(
     return NextResponse.json({ error: message }, { status });
   }
 }
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await requireStaffSession("members:archive");
+    const { id } = await params;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.member.update({
+        where: { id },
+        data: { status: "ARCHIVED", archivedAt: new Date() },
+      });
+
+      await writeAuditLog(tx, {
+        actorId: session.userId,
+        action: "MEMBER_ARCHIVED",
+        entityType: "Member",
+        entityId: id,
+      });
+    });
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to archive member";
+    const status = message.startsWith("Unauthorized") ? 401 : message.startsWith("Forbidden") ? 403 : 400;
+    return NextResponse.json({ error: message }, { status });
+  }
+}

@@ -19,12 +19,12 @@ async function main() {
 
   const owner = await prisma.user.upsert({
     where: { email: "owner@ironhub.ph" },
-    update: {},
+    update: { role: "ADMIN" },
     create: {
       email: "owner@ironhub.ph",
       name: "Coach Marco Reyes",
       passwordHash: ownerPassword,
-      role: "OWNER",
+      role: "ADMIN",
       isActive: true,
     },
   });

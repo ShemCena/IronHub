@@ -51,3 +51,44 @@ export async function PATCH(
     return NextResponse.json({ error: message }, { status });
   }
 }
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await requireStaffSession("plans:manage");
+    const { id } = await params;
+
+    const count = await prisma.membership.count({ where: { planId: id } });
+    if (count > 0) {
+      const deactivated = await prisma.membershipPlan.update({
+        where: { id },
+        data: { isActive: false, isPopular: false },
+      });
+      await writeAuditLog(prisma, {
+        actorId: session.userId,
+        action: "PLAN_DEACTIVATED",
+        entityType: "MembershipPlan",
+        entityId: id,
+      });
+      return NextResponse.json({ plan: deactivated, deactivatedOnly: true });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.membershipPlan.delete({ where: { id } });
+      await writeAuditLog(tx, {
+        actorId: session.userId,
+        action: "PLAN_DELETED",
+        entityType: "MembershipPlan",
+        entityId: id,
+      });
+    });
+
+    return NextResponse.json({ deleted: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to delete plan";
+    const status = message.startsWith("Unauthorized") ? 401 : message.startsWith("Forbidden") ? 403 : 400;
+    return NextResponse.json({ error: message }, { status });
+  }
+}

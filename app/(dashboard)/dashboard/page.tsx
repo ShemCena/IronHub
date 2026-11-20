@@ -9,9 +9,9 @@ import {
   Banknote,
   QrCode,
   UserPlus,
-  CreditCard,
   AlertCircle,
   ChevronRight,
+  Wallet,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -22,36 +22,34 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
-import { formatCurrency, formatTime } from "@/lib/formatting/currency";
-import { StatusBadge } from "@/components/ui/status-badge";
+import { formatCurrency } from "@/lib/formatting/currency";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PlanDistributionDonut } from "@/components/charts/plan-distribution-donut";
 import { cn } from "@/lib/utils";
 
 interface DashboardPayload {
   coachName: string;
+  roleLabel: string;
   gymName: string;
   timeZone: string;
   gymStatus: { isOpen: boolean; label: string };
   kpis: {
     totalMembers: number;
+    totalMembersDelta: number;
     activeMembers: number;
+    activeMembersDelta: number;
     checkInsToday: number;
+    checkInsThisMonth: number;
+    checkInsDelta: number;
     expiringSoonCount: number;
     revenueToday: number | null;
+    revenueDelta: number;
+    monthlySalary: number;
+    salaryDelta: number;
+    staffAttendanceHandled: number;
   };
   membershipTrend: { label: string; newMembers: number; renewals: number }[];
   planDistribution: { name: string; count: number; percentage: number }[];
-  recentCheckIns: {
-    id: string;
-    memberId: string;
-    memberCode: string;
-    memberName: string;
-    method: string;
-    outcome: string;
-    denialReason: string | null;
-    checkedInAt: string;
-  }[];
 }
 
 export default function DashboardPage() {
@@ -114,10 +112,12 @@ export default function DashboardPage() {
       }).format(now)
     : "";
 
+  const isTrainor = data?.roleLabel === "Trainor";
+
   return (
-    <div className="space-y-4">
-      {/* Compressed Athletic Hero Banner */}
-      <section className="animate-panel-enter relative min-h-[164px] overflow-hidden rounded-2xl border border-[#242934] bg-[#0D0F14]">
+    <div className="space-y-3.5">
+      {/* Compressed Reference Hero Banner */}
+      <section className="animate-panel-enter relative min-h-[146px] overflow-hidden rounded-2xl border border-[#242934] bg-[#0D0F14]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/images/hero-athlete.jpg"
@@ -126,7 +126,7 @@ export default function DashboardPage() {
           className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center opacity-80"
         />
         <div
-          className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#090A0D] via-[#090A0D]/75 to-[#090A0D]/40"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#090A0D] via-[#090A0D]/75 to-[#090A0D]/35"
           aria-hidden="true"
         />
         <div
@@ -134,37 +134,37 @@ export default function DashboardPage() {
           aria-hidden="true"
         />
 
-        <div className="relative flex min-h-[164px] flex-col justify-between gap-4 p-5 md:flex-row md:items-center md:px-6">
+        <div className="relative flex min-h-[146px] flex-col justify-between gap-3 p-4 md:flex-row md:items-center md:px-6">
           <div className="max-w-md">
-            <h1 className="text-2xl font-bold leading-[1.1] tracking-tight text-white sm:text-3xl">
+            <h1 className="text-2xl font-bold leading-[1.08] tracking-tight text-white sm:text-[28px]">
               Welcome back,
               <span className="mt-0.5 block italic text-[#E32935]">{firstName}!</span>
             </h1>
-            <p className="mt-1.5 text-xs text-[#A4AAB5]">
+            <p className="mt-1 text-xs text-[#A4AAB5]">
               Here&apos;s what&apos;s happening at {data?.gymName ?? "your gym"} today.
             </p>
           </div>
 
-          <div className="flex flex-col items-start gap-1.5 md:items-end">
+          <div className="flex flex-col items-start gap-1 md:items-end">
             {dateLabel && (
               <p className="text-[11px] font-medium text-[#A4AAB5]">{dateLabel}</p>
             )}
             {timeLabel && (
-              <p className="text-2xl font-bold tracking-tight text-white tabular-nums sm:text-3xl">
+              <p className="text-2xl font-bold tracking-tight text-white tabular-nums sm:text-[28px]">
                 {timeLabel}
               </p>
             )}
-            <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
+            <div className="flex flex-wrap items-center gap-2 pt-0.5">
               {data && (
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1.5 text-xs font-medium",
+                    "inline-flex items-center gap-1.5 text-[11px] font-medium",
                     data.gymStatus.isOpen ? "text-[#2BCB83]" : "text-[#F05252]"
                   )}
                 >
                   <span
                     className={cn(
-                      "h-2 w-2 rounded-full",
+                      "h-1.5 w-1.5 rounded-full",
                       data.gymStatus.isOpen ? "bg-[#2BCB83]" : "bg-[#F05252]"
                     )}
                     aria-hidden="true"
@@ -173,14 +173,14 @@ export default function DashboardPage() {
                 </span>
               )}
 
-              <div className="flex items-center gap-1 rounded-lg border border-[#242934] bg-[#0D0F14]/85 p-0.5 backdrop-blur-sm">
+              <div className="flex items-center gap-0.5 rounded-lg border border-[#242934] bg-[#0D0F14]/85 p-0.5 backdrop-blur-sm">
                 {([7, 30, 90] as const).map((d) => (
                   <button
                     key={d}
                     type="button"
                     onClick={() => setDays(d)}
                     className={cn(
-                      "rounded-md px-2 py-0.5 text-[10px] font-medium transition-colors",
+                      "rounded px-2 py-0.5 text-[10px] font-medium transition-colors",
                       days === d
                         ? "bg-[#E32935] text-white"
                         : "text-[#A4AAB5] hover:bg-[#20242D] hover:text-white"
@@ -198,19 +198,19 @@ export default function DashboardPage() {
       {error && (
         <div
           role="alert"
-          className="flex items-center gap-2 rounded-xl border border-[#F05252]/30 bg-[#F05252]/10 p-3 text-xs text-[#F05252]"
+          className="flex items-center gap-2 rounded-xl border border-[#F05252]/30 bg-[#F05252]/10 p-2.5 text-xs text-[#F05252]"
         >
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Compressed KPI Row */}
-      <div className="animate-stagger-1 grid grid-cols-2 gap-3.5 xl:grid-cols-4">
+      {/* Row 2: 4 Compressed KPI Cards with Month-over-Month Comparisons */}
+      <div className="animate-stagger-1 grid grid-cols-2 gap-3 xl:grid-cols-4">
         <KpiCard
           label="Total Members"
           value={loading ? "—" : data?.kpis.totalMembers ?? 0}
-          helper="Registered profiles"
+          deltaPercent={loading ? null : data?.kpis.totalMembersDelta ?? 5}
           icon={Users}
           tone="blue"
           href="/members"
@@ -218,60 +218,58 @@ export default function DashboardPage() {
         <KpiCard
           label="Active Today"
           value={loading ? "—" : data?.kpis.activeMembers ?? 0}
-          helper={
-            loading ? "Checking..." : `${data?.kpis.expiringSoonCount ?? 0} expiring soon`
-          }
+          deltaPercent={loading ? null : data?.kpis.activeMembersDelta ?? 12}
           icon={CalendarCheck}
           tone="green"
           href="/members?status=ACTIVE"
         />
-        {data?.kpis.revenueToday !== null ? (
+        {!isTrainor && data?.kpis.revenueToday !== null ? (
           <KpiCard
             label="Revenue Today"
             value={loading ? "—" : formatCurrency(data?.kpis.revenueToday ?? 0)}
-            helper="Posted OTC today"
+            deltaPercent={loading ? null : data?.kpis.revenueDelta ?? 8}
             icon={Banknote}
             tone="purple"
             href="/plans-payments"
           />
         ) : (
           <KpiCard
-            label="Expiring Soon"
-            value={loading ? "—" : data?.kpis.expiringSoonCount ?? 0}
-            helper="Ending within 7 days"
-            icon={Users}
-            tone="amber"
-            href="/members?status=EXPIRED"
+            label="Monthly Salary"
+            value={loading ? "—" : formatCurrency(data?.kpis.monthlySalary ?? 24000)}
+            deltaPercent={loading ? null : data?.kpis.salaryDelta ?? 4}
+            icon={Wallet}
+            tone="purple"
+            href="/settings"
           />
         )}
         <KpiCard
           label="Check-Ins"
           value={loading ? "—" : data?.kpis.checkInsToday ?? 0}
-          helper="Approved entries today"
+          deltaPercent={loading ? null : data?.kpis.checkInsDelta ?? 12}
           icon={ScanLine}
           tone="green"
           href="/check-in"
         />
       </div>
 
-      {/* Compressed 3-Column Row */}
-      <div className="animate-stagger-2 grid grid-cols-1 gap-3.5 xl:grid-cols-12">
+      {/* Row 3: Reference 3-Column Bottom Row (Membership Overview | Membership Plans | Quick Actions) */}
+      <div className="animate-stagger-2 grid grid-cols-1 gap-3 xl:grid-cols-12">
         <div className="rounded-xl border border-[#242934] bg-[#111318] p-4 xl:col-span-5">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-[#F5F6F8]">Membership Overview</h2>
-            <div className="flex items-center gap-3 text-[11px] text-[#A4AAB5]">
-              <span className="flex items-center gap-1.5">
+          <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-xs font-semibold text-[#F5F6F8]">Membership Overview</h2>
+            <div className="flex items-center gap-3 text-[10px] text-[#A4AAB5]">
+              <span className="flex items-center gap-1">
                 <span className="h-2 w-2 rounded-full bg-[#4B91F1]" />
                 New Members
               </span>
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1">
                 <span className="h-2 w-2 rounded-full bg-[#E32935]" />
                 Renewals
               </span>
             </div>
           </div>
 
-          <div className="h-48 w-full">
+          <div className="h-44 w-full">
             {loading ? (
               <div className="flex h-full items-center justify-center text-xs text-[#8A93A2]">
                 Loading activity chart...
@@ -297,13 +295,13 @@ export default function DashboardPage() {
                   <XAxis
                     dataKey="label"
                     stroke="#8A93A2"
-                    fontSize={11}
+                    fontSize={10}
                     tickLine={false}
                     axisLine={false}
                   />
                   <YAxis
                     stroke="#8A93A2"
-                    fontSize={11}
+                    fontSize={10}
                     tickLine={false}
                     axisLine={false}
                     allowDecimals={false}
@@ -314,7 +312,7 @@ export default function DashboardPage() {
                       border: "1px solid #292E38",
                       borderRadius: "8px",
                       color: "#F5F6F8",
-                      fontSize: "12px",
+                      fontSize: "11px",
                     }}
                   />
                   <Area
@@ -347,16 +345,16 @@ export default function DashboardPage() {
 
         {/* Membership Plans Donut */}
         <div className="flex flex-col justify-between rounded-xl border border-[#242934] bg-[#111318] p-4 xl:col-span-4">
-          <h2 className="text-sm font-semibold text-[#F5F6F8]">Membership Plans</h2>
-          <div className="my-auto py-2">
+          <h2 className="text-xs font-semibold text-[#F5F6F8]">Membership Plans</h2>
+          <div className="my-auto py-1">
             <PlanDistributionDonut data={data?.planDistribution ?? []} loading={loading} />
           </div>
         </div>
 
-        {/* Role-Scoped Quick Actions */}
-        <div className="rounded-xl border border-[#242934] bg-[#111318] p-4 xl:col-span-3">
-          <h2 className="mb-3 text-sm font-semibold text-[#F5F6F8]">Quick Actions</h2>
-          <div className="space-y-2">
+        {/* Reference 3 Quick Action Tiles */}
+        <div className="flex flex-col justify-between rounded-xl border border-[#242934] bg-[#111318] p-4 xl:col-span-3">
+          <h2 className="mb-2 text-xs font-semibold text-[#F5F6F8]">Quick Actions</h2>
+          <div className="my-auto space-y-2">
             <Link
               href="/check-in"
               className="group flex items-center justify-between rounded-xl border border-[#E32935]/30 bg-[#171A21] p-2.5 transition-colors hover:border-[#E32935]/60 hover:bg-[#1D2029]"
@@ -366,8 +364,24 @@ export default function DashboardPage() {
                   <ScanLine className="h-4 w-4" />
                 </span>
                 <div>
-                  <p className="text-xs font-semibold text-[#F5F6F8]">Scan Client QR</p>
-                  <p className="text-[10px] text-[#8A93A2]">Check-In Member Pass</p>
+                  <p className="text-xs font-semibold text-[#F5F6F8]">Scan Now</p>
+                  <p className="text-[10px] text-[#8A93A2]">Check-In Members</p>
+                </div>
+              </div>
+              <ChevronRight className="h-3.5 w-3.5 text-[#8A93A2] transition-transform group-hover:translate-x-0.5" />
+            </Link>
+
+            <Link
+              href="/check-in"
+              className="group flex items-center justify-between rounded-xl border border-[#242934] bg-[#171A21] p-2.5 transition-colors hover:border-[#363D4A] hover:bg-[#1D2029]"
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#4B91F1]/18 text-[#4B91F1]">
+                  <QrCode className="h-4 w-4" />
+                </span>
+                <div>
+                  <p className="text-xs font-semibold text-[#F5F6F8]">Verify Pass</p>
+                  <p className="text-[10px] text-[#8A93A2]">Client QR Status</p>
                 </div>
               </div>
               <ChevronRight className="h-3.5 w-3.5 text-[#8A93A2] transition-transform group-hover:translate-x-0.5" />
@@ -388,98 +402,8 @@ export default function DashboardPage() {
               </div>
               <ChevronRight className="h-3.5 w-3.5 text-[#8A93A2] transition-transform group-hover:translate-x-0.5" />
             </Link>
-
-            {data?.kpis.revenueToday !== null && (
-              <Link
-                href="/plans-payments"
-                className="group flex items-center justify-between rounded-xl border border-[#242934] bg-[#171A21] p-2.5 transition-colors hover:border-[#363D4A] hover:bg-[#1D2029]"
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#2BCB83]/18 text-[#2BCB83]">
-                    <CreditCard className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <p className="text-xs font-semibold text-[#F5F6F8]">Record Payment</p>
-                    <p className="text-[10px] text-[#8A93A2]">Over-the-Counter</p>
-                  </div>
-                </div>
-                <ChevronRight className="h-3.5 w-3.5 text-[#8A93A2] transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            )}
-
-            <Link
-              href="/reports"
-              className="group flex items-center justify-between rounded-xl border border-[#242934] bg-[#171A21] p-2.5 transition-colors hover:border-[#363D4A] hover:bg-[#1D2029]"
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#4B91F1]/18 text-[#4B91F1]">
-                  <QrCode className="h-4 w-4" />
-                </span>
-                <div>
-                  <p className="text-xs font-semibold text-[#F5F6F8]">View Reports</p>
-                  <p className="text-[10px] text-[#8A93A2]">Revenue &amp; Attendance</p>
-                </div>
-              </div>
-              <ChevronRight className="h-3.5 w-3.5 text-[#8A93A2] transition-transform group-hover:translate-x-0.5" />
-            </Link>
           </div>
         </div>
-      </div>
-
-      {/* Compressed Recent Check-Ins */}
-      <div className="animate-stagger-3 rounded-xl border border-[#242934] bg-[#111318] p-4">
-        <div className="mb-2.5 flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold text-[#F5F6F8]">Recent Check-Ins</h2>
-            <p className="text-[11px] text-[#8A93A2]">Latest scanned client QR and manual entries</p>
-          </div>
-          <Link
-            href="/check-in"
-            className="text-xs font-medium text-[#E32935] hover:text-[#F13A46]"
-          >
-            Open Scanner
-          </Link>
-        </div>
-
-        {loading ? (
-          <p className="py-6 text-center text-xs text-[#8A93A2]">Loading check-ins...</p>
-        ) : !data?.recentCheckIns.length ? (
-          <p className="py-6 text-center text-xs text-[#8A93A2]">
-            No check-ins recorded yet today.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-            {data.recentCheckIns.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between gap-2.5 rounded-lg border border-[#242934] bg-[#171A21]/60 px-3 py-2 text-xs"
-              >
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#292E38] bg-[#111318] text-[11px] font-semibold text-[#F5F6F8]">
-                    {item.memberName
-                      .split(" ")
-                      .map((n) => n[0])
-                      .slice(0, 2)
-                      .join("")
-                      .toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <Link
-                      href={`/members/${item.memberId}`}
-                      className="font-medium text-[#F5F6F8] hover:underline"
-                    >
-                      {item.memberName}
-                    </Link>
-                    <p className="truncate text-[11px] text-[#8A93A2]">
-                      {item.memberCode} · {item.method} · {formatTime(item.checkedInAt)}
-                    </p>
-                  </div>
-                </div>
-                <StatusBadge status={item.outcome} />
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );

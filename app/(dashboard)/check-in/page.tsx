@@ -14,6 +14,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import { formatDate, formatTime } from "@/lib/formatting/currency";
 import { cn } from "@/lib/utils";
 
@@ -52,6 +53,8 @@ interface MemberSearchHit {
   currentPlan: string | null;
 }
 
+const LOG_PAGE_SIZE = 5;
+
 export default function CheckInPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const controlsRef = useRef<{ stop: () => void } | null>(null);
@@ -67,6 +70,7 @@ export default function CheckInPage() {
   const [manualQuery, setManualQuery] = useState("");
   const [manualMatches, setManualMatches] = useState<MemberSearchHit[]>([]);
   const [recent, setRecent] = useState<RecentCheckIn[]>([]);
+  const [logPage, setLogPage] = useState(1);
 
   const loadRecent = useCallback(async () => {
     const res = await fetch("/api/check-in");
@@ -115,6 +119,7 @@ export default function CheckInPage() {
         checkedInAt: data.checkedInAt,
         member: data.member,
       });
+      setLogPage(1);
       loadRecent();
     } catch {
       setResult({
@@ -186,6 +191,7 @@ export default function CheckInPage() {
       });
       setManualQuery("");
       setManualMatches([]);
+      setLogPage(1);
       loadRecent();
     } finally {
       setSubmitting(false);
@@ -193,55 +199,57 @@ export default function CheckInPage() {
   }
 
   const scanning = scanState === "scanning";
+  const totalLogPages = Math.max(1, Math.ceil(recent.length / LOG_PAGE_SIZE));
+  const pagedRecent = recent.slice((logPage - 1) * LOG_PAGE_SIZE, logPage * LOG_PAGE_SIZE);
 
   return (
-    <div className="space-y-4 animate-panel-enter">
+    <div className="space-y-3 animate-panel-enter">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-[#F5F6F8]">
+        <h1 className="text-lg font-semibold tracking-tight text-[#F5F6F8]">
           Check-In
         </h1>
-        <p className="mt-0.5 text-xs text-[#A4AAB5]">
+        <p className="text-[11px] text-[#A4AAB5]">
           Scan a client&apos;s self-generated QR pass or record a manual front-desk check-in.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
         {/* Scanner Panel */}
-        <div className="rounded-xl border border-[#242934] bg-[#111318] p-4 lg:col-span-5">
-          <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="rounded-xl border border-[#242934] bg-[#111318] p-3.5 lg:col-span-5">
+          <div className="mb-3 flex items-center justify-between gap-2">
             <div>
-              <h2 className="text-base font-semibold text-[#F5F6F8]">QR Scanner</h2>
-              <p className="text-xs text-[#8A93A2]">Camera or USB barcode wedge</p>
+              <h2 className="text-sm font-semibold text-[#F5F6F8]">QR Scanner</h2>
+              <p className="text-[11px] text-[#8A93A2]">Camera or USB barcode wedge</p>
             </div>
             {!scanning ? (
               <button
                 type="button"
                 disabled={scanState === "requesting"}
                 onClick={handleStartCamera}
-                className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:opacity-60"
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E32935] px-3 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:opacity-60"
               >
-                <Camera className="h-4 w-4" />
+                <Camera className="h-3.5 w-3.5" />
                 <span>{scanState === "requesting" ? "Starting..." : "Start Camera"}</span>
               </button>
             ) : (
               <button
                 type="button"
                 onClick={handleStopCamera}
-                className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#292E38] bg-[#171A21] px-3.5 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
               >
-                <CameraOff className="h-4 w-4" />
+                <CameraOff className="h-3.5 w-3.5" />
                 <span>Stop Camera</span>
               </button>
             )}
           </div>
 
           {devices.length > 1 && (
-            <div className="mb-3">
+            <div className="mb-2.5">
               <select
                 value={selectedDeviceId}
                 onChange={(e) => setSelectedDeviceId(e.target.value)}
                 aria-label="Select camera device"
-                className="h-9 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
+                className="h-8 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
               >
                 {devices.map((d) => (
                   <option key={d.deviceId} value={d.deviceId}>
@@ -263,48 +271,48 @@ export default function CheckInPage() {
 
             {scanState === "requesting" && (
               <div className="flex flex-col items-center gap-2 px-6 text-center">
-                <Loader2 className="h-8 w-8 animate-spin text-[#E32935]" />
+                <Loader2 className="h-7 w-7 animate-spin text-[#E32935]" />
                 <p className="text-xs text-[#A4AAB5]">Requesting camera permission...</p>
               </div>
             )}
 
             {scanState === "idle" && (
-              <div className="flex flex-col items-center gap-3 px-6 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#E32935]/12 text-[#E32935] ring-1 ring-[#E32935]/30 shadow-[0_0_28px_rgba(227,41,53,0.2)]">
-                  <QrCode className="h-8 w-8" />
+              <div className="flex flex-col items-center gap-2.5 px-6 text-center">
+                <div className="flex h-13 w-13 items-center justify-center rounded-2xl bg-[#E32935]/12 text-[#E32935] ring-1 ring-[#E32935]/30 shadow-[0_0_24px_rgba(227,41,53,0.2)]">
+                  <QrCode className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-[#F5F6F8]">Scan Member QR Code</p>
-                  <p className="mt-0.5 text-xs text-[#8A93A2]">
-                    Click Start Camera or use a handheld scanner below
+                  <p className="text-xs font-semibold text-[#F5F6F8]">Scan Member QR Code</p>
+                  <p className="mt-0.5 text-[11px] text-[#8A93A2]">
+                    Click Start Camera or paste a token below
                   </p>
                 </div>
               </div>
             )}
 
             {/* L-shaped corner reticles */}
-            <div className="pointer-events-none absolute inset-6">
+            <div className="pointer-events-none absolute inset-5">
               <span
                 className={cn(
-                  "absolute left-0 top-0 h-6 w-6 rounded-tl-md border-l-2 border-t-2",
+                  "absolute left-0 top-0 h-5 w-5 rounded-tl-md border-l-2 border-t-2",
                   scanning ? "border-[#E32935]" : "border-[#8A93A2]/60"
                 )}
               />
               <span
                 className={cn(
-                  "absolute right-0 top-0 h-6 w-6 rounded-tr-md border-r-2 border-t-2",
+                  "absolute right-0 top-0 h-5 w-5 rounded-tr-md border-r-2 border-t-2",
                   scanning ? "border-[#E32935]" : "border-[#8A93A2]/60"
                 )}
               />
               <span
                 className={cn(
-                  "absolute bottom-0 left-0 h-6 w-6 rounded-bl-md border-b-2 border-l-2",
+                  "absolute bottom-0 left-0 h-5 w-5 rounded-bl-md border-b-2 border-l-2",
                   scanning ? "border-[#E32935]" : "border-[#8A93A2]/60"
                 )}
               />
               <span
                 className={cn(
-                  "absolute bottom-0 right-0 h-6 w-6 rounded-br-md border-b-2 border-r-2",
+                  "absolute bottom-0 right-0 h-5 w-5 rounded-br-md border-b-2 border-r-2",
                   scanning ? "border-[#E32935]" : "border-[#8A93A2]/60"
                 )}
               />
@@ -315,7 +323,7 @@ export default function CheckInPage() {
           </div>
 
           {cameraError && (
-            <p className="mt-3 rounded-lg border border-[#F2B84B]/30 bg-[#F2B84B]/10 p-2.5 text-xs text-[#F2B84B]">
+            <p className="mt-2.5 rounded-lg border border-[#F2B84B]/30 bg-[#F2B84B]/10 p-2 text-[11px] text-[#F2B84B]">
               {cameraError}
             </p>
           )}
@@ -327,18 +335,18 @@ export default function CheckInPage() {
               submitQrToken(tokenInput);
               setTokenInput("");
             }}
-            className="mt-4 flex gap-2"
+            className="mt-3 flex gap-2"
           >
             <input
               value={tokenInput}
               onChange={(e) => setTokenInput(e.target.value)}
               placeholder="Or scan / paste QR token (IH1:...)"
-              className="h-10 flex-1 rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]/40"
+              className="h-8 flex-1 rounded-lg border border-[#292E38] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none"
             />
             <button
               type="submit"
               disabled={submitting || !tokenInput.trim()}
-              className="h-10 rounded-lg border border-[#292E38] bg-[#171A21] px-3.5 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D] disabled:opacity-40"
+              className="h-8 rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D] disabled:opacity-40"
             >
               Verify
             </button>
@@ -346,11 +354,11 @@ export default function CheckInPage() {
         </div>
 
         {/* Result & Manual Fallback */}
-        <div className="space-y-6 lg:col-span-7">
-          {/* Tall Centered Hero Verification Card matching Reference */}
+        <div className="space-y-3 lg:col-span-7">
+          {/* Compact Verification Card matching Reference */}
           <div
             className={cn(
-              "flex min-h-[340px] flex-col items-center justify-center rounded-2xl border p-8 text-center transition-colors",
+              "flex min-h-[210px] flex-col items-center justify-center rounded-xl border p-5 text-center transition-colors",
               result?.outcome === "APPROVED"
                 ? "border-[#2BCB83]/40 bg-gradient-to-b from-[#164A31]/80 via-[#0E1E17] to-[#111318]"
                 : result?.outcome === "DENIED"
@@ -359,21 +367,21 @@ export default function CheckInPage() {
             )}
           >
             {!result ? (
-              <div className="flex max-w-xs flex-col items-center gap-3">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#2BCB83]/15 text-[#2BCB83] ring-1 ring-[#2BCB83]/30">
-                  <UserCheck className="h-7 w-7" />
+              <div className="flex max-w-xs flex-col items-center gap-2">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#2BCB83]/15 text-[#2BCB83] ring-1 ring-[#2BCB83]/30">
+                  <UserCheck className="h-5 w-5" />
                 </div>
-                <p className="text-lg font-semibold text-[#F5F6F8]">Ready for Check-In</p>
-                <p className="text-xs text-[#A4AAB5]">
+                <p className="text-sm font-semibold text-[#F5F6F8]">Ready for Check-In</p>
+                <p className="text-[11px] text-[#A4AAB5]">
                   Scan a member&apos;s QR code on the left or search manually below to verify membership access.
                 </p>
               </div>
             ) : result.outcome === "APPROVED" ? (
               <div className="flex w-full max-w-xs flex-col items-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#2BCB83] text-[#090A0D] shadow-[0_0_28px_rgba(43,203,131,0.45)]">
-                  <CheckCircle2 className="h-8 w-8" />
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#2BCB83] text-[#090A0D] shadow-[0_0_22px_rgba(43,203,131,0.45)]">
+                  <CheckCircle2 className="h-6 w-6" />
                 </div>
-                <p className="mt-4 text-lg font-bold text-[#2BCB83]">
+                <p className="mt-2.5 text-sm font-bold text-[#2BCB83]">
                   Check-In Successful!
                 </p>
                 {result.member?.photoUrl ? (
@@ -381,10 +389,10 @@ export default function CheckInPage() {
                   <img
                     src={result.member.photoUrl}
                     alt={result.member.name}
-                    className="mt-4 h-16 w-16 rounded-full border-2 border-[#2BCB83]/60 object-cover"
+                    className="mt-2.5 h-12 w-12 rounded-full border-2 border-[#2BCB83]/60 object-cover"
                   />
                 ) : (
-                  <div className="mt-4 flex h-16 w-16 items-center justify-center rounded-full border-2 border-[#2BCB83]/50 bg-[#171A21] text-lg font-bold text-white">
+                  <div className="mt-2.5 flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#2BCB83]/50 bg-[#171A21] text-sm font-bold text-white">
                     {(result.member?.name ?? "M")
                       .split(" ")
                       .map((n) => n[0])
@@ -393,23 +401,23 @@ export default function CheckInPage() {
                       .toUpperCase()}
                   </div>
                 )}
-                <p className="mt-3 text-lg font-semibold text-white">
+                <p className="mt-2 text-sm font-semibold text-white">
                   {result.member?.name}
                 </p>
-                <p className="text-xs text-[#A4AAB5]">
+                <p className="text-[11px] text-[#A4AAB5]">
                   {result.member?.planName} · {result.member?.memberCode}
                 </p>
-                <p className="mt-1 text-[11px] text-[#8A93A2] tabular-nums">
+                <p className="mt-0.5 text-[10px] text-[#8A93A2] tabular-nums">
                   {result.checkedInAt ? `Today · ${formatTime(result.checkedInAt)}` : ""}
                   {result.member?.expiryDate
                     ? ` · Valid until ${formatDate(result.member.expiryDate)}`
                     : ""}
                 </p>
-                <div className="mt-5 flex w-full items-center gap-2">
+                <div className="mt-3 flex w-full items-center gap-2">
                   {result.member && (
                     <Link
                       href={`/members/${result.member.id}`}
-                      className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#292E38] bg-[#171A21] px-4 text-xs font-semibold text-white hover:bg-[#20242D]"
+                      className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs font-semibold text-white hover:bg-[#20242D]"
                     >
                       <span>View Member</span>
                       <ArrowRight className="h-3.5 w-3.5" />
@@ -418,7 +426,7 @@ export default function CheckInPage() {
                   <button
                     type="button"
                     onClick={() => setResult(null)}
-                    className="h-10 rounded-xl border border-[#292E38] bg-[#111318] px-3 text-xs text-[#A4AAB5] hover:text-white"
+                    className="h-8 rounded-lg border border-[#292E38] bg-[#111318] px-2.5 text-xs text-[#A4AAB5] hover:text-white"
                   >
                     Clear
                   </button>
@@ -426,21 +434,21 @@ export default function CheckInPage() {
               </div>
             ) : (
               <div className="flex w-full max-w-xs flex-col items-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F05252] text-white shadow-[0_0_28px_rgba(240,82,82,0.45)]">
-                  <XCircle className="h-8 w-8" />
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#F05252] text-white shadow-[0_0_22px_rgba(240,82,82,0.45)]">
+                  <XCircle className="h-6 w-6" />
                 </div>
-                <p className="mt-4 text-lg font-bold text-[#F05252]">Check-In Denied</p>
-                <p className="mt-1.5 text-base font-semibold text-white">
+                <p className="mt-2.5 text-sm font-bold text-[#F05252]">Check-In Denied</p>
+                <p className="mt-1 text-xs font-semibold text-white">
                   {result.member?.name ?? "Unrecognized Credential"}
                 </p>
-                <p className="mt-1 text-xs text-[#F05252]">
+                <p className="mt-0.5 text-[11px] text-[#F05252]">
                   {result.reason ?? "Access is not permitted."}
                 </p>
-                <div className="mt-5 flex w-full items-center gap-2">
+                <div className="mt-3 flex w-full items-center gap-2">
                   {result.member && (
                     <Link
                       href={`/members/${result.member.id}`}
-                      className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#292E38] bg-[#171A21] px-4 text-xs font-semibold text-white hover:bg-[#20242D]"
+                      className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs font-semibold text-white hover:bg-[#20242D]"
                     >
                       <span>View Profile</span>
                     </Link>
@@ -448,7 +456,7 @@ export default function CheckInPage() {
                   <button
                     type="button"
                     onClick={() => setResult(null)}
-                    className="h-10 rounded-xl border border-[#292E38] bg-[#111318] px-3 text-xs text-[#A4AAB5] hover:text-white"
+                    className="h-8 rounded-lg border border-[#292E38] bg-[#111318] px-2.5 text-xs text-[#A4AAB5] hover:text-white"
                   >
                     Clear
                   </button>
@@ -458,37 +466,37 @@ export default function CheckInPage() {
           </div>
 
           {/* Manual Fallback */}
-          <div className="rounded-xl border border-[#292E38] bg-[#111318] p-5">
-            <h2 className="text-base font-semibold text-[#F5F6F8]">
+          <div className="rounded-xl border border-[#242934] bg-[#111318] p-3.5">
+            <h2 className="text-xs font-semibold text-[#F5F6F8]">
               Manual Check-In Fallback
             </h2>
-            <p className="mt-0.5 text-xs text-[#8A93A2]">
-              Search by name or member code if a member forgot their QR card. Recorded in audit log.
+            <p className="text-[11px] text-[#8A93A2]">
+              Search by name or member code if a client forgot their phone.
             </p>
 
-            <div className="relative mt-3">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8A93A2]" />
+            <div className="relative mt-2">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8A93A2]" />
               <input
                 type="search"
                 value={manualQuery}
                 onChange={(e) => setManualQuery(e.target.value)}
                 placeholder="Type member name or code (e.g. Juan or IH-1001)..."
-                className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] pl-9 pr-3 text-sm text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]/40"
+                className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] pl-8 pr-3 text-xs text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none"
               />
             </div>
 
             {manualMatches.length > 0 && (
-              <div className="mt-2 divide-y divide-[#292E38] rounded-lg border border-[#292E38] bg-[#171A21]">
+              <div className="mt-2 divide-y divide-[#242934] rounded-lg border border-[#242934] bg-[#171A21]">
                 {manualMatches.map((m) => (
                   <div
                     key={m.id}
-                    className="flex items-center justify-between gap-3 px-3 py-2.5 text-sm"
+                    className="flex items-center justify-between gap-2 px-3 py-2 text-xs"
                   >
                     <div>
                       <p className="font-medium text-[#F5F6F8]">
                         {m.firstName} {m.lastName}
                       </p>
-                      <p className="text-xs text-[#8A93A2]">
+                      <p className="text-[11px] text-[#8A93A2]">
                         {m.memberCode} · {m.currentPlan ?? "No Plan"}
                       </p>
                     </div>
@@ -498,7 +506,7 @@ export default function CheckInPage() {
                         type="button"
                         disabled={submitting}
                         onClick={() => handleManualCheckIn(m.id)}
-                        className="rounded-md bg-[#E32935] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#F13A46]"
+                        className="rounded-md bg-[#E32935] px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-[#F13A46]"
                       >
                         Check In
                       </button>
@@ -509,25 +517,25 @@ export default function CheckInPage() {
             )}
           </div>
 
-          {/* Recent Attendance Log */}
-          <div className="rounded-xl border border-[#292E38] bg-[#111318] p-5">
-            <h2 className="mb-3 text-base font-semibold text-[#F5F6F8]">
+          {/* Recent Attendance Log with Pagination */}
+          <div className="rounded-xl border border-[#242934] bg-[#111318] p-3.5">
+            <h2 className="mb-2 text-xs font-semibold text-[#F5F6F8]">
               Recent Attendance Log
             </h2>
-            <div className="divide-y divide-[#292E38]">
-              {recent.length === 0 ? (
-                <p className="py-6 text-center text-xs text-[#8A93A2]">
+            <div className="divide-y divide-[#242934]">
+              {pagedRecent.length === 0 ? (
+                <p className="py-4 text-center text-xs text-[#8A93A2]">
                   No check-ins recorded yet.
                 </p>
               ) : (
-                recent.slice(0, 8).map((r) => (
+                pagedRecent.map((r) => (
                   <div
                     key={r.id}
-                    className="flex items-center justify-between gap-3 py-2.5 text-sm"
+                    className="flex items-center justify-between gap-2 py-2 text-xs"
                   >
                     <div>
                       <p className="font-medium text-[#F5F6F8]">{r.memberName}</p>
-                      <p className="text-xs text-[#8A93A2]">
+                      <p className="text-[11px] text-[#8A93A2]">
                         {r.memberCode} · {r.method} · {formatTime(r.checkedInAt)}
                         {r.denialReason ? ` — ${r.denialReason}` : ""}
                       </p>
@@ -537,6 +545,17 @@ export default function CheckInPage() {
                 ))
               )}
             </div>
+            {recent.length > 0 && (
+              <div className="mt-2 border-t border-[#242934] pt-2">
+                <PaginationBar
+                  page={logPage}
+                  totalPages={totalLogPages}
+                  totalItems={recent.length}
+                  pageSize={LOG_PAGE_SIZE}
+                  onPageChange={setLogPage}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

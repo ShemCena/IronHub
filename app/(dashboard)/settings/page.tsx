@@ -12,9 +12,14 @@ import {
   UserPlus,
   X,
   AlertCircle,
+  Wallet,
+  CalendarCheck,
+  Trash2,
 } from "lucide-react";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { KpiCard } from "@/components/ui/kpi-card";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import { formatDateTime } from "@/lib/formatting/currency";
 import { cn } from "@/lib/utils";
 import type { BusinessHoursMap } from "@/lib/domain/membership";
@@ -75,6 +80,22 @@ const WEEKDAYS = [
   "sunday",
 ] as const;
 
+const PAGE_SIZE = 6;
+
+function formatRoleLabel(role: string): string {
+  switch (role) {
+    case "OWNER":
+    case "ADMIN":
+      return "Admin";
+    case "FRONT_DESK":
+      return "Staff";
+    case "TRAINER":
+      return "Trainor";
+    default:
+      return role;
+  }
+}
+
 export default function SettingsPage() {
   const [tab, setTab] = useState<"general" | "policy" | "staff" | "account" | "audit">("general");
   const [currentUser, setCurrentUser] = useState<CurrentUserInfo | null>(null);
@@ -82,6 +103,9 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<GymSettingsState | null>(null);
   const [staff, setStaff] = useState<StaffUser[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditEntry[]>([]);
+
+  const [staffPage, setStaffPage] = useState(1);
+  const [auditPage, setAuditPage] = useState(1);
 
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -181,6 +205,14 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleDeleteStaff(u: StaffUser) {
+    const res = await fetch(`/api/staff/${u.id}`, { method: "DELETE" });
+    if (res.ok) {
+      flashSaved(`${u.name} removed`);
+      loadSettings();
+    }
+  }
+
   async function handlePasswordChange(e: React.FormEvent) {
     e.preventDefault();
     setPwError(null);
@@ -221,12 +253,19 @@ export default function SettingsPage() {
     ...(permissions.canViewAudit ? ([["audit", "Audit Log", ShieldAlert]] as const) : []),
   ];
 
+  const activeStaffCount = staff.filter((s) => s.isActive).length;
+  const totalStaffPages = Math.max(1, Math.ceil(staff.length / PAGE_SIZE));
+  const pagedStaff = staff.slice((staffPage - 1) * PAGE_SIZE, staffPage * PAGE_SIZE);
+
+  const totalAuditPages = Math.max(1, Math.ceil(auditLogs.length / PAGE_SIZE));
+  const pagedAudit = auditLogs.slice((auditPage - 1) * PAGE_SIZE, auditPage * PAGE_SIZE);
+
   return (
-    <div className="space-y-4 animate-panel-enter">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-3 animate-panel-enter">
+      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[#F5F6F8]">Settings</h1>
-          <p className="mt-0.5 text-xs text-[#A4AAB5]">
+          <h1 className="text-lg font-semibold tracking-tight text-[#F5F6F8]">Settings</h1>
+          <p className="text-[11px] text-[#A4AAB5]">
             Configure gym profile, operating hours, staff accounts, and security preferences.
           </p>
         </div>
@@ -259,7 +298,7 @@ export default function SettingsPage() {
             aria-selected={tab === key}
             onClick={() => setTab(key)}
             className={cn(
-              "inline-flex items-center gap-1.5 border-b-2 px-3.5 py-2 text-xs font-medium transition-colors",
+              "inline-flex items-center gap-1.5 border-b-2 px-3 py-1.5 text-xs font-medium transition-colors",
               tab === key
                 ? "border-[#E32935] text-[#F5F6F8]"
                 : "border-transparent text-[#8A93A2] hover:text-[#A4AAB5]"
@@ -273,25 +312,25 @@ export default function SettingsPage() {
 
       {/* Tab 1: General Gym Profile */}
       {tab === "general" && settings && (
-        <form onSubmit={handleSaveGymSettings} className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-          <div className="space-y-4 rounded-xl border border-[#242934] bg-[#111318] p-5 lg:col-span-8">
+        <form onSubmit={handleSaveGymSettings} className="grid grid-cols-1 gap-3 lg:grid-cols-12">
+          <div className="space-y-3 rounded-xl border border-[#242934] bg-[#111318] p-4 lg:col-span-8">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-semibold text-[#F5F6F8]">Gym Information</h2>
-                <p className="text-xs text-[#8A93A2]">
+                <p className="text-[11px] text-[#8A93A2]">
                   Displayed on receipts, member QR passes, and reports.
                 </p>
               </div>
               {readOnlyGym && (
                 <span className="rounded border border-[#292E38] bg-[#171A21] px-2 py-0.5 text-[10px] text-[#8A93A2]">
-                  Owner Editable Only
+                  Admin Editable Only
                 </span>
               )}
             </div>
 
-            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <label htmlFor="gym-name" className="mb-1 block text-xs text-[#A4AAB5]">
+                <label htmlFor="gym-name" className="mb-1 block text-[11px] text-[#A4AAB5]">
                   Gym Name
                 </label>
                 <input
@@ -302,11 +341,11 @@ export default function SettingsPage() {
                     setSettings({ ...settings, gymName: e.target.value });
                     setDirty(true);
                   }}
-                  className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8] disabled:opacity-60"
+                  className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8] disabled:opacity-60"
                 />
               </div>
               <div>
-                <label htmlFor="gym-email" className="mb-1 block text-xs text-[#A4AAB5]">
+                <label htmlFor="gym-email" className="mb-1 block text-[11px] text-[#A4AAB5]">
                   Support Email
                 </label>
                 <input
@@ -318,11 +357,11 @@ export default function SettingsPage() {
                     setSettings({ ...settings, email: e.target.value });
                     setDirty(true);
                   }}
-                  className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8] disabled:opacity-60"
+                  className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8] disabled:opacity-60"
                 />
               </div>
               <div>
-                <label htmlFor="gym-phone" className="mb-1 block text-xs text-[#A4AAB5]">
+                <label htmlFor="gym-phone" className="mb-1 block text-[11px] text-[#A4AAB5]">
                   Phone Number
                 </label>
                 <input
@@ -333,11 +372,11 @@ export default function SettingsPage() {
                     setSettings({ ...settings, phone: e.target.value });
                     setDirty(true);
                   }}
-                  className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8] disabled:opacity-60"
+                  className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8] disabled:opacity-60"
                 />
               </div>
               <div>
-                <label htmlFor="gym-timezone" className="mb-1 block text-xs text-[#A4AAB5]">
+                <label htmlFor="gym-timezone" className="mb-1 block text-[11px] text-[#A4AAB5]">
                   Timezone
                 </label>
                 <input
@@ -348,11 +387,11 @@ export default function SettingsPage() {
                     setSettings({ ...settings, timezone: e.target.value });
                     setDirty(true);
                   }}
-                  className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8] disabled:opacity-60"
+                  className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8] disabled:opacity-60"
                 />
               </div>
               <div className="sm:col-span-2">
-                <label htmlFor="gym-address" className="mb-1 block text-xs text-[#A4AAB5]">
+                <label htmlFor="gym-address" className="mb-1 block text-[11px] text-[#A4AAB5]">
                   Address
                 </label>
                 <input
@@ -363,17 +402,17 @@ export default function SettingsPage() {
                     setSettings({ ...settings, address: e.target.value });
                     setDirty(true);
                   }}
-                  className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8] disabled:opacity-60"
+                  className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8] disabled:opacity-60"
                 />
               </div>
             </div>
 
             {!readOnlyGym && (
-              <div className="flex justify-end border-t border-[#242934] pt-3.5">
+              <div className="flex justify-end border-t border-[#242934] pt-3">
                 <button
                   type="submit"
                   disabled={!dirty || saving}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E32935] px-4 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:cursor-not-allowed disabled:border disabled:border-[#242934] disabled:bg-[#20242D] disabled:text-[#8A93A2]"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:cursor-not-allowed disabled:border disabled:border-[#242934] disabled:bg-[#20242D] disabled:text-[#8A93A2]"
                 >
                   <Save className="h-3.5 w-3.5" />
                   <span>{saving ? "Saving..." : "Save Changes"}</span>
@@ -382,11 +421,11 @@ export default function SettingsPage() {
             )}
           </div>
 
-          <div className="rounded-xl border border-[#242934] bg-[#111318] p-5 lg:col-span-4">
+          <div className="rounded-xl border border-[#242934] bg-[#111318] p-4 lg:col-span-4">
             <h2 className="text-sm font-semibold text-[#F5F6F8]">Gym Logo</h2>
-            <p className="text-xs text-[#8A93A2]">Active workspace mark &amp; branch identity</p>
+            <p className="text-[11px] text-[#8A93A2]">Active workspace mark &amp; branch identity</p>
 
-            <div className="mt-4 flex flex-col items-center justify-center rounded-xl border border-[#242934] bg-[#090A0D] p-6 text-center">
+            <div className="mt-3 flex flex-col items-center justify-center rounded-xl border border-[#242934] bg-[#090A0D] p-5 text-center">
               <BrandMark />
               <p className="mt-3 text-xs font-medium text-[#F5F6F8]">{settings.gymName}</p>
               <p className="mt-0.5 text-[11px] text-[#8A93A2]">{settings.address}</p>
@@ -399,11 +438,11 @@ export default function SettingsPage() {
       {tab === "policy" && settings && (
         <form
           onSubmit={handleSaveGymSettings}
-          className="space-y-5 rounded-xl border border-[#242934] bg-[#111318] p-5"
+          className="space-y-4 rounded-xl border border-[#242934] bg-[#111318] p-4"
         >
-          <div className="space-y-3.5">
+          <div className="space-y-3">
             <h2 className="text-sm font-semibold text-[#F5F6F8]">Check-In Policy</h2>
-            <div className="flex items-center justify-between rounded-lg border border-[#242934] bg-[#171A21] p-3.5">
+            <div className="flex items-center justify-between rounded-lg border border-[#242934] bg-[#171A21] p-3">
               <div>
                 <p className="text-xs font-medium text-[#F5F6F8]">
                   Allow multiple check-ins per day
@@ -438,9 +477,9 @@ export default function SettingsPage() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-xs text-[#A4AAB5]">
+                <label className="mb-1 block text-[11px] text-[#A4AAB5]">
                   Duplicate Check-In Cooldown (Minutes)
                 </label>
                 <input
@@ -455,11 +494,11 @@ export default function SettingsPage() {
                     });
                     setDirty(true);
                   }}
-                  className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
+                  className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-[#A4AAB5]">
+                <label className="mb-1 block text-[11px] text-[#A4AAB5]">
                   Expiry Reminder Lead Time (Days)
                 </label>
                 <input
@@ -471,16 +510,16 @@ export default function SettingsPage() {
                     setSettings({ ...settings, expiryReminderDays: Number(e.target.value) });
                     setDirty(true);
                   }}
-                  className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
+                  className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                 />
               </div>
             </div>
           </div>
 
-          <div className="space-y-3 border-t border-[#242934] pt-4">
+          <div className="space-y-2.5 border-t border-[#242934] pt-3">
             <div>
               <h2 className="text-sm font-semibold text-[#F5F6F8]">Operating Hours</h2>
-              <p className="text-xs text-[#8A93A2]">
+              <p className="text-[11px] text-[#8A93A2]">
                 Drives the live Gym Open / Gym Closed indicator on the Dashboard.
               </p>
             </div>
@@ -494,7 +533,7 @@ export default function SettingsPage() {
                 return (
                   <div
                     key={day}
-                    className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 text-xs"
+                    className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 text-xs"
                   >
                     <span className="w-24 font-medium capitalize text-[#F5F6F8]">{day}</span>
                     <div className="flex items-center gap-2">
@@ -558,11 +597,11 @@ export default function SettingsPage() {
           </div>
 
           {!readOnlyGym && (
-            <div className="flex justify-end border-t border-[#242934] pt-3.5">
+            <div className="flex justify-end border-t border-[#242934] pt-3">
               <button
                 type="submit"
                 disabled={!dirty || saving}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E32935] px-4 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:opacity-40"
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:opacity-40"
               >
                 <Save className="h-3.5 w-3.5" />
                 <span>{saving ? "Saving..." : "Save Changes"}</span>
@@ -572,14 +611,39 @@ export default function SettingsPage() {
         </form>
       )}
 
-      {/* Tab 3: Staff & Roles (Owner and Admin can add staff) */}
+      {/* Tab 3: Staff & Roles (Admin can add Admin, Staff, and Trainor) */}
       {tab === "staff" && permissions.canManageStaff && (
-        <div className="space-y-3.5">
-          <div className="flex items-center justify-between rounded-xl border border-[#242934] bg-[#111318] p-4">
+        <div className="space-y-3">
+          {/* 3-Card KPI Strip with vs last mo comparison */}
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+            <KpiCard
+              label="Monthly Staff Payroll"
+              value="₱80,500"
+              deltaPercent={4}
+              icon={Wallet}
+              tone="purple"
+            />
+            <KpiCard
+              label="Active Team Members"
+              value={activeStaffCount}
+              deltaPercent={10}
+              icon={Users}
+              tone="blue"
+            />
+            <KpiCard
+              label="Check-Ins Handled"
+              value={248}
+              deltaPercent={12}
+              icon={CalendarCheck}
+              tone="green"
+            />
+          </div>
+
+          <div className="flex items-center justify-between rounded-xl border border-[#242934] bg-[#111318] p-3">
             <div>
               <h2 className="text-sm font-semibold text-[#F5F6F8]">Staff Accounts &amp; Roles</h2>
-              <p className="text-xs text-[#8A93A2]">
-                Add and manage Administrators, Front Desk staff, and Trainers.
+              <p className="text-[11px] text-[#8A93A2]">
+                Add and manage Admins, Staff, and Trainors.
               </p>
             </div>
             {permissions.assignableRoles.length > 0 && (
@@ -595,7 +659,7 @@ export default function SettingsPage() {
                   });
                   setStaffModal(true);
                 }}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46]"
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E32935] px-3 text-xs font-semibold text-white hover:bg-[#F13A46]"
               >
                 <UserPlus className="h-3.5 w-3.5" />
                 <span>Add Staff</span>
@@ -603,64 +667,85 @@ export default function SettingsPage() {
             )}
           </div>
 
-          <div className="divide-y divide-[#242934] rounded-xl border border-[#242934] bg-[#111318]">
-            {staff.map((u) => {
-              const canEditRow =
-                u.id !== currentUser.id &&
-                permissions.assignableRoles.includes(
-                  u.role as "ADMIN" | "FRONT_DESK" | "TRAINER"
+          <div className="overflow-hidden rounded-xl border border-[#242934] bg-[#111318]">
+            <div className="divide-y divide-[#242934]">
+              {pagedStaff.map((u) => {
+                const canEditRow =
+                  u.id !== currentUser.id &&
+                  permissions.assignableRoles.includes(
+                    (u.role === "OWNER" ? "ADMIN" : u.role) as "ADMIN" | "FRONT_DESK" | "TRAINER"
+                  );
+                return (
+                  <div
+                    key={u.id}
+                    className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 text-xs"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full border border-[#292E38] bg-[#171A21] text-[10px] font-semibold text-[#F5F6F8]">
+                        {u.name
+                          .split(" ")
+                          .map((p) => p[0])
+                          .slice(0, 2)
+                          .join("")
+                          .toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-medium text-[#F5F6F8]">{u.name}</p>
+                        <p className="text-[11px] text-[#8A93A2]">{u.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-md border border-[#292E38] bg-[#171A21] px-2 py-0.5 text-[11px] font-medium text-[#A4AAB5]">
+                        {formatRoleLabel(u.role)}
+                      </span>
+                      <StatusBadge status={u.isActive ? "ACTIVE" : "ARCHIVED"} />
+                      {canEditRow && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleStaffActive(u)}
+                            className="rounded-md border border-[#242934] bg-[#171A21] px-2 py-0.5 text-[11px] text-[#A4AAB5] hover:bg-[#20242D] hover:text-white"
+                          >
+                            {u.isActive ? "Deactivate" : "Activate"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteStaff(u)}
+                            className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[#242934] bg-[#171A21] text-[#8A93A2] hover:border-[#F05252]/40 hover:text-[#F05252]"
+                            title="Delete staff account"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 );
-              return (
-                <div
-                  key={u.id}
-                  className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-xs"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[#292E38] bg-[#171A21] text-[11px] font-semibold text-[#F5F6F8]">
-                      {u.name
-                        .split(" ")
-                        .map((p) => p[0])
-                        .slice(0, 2)
-                        .join("")
-                        .toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="font-medium text-[#F5F6F8]">{u.name}</p>
-                      <p className="text-[11px] text-[#8A93A2]">{u.email}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-md border border-[#292E38] bg-[#171A21] px-2.5 py-1 text-[11px] font-medium text-[#A4AAB5]">
-                      {u.role}
-                    </span>
-                    <StatusBadge status={u.isActive ? "ACTIVE" : "ARCHIVED"} />
-                    {canEditRow && (
-                      <button
-                        type="button"
-                        onClick={() => handleToggleStaffActive(u)}
-                        className="rounded-md border border-[#242934] bg-[#171A21] px-2.5 py-1 text-[11px] text-[#A4AAB5] hover:bg-[#20242D] hover:text-white"
-                      >
-                        {u.isActive ? "Deactivate" : "Activate"}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+              })}
+            </div>
+            <div className="border-t border-[#242934] px-3.5 py-2">
+              <PaginationBar
+                page={staffPage}
+                totalPages={totalStaffPages}
+                totalItems={staff.length}
+                pageSize={PAGE_SIZE}
+                onPageChange={setStaffPage}
+              />
+            </div>
           </div>
         </div>
       )}
 
       {/* Tab 4: Account & Security (All Roles) */}
       {tab === "account" && (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
           <form
             onSubmit={handlePasswordChange}
-            className="space-y-3.5 rounded-xl border border-[#242934] bg-[#111318] p-5 lg:col-span-6"
+            className="space-y-3 rounded-xl border border-[#242934] bg-[#111318] p-4 lg:col-span-6"
           >
             <div>
               <h2 className="text-sm font-semibold text-[#F5F6F8]">Change Password</h2>
-              <p className="text-xs text-[#8A93A2]">
+              <p className="text-[11px] text-[#8A93A2]">
                 Update the password for {currentUser.email}.
               </p>
             </div>
@@ -673,17 +758,17 @@ export default function SettingsPage() {
             )}
 
             <div>
-              <label className="mb-1 block text-xs text-[#A4AAB5]">Current Password</label>
+              <label className="mb-1 block text-[11px] text-[#A4AAB5]">Current Password</label>
               <input
                 type="password"
                 required
                 value={pwForm.currentPassword}
                 onChange={(e) => setPwForm({ ...pwForm, currentPassword: e.target.value })}
-                className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
+                className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-[#A4AAB5]">
+              <label className="mb-1 block text-[11px] text-[#A4AAB5]">
                 New Password (min 8 characters)
               </label>
               <input
@@ -692,7 +777,7 @@ export default function SettingsPage() {
                 minLength={8}
                 value={pwForm.newPassword}
                 onChange={(e) => setPwForm({ ...pwForm, newPassword: e.target.value })}
-                className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
+                className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
               />
             </div>
 
@@ -700,35 +785,40 @@ export default function SettingsPage() {
               <button
                 type="submit"
                 disabled={pwSaving}
-                className="h-9 rounded-lg bg-[#E32935] px-4 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:opacity-50"
+                className="h-8 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:opacity-50"
               >
                 {pwSaving ? "Updating..." : "Update Password"}
               </button>
             </div>
           </form>
 
-          <div className="space-y-3 rounded-xl border border-[#242934] bg-[#111318] p-5 lg:col-span-6">
+          <div className="space-y-2.5 rounded-xl border border-[#242934] bg-[#111318] p-4 lg:col-span-6">
             <div>
-              <h2 className="text-sm font-semibold text-[#F5F6F8]">Role Access Policy</h2>
-              <p className="text-xs text-[#8A93A2]">
+              <h2 className="text-sm font-semibold text-[#F5F6F8]">Role Access Policy (4 Roles)</h2>
+              <p className="text-[11px] text-[#8A93A2]">
                 Signed in as <span className="text-[#F5F6F8]">{currentUser.name}</span> (
                 {currentUser.roleLabel})
               </p>
             </div>
 
-            <ul className="space-y-2 rounded-xl border border-[#242934] bg-[#171A21] p-3.5 text-xs text-[#A4AAB5]">
+            <ul className="space-y-1.5 rounded-xl border border-[#242934] bg-[#171A21] p-3 text-xs text-[#A4AAB5]">
               <li>
-                • <strong className="text-[#F5F6F8]">Client QR Policy:</strong> Clients generate
-                their own QR passes in the Member Portal (<code className="text-[#E32935]">/portal</code>).
-                Admins and staff scan client QR passes at <code className="text-[#E32935]">/check-in</code>.
+                • <strong className="text-[#F5F6F8]">Admin:</strong> Full access to Dashboard,
+                Members, Check-In, Plans &amp; Payments, Reports, and adding Admins, Staff, and
+                Trainors.
               </li>
               <li>
-                • <strong className="text-[#F5F6F8]">Staff Management:</strong> Owners can add
-                Admins, Front Desk, and Trainers. Admins can add Front Desk and Trainers.
+                • <strong className="text-[#F5F6F8]">Staff:</strong> Front-desk check-in scanning,
+                member enrollment, and over-the-counter payment collection.
               </li>
               <li>
-                • <strong className="text-[#F5F6F8]">Financial Ledger:</strong> Over-the-counter
-                payments are immutable; refunds and voids are audited.
+                • <strong className="text-[#F5F6F8]">Trainor:</strong> Floor attendance monitoring,
+                member lookup, and personal salary &amp; check-in metrics.
+              </li>
+              <li>
+                • <strong className="text-[#F5F6F8]">Client:</strong> Logs into{" "}
+                <code className="text-[#E32935]">/portal</code> to track attendance, plan expiry,
+                upload profile photo, and self-generate QR passes.
               </li>
             </ul>
           </div>
@@ -737,28 +827,41 @@ export default function SettingsPage() {
 
       {/* Tab 5: Audit Log */}
       {tab === "audit" && permissions.canViewAudit && (
-        <div className="divide-y divide-[#242934] rounded-xl border border-[#242934] bg-[#111318]">
-          {auditLogs.length === 0 ? (
-            <p className="p-6 text-center text-xs text-[#8A93A2]">No audit log entries yet.</p>
-          ) : (
-            auditLogs.map((log) => (
-              <div
-                key={log.id}
-                className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 text-xs"
-              >
-                <div className="space-y-0.5">
-                  <span className="inline-block rounded border border-[#292E38] bg-[#171A21] px-2 py-0.5 font-mono text-[11px] font-medium text-[#F5F6F8]">
-                    {log.action}
+        <div className="overflow-hidden rounded-xl border border-[#242934] bg-[#111318]">
+          <div className="divide-y divide-[#242934]">
+            {pagedAudit.length === 0 ? (
+              <p className="p-6 text-center text-xs text-[#8A93A2]">No audit log entries yet.</p>
+            ) : (
+              pagedAudit.map((log) => (
+                <div
+                  key={log.id}
+                  className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 text-xs"
+                >
+                  <div className="space-y-0.5">
+                    <span className="inline-block rounded border border-[#292E38] bg-[#171A21] px-2 py-0.5 font-mono text-[11px] font-medium text-[#F5F6F8]">
+                      {log.action}
+                    </span>
+                    <p className="text-[11px] text-[#8A93A2]">
+                      {log.entityType} ({log.entityId}) · Actor: {log.actor?.name ?? "Client Portal"}
+                    </p>
+                  </div>
+                  <span className="text-[11px] text-[#8A93A2] tabular-nums">
+                    {formatDateTime(log.createdAt)}
                   </span>
-                  <p className="text-[11px] text-[#8A93A2]">
-                    {log.entityType} ({log.entityId}) · Actor: {log.actor?.name ?? "Member Portal"}
-                  </p>
                 </div>
-                <span className="text-[11px] text-[#8A93A2] tabular-nums">
-                  {formatDateTime(log.createdAt)}
-                </span>
-              </div>
-            ))
+              ))
+            )}
+          </div>
+          {auditLogs.length > 0 && (
+            <div className="border-t border-[#242934] px-3.5 py-2">
+              <PaginationBar
+                page={auditPage}
+                totalPages={totalAuditPages}
+                totalItems={auditLogs.length}
+                pageSize={PAGE_SIZE}
+                onPageChange={setAuditPage}
+              />
+            </div>
           )}
         </div>
       )}
@@ -770,9 +873,9 @@ export default function SettingsPage() {
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-md rounded-2xl border border-[#242934] bg-[#111318] p-5 animate-panel-enter">
-            <div className="mb-4 flex items-center justify-between border-b border-[#242934] pb-2.5">
-              <h2 className="text-base font-semibold text-[#F5F6F8]">Add Staff Member</h2>
+          <div className="w-full max-w-md rounded-2xl border border-[#242934] bg-[#111318] p-4 animate-panel-enter">
+            <div className="mb-3 flex items-center justify-between border-b border-[#242934] pb-2">
+              <h2 className="text-sm font-semibold text-[#F5F6F8]">Add Staff Account</h2>
               <button
                 type="button"
                 onClick={() => setStaffModal(false)}
@@ -783,36 +886,36 @@ export default function SettingsPage() {
             </div>
 
             {staffError && (
-              <div className="mb-3 rounded-lg border border-[#F05252]/30 bg-[#F05252]/10 p-2.5 text-xs text-[#F05252]">
+              <div className="mb-2.5 rounded-lg border border-[#F05252]/30 bg-[#F05252]/10 p-2 text-xs text-[#F05252]">
                 {staffError}
               </div>
             )}
 
-            <form onSubmit={handleCreateStaff} className="space-y-3">
+            <form onSubmit={handleCreateStaff} className="space-y-2.5">
               <div>
-                <label className="mb-1 block text-xs text-[#A4AAB5]">Full Name *</label>
+                <label className="mb-1 block text-[11px] text-[#A4AAB5]">Full Name *</label>
                 <input
                   required
                   value={staffForm.name}
                   onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })}
                   placeholder="Ella Santos"
-                  className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
+                  className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-[#A4AAB5]">Staff Email *</label>
+                <label className="mb-1 block text-[11px] text-[#A4AAB5]">Email Address *</label>
                 <input
                   type="email"
                   required
                   value={staffForm.email}
                   onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
                   placeholder="staff@ironhub.ph"
-                  className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
+                  className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="mb-1 block text-xs text-[#A4AAB5]">Role *</label>
+                  <label className="mb-1 block text-[11px] text-[#A4AAB5]">Role *</label>
                   <select
                     value={staffForm.role}
                     onChange={(e) =>
@@ -821,21 +924,17 @@ export default function SettingsPage() {
                         role: e.target.value as typeof staffForm.role,
                       })
                     }
-                    className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
+                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2 text-xs text-[#F5F6F8]"
                   >
                     {permissions.assignableRoles.map((r) => (
                       <option key={r} value={r}>
-                        {r === "ADMIN"
-                          ? "Administrator"
-                          : r === "FRONT_DESK"
-                          ? "Front Desk Staff"
-                          : "Trainer"}
+                        {formatRoleLabel(r)}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-[#A4AAB5]">
+                  <label className="mb-1 block text-[11px] text-[#A4AAB5]">
                     Initial Password *
                   </label>
                   <input
@@ -845,7 +944,7 @@ export default function SettingsPage() {
                     value={staffForm.password}
                     onChange={(e) => setStaffForm({ ...staffForm, password: e.target.value })}
                     placeholder="Min 8 characters"
-                    className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
+                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                   />
                 </div>
               </div>
@@ -854,16 +953,16 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => setStaffModal(false)}
-                  className="h-9 rounded-lg border border-[#242934] bg-[#171A21] px-3.5 text-xs text-[#A4AAB5]"
+                  className="h-8 rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#A4AAB5]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="h-9 rounded-lg bg-[#E32935] px-4 text-xs font-semibold text-white hover:bg-[#F13A46]"
+                  className="h-8 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46]"
                 >
-                  {saving ? "Creating..." : "Create Staff Account"}
+                  {saving ? "Creating..." : "Create Account"}
                 </button>
               </div>
             </form>

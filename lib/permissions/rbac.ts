@@ -20,46 +20,38 @@ export type Permission =
   | "audit:view"
   | "account:self";
 
+const ADMIN_PERMISSIONS = new Set<Permission>([
+  "dashboard:view",
+  "members:view",
+  "members:write",
+  "members:archive",
+  "checkin:perform",
+  "qr:revoke",
+  "plans:view",
+  "plans:manage",
+  "payments:view",
+  "payments:record",
+  "payments:refund_void",
+  "reports:view",
+  "reports:export",
+  "settings:view",
+  "settings:manage",
+  "staff:manage",
+  "audit:view",
+  "account:self",
+]);
+
+/**
+ * 4-Role System:
+ * 1. ADMIN -> "Admin"
+ * 2. FRONT_DESK -> "Staff"
+ * 3. TRAINER -> "Trainor"
+ * 4. Member -> "Client" (Member Portal /portal)
+ * (Legacy OWNER enum maps identically to ADMIN)
+ */
 const ROLE_PERMISSIONS: Record<StaffRole, ReadonlySet<Permission>> = {
-  OWNER: new Set<Permission>([
-    "dashboard:view",
-    "members:view",
-    "members:write",
-    "members:archive",
-    "checkin:perform",
-    "qr:revoke",
-    "plans:view",
-    "plans:manage",
-    "payments:view",
-    "payments:record",
-    "payments:refund_void",
-    "reports:view",
-    "reports:export",
-    "settings:view",
-    "settings:manage",
-    "staff:manage",
-    "audit:view",
-    "account:self",
-  ]),
-  ADMIN: new Set<Permission>([
-    "dashboard:view",
-    "members:view",
-    "members:write",
-    "members:archive",
-    "checkin:perform",
-    "qr:revoke",
-    "plans:view",
-    "plans:manage",
-    "payments:view",
-    "payments:record",
-    "payments:refund_void",
-    "reports:view",
-    "reports:export",
-    "settings:view",
-    "staff:manage",
-    "audit:view",
-    "account:self",
-  ]),
+  OWNER: ADMIN_PERMISSIONS,
+  ADMIN: ADMIN_PERMISSIONS,
   FRONT_DESK: new Set<Permission>([
     "dashboard:view",
     "members:view",
@@ -84,31 +76,38 @@ export function hasPermission(role: StaffRole, permission: Permission): boolean 
 
 export function assertPermission(role: StaffRole, permission: Permission): void {
   if (!hasPermission(role, permission)) {
-    throw new Error(`Forbidden: role ${role} lacks permission ${permission}`);
+    throw new Error(`Forbidden: role ${getRoleLabel(role)} lacks permission ${permission}`);
   }
 }
 
-/** Roles an actor is allowed to create or manage. */
+/** Admins can add and manage Admin, Staff (FRONT_DESK), and Trainor (TRAINER). */
 export function getAssignableRoles(actor: StaffRole): StaffRole[] {
-  if (actor === "OWNER" || actor === "ADMIN") {
+  if (actor === "ADMIN" || actor === "OWNER") {
     return ["ADMIN", "FRONT_DESK", "TRAINER"];
   }
   return [];
 }
 
 export function canManageStaffRole(actor: StaffRole, target: StaffRole): boolean {
-  return getAssignableRoles(actor).includes(target);
+  if (actor === "ADMIN" || actor === "OWNER") {
+    return (
+      target === "ADMIN" ||
+      target === "FRONT_DESK" ||
+      target === "TRAINER" ||
+      target === "OWNER"
+    );
+  }
+  return false;
 }
 
 export function getRoleLabel(role: StaffRole): string {
   switch (role) {
     case "OWNER":
-      return "Gym Owner";
     case "ADMIN":
-      return "Administrator";
+      return "Admin";
     case "FRONT_DESK":
-      return "Front Desk Staff";
+      return "Staff";
     case "TRAINER":
-      return "Trainer";
+      return "Trainor";
   }
 }

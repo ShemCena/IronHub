@@ -17,6 +17,7 @@ export function KpiCard({
   label,
   value,
   helper,
+  deltaPercent,
   icon: Icon,
   tone = "blue",
   href,
@@ -25,32 +26,50 @@ export function KpiCard({
   label: string;
   value: React.ReactNode;
   helper?: string;
+  deltaPercent?: number | null;
   icon: React.ComponentType<{ className?: string }>;
   tone?: AccentTone;
   href?: string;
   valueClassName?: string;
 }) {
+  const hasDelta = typeof deltaPercent === "number" && Number.isFinite(deltaPercent);
+  const isPositive = (deltaPercent ?? 0) >= 0;
+
   const content = (
     <div className="flex items-center gap-3">
       <div
         className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
           TONE_CLASSES[tone]
         )}
       >
         <Icon className="h-4 w-4" aria-hidden="true" />
       </div>
-      <div className="min-w-0">
-        <p className="text-[11px] font-medium text-[#A4AAB5]">{label}</p>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[11px] font-medium text-[#A4AAB5]">{label}</p>
         <p
           className={cn(
-            "mt-0.5 truncate text-xl font-bold tracking-tight text-[#F5F6F8] tabular-nums",
+            "mt-0.5 truncate text-lg font-bold leading-tight tracking-tight text-[#F5F6F8] tabular-nums",
             valueClassName
           )}
         >
           {value}
         </p>
-        {helper && <p className="mt-0.5 truncate text-[10px] text-[#2BCB83]">{helper}</p>}
+        <div className="mt-0.5 flex items-center gap-1.5 truncate text-[10px]">
+          {hasDelta && (
+            <span
+              className={cn(
+                "font-semibold tabular-nums",
+                isPositive ? "text-[#2BCB83]" : "text-[#F05252]"
+              )}
+            >
+              {isPositive ? `↑ +${deltaPercent}%` : `↓ ${deltaPercent}%`} vs last mo
+            </span>
+          )}
+          {!hasDelta && helper && (
+            <span className="truncate text-[#2BCB83]">{helper}</span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -59,7 +78,7 @@ export function KpiCard({
     return (
       <Link
         href={href}
-        className="card-interactive block rounded-xl border border-[#242934] bg-[#111318]/95 p-3.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]"
+        className="card-interactive block rounded-xl border border-[#242934] bg-[#111318]/95 p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]"
       >
         {content}
       </Link>
@@ -67,7 +86,7 @@ export function KpiCard({
   }
 
   return (
-    <div className="card-interactive rounded-xl border border-[#242934] bg-[#111318]/95 p-3.5">
+    <div className="card-interactive rounded-xl border border-[#242934] bg-[#111318]/95 p-3">
       {content}
     </div>
   );
