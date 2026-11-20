@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Save, CheckCircle2, AlertCircle, KeyRound, Building2, UserCircle2 } from "lucide-react";
 import { BrandMark } from "@/components/ui/brand-mark";
+import { useFeedback } from "@/components/ui/feedback-modal";
 import type { BusinessHoursMap } from "@/lib/domain/membership";
 
 interface GymSettingsState {
@@ -31,6 +32,7 @@ interface CurrentUserInfo {
 }
 
 export default function SettingsPage() {
+  const { showSuccess, showError } = useFeedback();
   const [currentUser, setCurrentUser] = useState<CurrentUserInfo | null>(null);
   const [permissions, setPermissions] = useState<SettingsPermissions | null>(null);
   const [settings, setSettings] = useState<GymSettingsState | null>(null);
@@ -78,7 +80,10 @@ export default function SettingsPage() {
       });
       if (res.ok) {
         setDirty(false);
-        flashSaved("Gym information saved");
+        showSuccess("Settings Saved", "Gym profile information has been updated.");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showError("Save Failed", data.error ?? "Unable to save gym settings.");
       }
     } finally {
       setSaving(false);
@@ -97,11 +102,13 @@ export default function SettingsPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setProfileError(data.error ?? "Failed to update profile.");
+        const msg = data.error ?? "Failed to update profile.";
+        setProfileError(msg);
+        showError("Profile Update Failed", msg);
         return;
       }
       setCurrentUser((prev) => (prev ? { ...prev, name: data.user.name } : prev));
-      flashSaved("Profile updated");
+      showSuccess("Profile Updated", "Your coach profile has been saved.");
     } finally {
       setProfileSaving(false);
     }
@@ -119,11 +126,13 @@ export default function SettingsPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setPwError(data.error ?? "Failed to update password.");
+        const msg = data.error ?? "Failed to update password.";
+        setPwError(msg);
+        showError("Password Error", msg);
         return;
       }
       setPwForm({ currentPassword: "", newPassword: "" });
-      flashSaved("Password updated");
+      showSuccess("Password Updated", "Your account password has been changed.");
     } finally {
       setPwSaving(false);
     }

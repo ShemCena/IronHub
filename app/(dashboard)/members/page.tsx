@@ -16,6 +16,7 @@ import {
 import { StatusBadge } from "@/components/ui/status-badge";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PaginationBar } from "@/components/ui/pagination-bar";
+import { useFeedback } from "@/components/ui/feedback-modal";
 import { getPlanTierColor } from "@/components/charts/plan-distribution-donut";
 import { formatCurrency, formatDate } from "@/lib/formatting/currency";
 import { cn } from "@/lib/utils";
@@ -56,6 +57,7 @@ const STATUS_TABS = ["ALL", "ACTIVE", "EXPIRED", "SUSPENDED"] as const;
 const PAGE_SIZE = 6;
 
 export default function MembersPage() {
+  const { showSuccess, showError, confirmAction } = useFeedback();
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [summary, setSummary] = useState({ total: 0, active: 0, expired: 0, suspended: 0 });
   const [page, setPage] = useState(1);
@@ -185,24 +187,46 @@ export default function MembersPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setFormError(data.error ?? "Failed to save member.");
+        const msg = data.error ?? "Failed to save member.";
+        setFormError(msg);
+        showError("Unable to Save", msg);
         return;
       }
+      const wasEdit = Boolean(editTarget);
+      const savedName = `${form.firstName} ${form.lastName}`.trim();
       setModalOpen(false);
       setEditTarget(null);
       loadMembers();
+      showSuccess(
+        wasEdit ? "Client Updated" : "Client Registered",
+        wasEdit
+          ? `${savedName}'s profile has been updated.`
+          : `${savedName} has been registered successfully.`
+      );
     } catch {
       setFormError("Network error while saving member.");
+      showError("Network Error", "Could not connect to the server while saving.");
     } finally {
       setSaving(false);
     }
   }
 
-  async function handleArchiveMember(m: MemberRow) {
-    const res = await fetch(`/api/members/${m.id}`, { method: "DELETE" });
-    if (res.ok) {
-      loadMembers();
-    }
+  function handleArchiveMember(m: MemberRow) {
+    confirmAction({
+      title: "Archive Member",
+      message: `Are you sure you want to archive ${m.firstName} ${m.lastName} (${m.memberCode})? They will no longer be able to check in.`,
+      confirmLabel: "Archive",
+      onConfirm: async () => {
+        const res = await fetch(`/api/members/${m.id}`, { method: "DELETE" });
+        if (res.ok) {
+          loadMembers();
+          showSuccess("Member Archived", `${m.firstName} ${m.lastName} has been archived.`);
+        } else {
+          const data = await res.json().catch(() => ({}));
+          showError("Archive Failed", data.error ?? "Could not archive member.");
+        }
+      },
+    });
   }
 
   return (

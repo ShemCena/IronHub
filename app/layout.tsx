@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Barlow_Condensed } from "next/font/google";
+import { FeedbackProvider } from "@/components/ui/feedback-modal";
 import "./globals.css";
 
 const inter = Inter({
@@ -67,7 +68,7 @@ export default function RootLayout({
         className="min-h-screen bg-[#090A0D] text-[#F5F6F8] antialiased selection:bg-[#E32935]/30 selection:text-white"
         suppressHydrationWarning
       >
-        {children}
+        <FeedbackProvider>{children}</FeedbackProvider>
       </body>
     </html>
   );

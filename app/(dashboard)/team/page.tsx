@@ -14,6 +14,7 @@ import {
 import { StatusBadge } from "@/components/ui/status-badge";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PaginationBar } from "@/components/ui/pagination-bar";
+import { useFeedback } from "@/components/ui/feedback-modal";
 
 interface TeamUser {
   id: string;
@@ -31,6 +32,7 @@ function formatRoleLabel(role: string): string {
 }
 
 export default function TeamPage() {
+  const { showSuccess, showError, confirmAction } = useFeedback();
   const [staff, setStaff] = useState<TeamUser[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [assignableRoles, setAssignableRoles] = useState<("ADMIN" | "TRAINER")[]>([]);
@@ -84,12 +86,14 @@ export default function TeamPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setFormError(data.error ?? "Failed to create account.");
+        const msg = data.error ?? "Failed to create account.";
+        setFormError(msg);
+        showError("Account Creation Failed", msg);
         return;
       }
       setModalOpen(false);
       setForm({ name: "", email: "", password: "", role: "TRAINER" });
-      flash(`Added ${data.staff.name}`);
+      showSuccess("Account Created", `${data.staff.name} has been added to your team.`);
       loadTeam();
     } finally {
       setSaving(false);
@@ -103,17 +107,33 @@ export default function TeamPage() {
       body: JSON.stringify({ isActive: !u.isActive }),
     });
     if (res.ok) {
-      flash(`${u.name} ${u.isActive ? "deactivated" : "activated"}`);
+      showSuccess(
+        u.isActive ? "Account Deactivated" : "Account Activated",
+        `${u.name} has been ${u.isActive ? "deactivated" : "activated"}.`
+      );
       loadTeam();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      showError("Update Failed", data.error ?? "Could not update account status.");
     }
   }
 
-  async function handleDelete(u: TeamUser) {
-    const res = await fetch(`/api/staff/${u.id}`, { method: "DELETE" });
-    if (res.ok) {
-      flash(`${u.name} removed`);
-      loadTeam();
-    }
+  function handleDelete(u: TeamUser) {
+    confirmAction({
+      title: "Delete Account",
+      message: `Are you sure you want to permanently remove ${u.name} (${u.email})?`,
+      confirmLabel: "Delete",
+      onConfirm: async () => {
+        const res = await fetch(`/api/staff/${u.id}`, { method: "DELETE" });
+        if (res.ok) {
+          showSuccess("Account Removed", `${u.name} has been removed.`);
+          loadTeam();
+        } else {
+          const data = await res.json().catch(() => ({}));
+          showError("Delete Failed", data.error ?? "Could not delete account.");
+        }
+      },
+    });
   }
 
   const activeCount = staff.filter((s) => s.isActive).length;

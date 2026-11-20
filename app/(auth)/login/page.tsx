@@ -4,9 +4,11 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, AlertCircle, ShieldCheck } from "lucide-react";
 import { BrandMark } from "@/components/ui/brand-mark";
+import { useFeedback } from "@/components/ui/feedback-modal";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { showError } = useFeedback();
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -28,13 +30,17 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Unable to sign in.");
+        const msg = data.error ?? "Unable to sign in.";
+        setError(msg);
+        showError("Sign In Failed", msg);
         return;
       }
       router.push(data.redirectTo ?? "/dashboard");
       router.refresh();
     } catch {
-      setError("Network error while signing in.");
+      const msg = "Network error while signing in.";
+      setError(msg);
+      showError("Connection Error", msg);
     } finally {
       setLoading(false);
     }

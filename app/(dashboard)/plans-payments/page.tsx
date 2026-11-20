@@ -18,6 +18,7 @@ import {
 import { StatusBadge } from "@/components/ui/status-badge";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PaginationBar } from "@/components/ui/pagination-bar";
+import { useFeedback } from "@/components/ui/feedback-modal";
 import { formatCompactCurrency, formatCurrency, formatDateTime } from "@/lib/formatting/currency";
 import { cn } from "@/lib/utils";
 
@@ -77,6 +78,7 @@ function formatDuration(value: number, unit: string): string {
 }
 
 export default function PlansAndPaymentsPage() {
+  const { showSuccess, showError, confirmAction } = useFeedback();
   const [tab, setTab] = useState<"plans" | "payments">("plans");
   const [plans, setPlans] = useState<PlanItem[]>([]);
   const [payments, setPayments] = useState<PaymentRow[]>([]);
@@ -228,22 +230,40 @@ export default function PlansAndPaymentsPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Failed to save plan.");
+        const msg = data.error ?? "Failed to save plan.";
+        setError(msg);
+        showError("Plan Error", msg);
         return;
       }
+      const wasEdit = Boolean(editingPlan);
       setPlanModal(false);
       setEditingPlan(null);
       loadAll();
+      showSuccess(
+        wasEdit ? "Plan Updated" : "Plan Created",
+        `${planForm.name} plan has been saved successfully.`
+      );
     } finally {
       setSaving(false);
     }
   }
 
-  async function handleDeletePlan(p: PlanItem) {
-    const res = await fetch(`/api/plans/${p.id}`, { method: "DELETE" });
-    if (res.ok) {
-      loadAll();
-    }
+  function handleDeletePlan(p: PlanItem) {
+    confirmAction({
+      title: "Remove Plan",
+      message: `Are you sure you want to deactivate or delete the "${p.name}" plan?`,
+      confirmLabel: "Remove Plan",
+      onConfirm: async () => {
+        const res = await fetch(`/api/plans/${p.id}`, { method: "DELETE" });
+        if (res.ok) {
+          loadAll();
+          showSuccess("Plan Removed", `"${p.name}" has been updated.`);
+        } else {
+          const data = await res.json().catch(() => ({}));
+          showError("Action Failed", data.error ?? "Unable to remove plan.");
+        }
+      },
+    });
   }
 
   async function handleRecordPayment(e: React.FormEvent) {
@@ -258,11 +278,17 @@ export default function PlansAndPaymentsPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Failed to record payment.");
+        const msg = data.error ?? "Failed to record payment.";
+        setError(msg);
+        showError("Payment Failed", msg);
         return;
       }
       setPaymentModal(false);
       loadAll();
+      showSuccess(
+        "Payment Recorded",
+        `Receipt ${data.payment?.receiptNumber ?? ""} posted for ${formatCurrency(payForm.amount)}.`
+      );
     } finally {
       setSaving(false);
     }
@@ -278,10 +304,16 @@ export default function PlansAndPaymentsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: auditTarget.action, reason: auditReason }),
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
+        const label = auditTarget.action === "REFUND" ? "Payment Refunded" : "Payment Voided";
+        const receipt = auditTarget.receipt;
         setAuditTarget(null);
         setAuditReason("");
         loadAll();
+        showSuccess(label, `Receipt ${receipt} has been marked as ${auditTarget.action.toLowerCase()}ed.`);
+      } else {
+        showError("Action Failed", data.error ?? "Could not update payment status.");
       }
     } finally {
       setSaving(false);

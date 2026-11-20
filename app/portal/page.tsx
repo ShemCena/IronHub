@@ -29,6 +29,7 @@ import { BrandMark } from "@/components/ui/brand-mark";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PaginationBar } from "@/components/ui/pagination-bar";
+import { useFeedback } from "@/components/ui/feedback-modal";
 import { formatCurrency, formatDate, formatDateTime, formatTime } from "@/lib/formatting/currency";
 import { cn } from "@/lib/utils";
 
@@ -146,6 +147,7 @@ async function resizeImageToDataUrl(file: File): Promise<string> {
 
 export default function MemberPortalDashboardPage() {
   const router = useRouter();
+  const { showSuccess, showError } = useFeedback();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [section, setSection] = useState<PortalSection>("overview");
@@ -224,7 +226,12 @@ export default function MemberPortalDashboardPage() {
               }
             : prev
         );
-        flashNotice("Your personal QR pass is active. Present it to front-desk staff on entry.");
+        showSuccess(
+          "QR Pass Active",
+          "Your personal QR pass is ready. Present it to the front desk when entering the gym."
+        );
+      } else {
+        showError("QR Error", json.error ?? "Could not generate QR pass.");
       }
     } finally {
       setGeneratingQr(false);
@@ -267,7 +274,9 @@ export default function MemberPortalDashboardPage() {
       });
       const json = await res.json();
       if (!res.ok) {
-        setError(json.error ?? "Failed to update settings.");
+        const msg = json.error ?? "Failed to update settings.";
+        setError(msg);
+        showError("Update Failed", msg);
         return;
       }
       setData((prev) =>
@@ -286,7 +295,7 @@ export default function MemberPortalDashboardPage() {
           : prev
       );
       setProfileForm((prev) => ({ ...prev, currentPassword: "", newPassword: "" }));
-      flashNotice("Profile & settings saved.");
+      showSuccess("Profile Saved", "Your contact details, photo, and security settings have been saved.");
     } finally {
       setSavingProfile(false);
     }
