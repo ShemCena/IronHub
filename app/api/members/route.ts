@@ -70,6 +70,7 @@ export async function GET(request: Request) {
         lastName: m.lastName,
         email: m.email,
         phone: m.phone,
+        photoUrl: m.photoUrl,
         status: m.status,
         joinedAt: m.joinedAt,
         currentPlan: m.memberships[0]?.planNameSnapshot ?? null,

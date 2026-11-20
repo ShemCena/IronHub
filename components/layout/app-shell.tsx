@@ -17,7 +17,6 @@ import {
   ScanLine,
   ArrowRight,
   ChevronDown,
-  ExternalLink,
 } from "lucide-react";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { cn } from "@/lib/utils";
@@ -211,17 +210,8 @@ export function AppShell({
           })}
         </nav>
 
-        {/* Client Self-Service Portal Link + Fixed-height Athletic Brand Card */}
-        <div className="shrink-0 space-y-2 p-2.5">
-          <Link
-            href="/portal/login"
-            target="_blank"
-            className="flex items-center justify-between rounded-lg border border-[#242934] bg-[#111318] px-2.5 py-1.5 text-[11px] font-medium text-[#A4AAB5] transition-colors hover:border-[#363D4A] hover:text-white"
-          >
-            <span>Client QR Portal</span>
-            <ExternalLink className="h-3 w-3 text-[#8A93A2]" />
-          </Link>
-
+        {/* Fixed-height Athletic Brand Card */}
+        <div className="shrink-0 p-2.5">
           <Link
             href="/check-in"
             className="group relative block h-[144px] overflow-hidden rounded-xl border border-[#242934] bg-[#111318]"

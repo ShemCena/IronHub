@@ -25,6 +25,7 @@ interface CheckInResult {
     id: string;
     memberCode: string;
     name: string;
+    photoUrl?: string | null;
     planName: string;
     expiryDate: string | null;
   };
@@ -375,14 +376,23 @@ export default function CheckInPage() {
                 <p className="mt-4 text-lg font-bold text-[#2BCB83]">
                   Check-In Successful!
                 </p>
-                <div className="mt-4 flex h-16 w-16 items-center justify-center rounded-full border-2 border-[#2BCB83]/50 bg-[#171A21] text-lg font-bold text-white">
-                  {(result.member?.name ?? "M")
-                    .split(" ")
-                    .map((n) => n[0])
-                    .slice(0, 2)
-                    .join("")
-                    .toUpperCase()}
-                </div>
+                {result.member?.photoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={result.member.photoUrl}
+                    alt={result.member.name}
+                    className="mt-4 h-16 w-16 rounded-full border-2 border-[#2BCB83]/60 object-cover"
+                  />
+                ) : (
+                  <div className="mt-4 flex h-16 w-16 items-center justify-center rounded-full border-2 border-[#2BCB83]/50 bg-[#171A21] text-lg font-bold text-white">
+                    {(result.member?.name ?? "M")
+                      .split(" ")
+                      .map((n) => n[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase()}
+                  </div>
+                )}
                 <p className="mt-3 text-lg font-semibold text-white">
                   {result.member?.name}
                 </p>

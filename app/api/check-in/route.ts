@@ -191,6 +191,7 @@ export async function POST(request: Request) {
         id: member.id,
         memberCode: member.memberCode,
         name: `${member.firstName} ${member.lastName}`,
+        photoUrl: member.photoUrl,
         planName: latestMembership?.planNameSnapshot ?? "No Plan",
         expiryDate: latestMembership?.endDate ?? null,
       },

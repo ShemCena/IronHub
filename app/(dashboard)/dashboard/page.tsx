@@ -408,8 +408,7 @@ export default function DashboardPage() {
             )}
 
             <Link
-              href="/portal/login"
-              target="_blank"
+              href="/reports"
               className="group flex items-center justify-between rounded-xl border border-[#242934] bg-[#171A21] p-2.5 transition-colors hover:border-[#363D4A] hover:bg-[#1D2029]"
             >
               <div className="flex items-center gap-2.5">
@@ -417,8 +416,8 @@ export default function DashboardPage() {
                   <QrCode className="h-4 w-4" />
                 </span>
                 <div>
-                  <p className="text-xs font-semibold text-[#F5F6F8]">Client QR Portal</p>
-                  <p className="text-[10px] text-[#8A93A2]">Self-Service Pass</p>
+                  <p className="text-xs font-semibold text-[#F5F6F8]">View Reports</p>
+                  <p className="text-[10px] text-[#8A93A2]">Revenue &amp; Attendance</p>
                 </div>
               </div>
               <ChevronRight className="h-3.5 w-3.5 text-[#8A93A2] transition-transform group-hover:translate-x-0.5" />

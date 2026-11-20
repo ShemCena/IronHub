@@ -28,6 +28,7 @@ interface MemberRow {
   phone: string | null;
   status: string;
   joinedAt: string;
+  photoUrl: string | null;
   currentPlan: string | null;
   expiryDate: string | null;
   hasActiveQr: boolean;
@@ -108,7 +109,7 @@ export default function MembersPage() {
           setPlans(data.plans.filter((p: PlanOption) => p.isActive));
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   async function handleCreateMember(e: React.FormEvent) {
@@ -290,9 +291,18 @@ export default function MembersPage() {
                     <tr key={m.id} className="transition-colors hover:bg-[#171A21]">
                       <td className="px-3.5 py-2">
                         <div className="flex items-center gap-2.5">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#292E38] bg-[#171A21] text-[11px] font-semibold text-[#F5F6F8]">
-                            {initials}
-                          </div>
+                          {m.photoUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={m.photoUrl}
+                              alt={`${m.firstName} ${m.lastName}`}
+                              className="h-8 w-8 shrink-0 rounded-full border border-[#292E38] object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#292E38] bg-[#171A21] text-[11px] font-semibold text-[#F5F6F8]">
+                              {initials}
+                            </div>
+                          )}
                           <div>
                             <Link
                               href={`/members/${m.id}`}
