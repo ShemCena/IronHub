@@ -22,7 +22,10 @@ export async function GET(request: Request) {
     };
 
     if (session.role === "TRAINER" && scope === "mine") {
-      where.trainerId = session.userId;
+      const assignedRows = await prisma.$queryRaw<{ id: string }[]>`
+        SELECT id FROM members WHERE "trainerId" = ${session.userId} AND status <> 'ARCHIVED'
+      `;
+      where.id = { in: assignedRows.map((r) => r.id) };
     }
 
     if (q) {
@@ -41,7 +44,7 @@ export async function GET(request: Request) {
       };
     }
 
-    const [members, total, totalCount, activeCount, expiredCount, suspendedCount, trainers] =
+    const [members, total, totalCount, activeCount, expiredCount, suspendedCount, trainers, trainerRows] =
       await Promise.all([
         prisma.member.findMany({
           where,
@@ -49,7 +52,6 @@ export async function GET(request: Request) {
           take: pageSize,
           orderBy: { createdAt: "desc" },
           include: {
-            trainer: { select: { id: true, name: true } },
             memberships: {
               orderBy: { endDate: "desc" },
               take: 1,
@@ -71,28 +73,37 @@ export async function GET(request: Request) {
           select: { id: true, name: true },
           orderBy: { name: "asc" },
         }),
+        prisma.$queryRaw<{ id: string; trainerId: string | null }[]>`
+          SELECT id, "trainerId" FROM members WHERE status <> 'ARCHIVED'
+        `,
       ]);
+
+    const trainerNameById = new Map(trainers.map((t) => [t.id, t.name]));
+    const trainerIdByMemberId = new Map(trainerRows.map((r) => [r.id, r.trainerId]));
 
     return NextResponse.json({
       role: session.role,
       trainers,
-      members: members.map((m) => ({
-        id: m.id,
-        memberCode: m.memberCode,
-        firstName: m.firstName,
-        lastName: m.lastName,
-        email: m.email,
-        phone: m.phone,
-        photoUrl: m.photoUrl,
-        status: m.status,
-        joinedAt: m.joinedAt,
-        trainerId: m.trainerId,
-        trainerName: m.trainer?.name ?? null,
-        currentPlan: m.memberships[0]?.planNameSnapshot ?? null,
-        expiryDate: m.memberships[0]?.endDate ?? null,
-        hasActiveQr: m.qrCredentials.length > 0,
-        qrLast4: m.qrCredentials[0]?.tokenLast4 ?? null,
-      })),
+      members: members.map((m) => {
+        const assignedTrainerId = trainerIdByMemberId.get(m.id) ?? null;
+        return {
+          id: m.id,
+          memberCode: m.memberCode,
+          firstName: m.firstName,
+          lastName: m.lastName,
+          email: m.email,
+          phone: m.phone,
+          photoUrl: m.photoUrl,
+          status: m.status,
+          joinedAt: m.joinedAt,
+          trainerId: assignedTrainerId,
+          trainerName: assignedTrainerId ? trainerNameById.get(assignedTrainerId) ?? null : null,
+          currentPlan: m.memberships[0]?.planNameSnapshot ?? null,
+          expiryDate: m.memberships[0]?.endDate ?? null,
+          hasActiveQr: m.qrCredentials.length > 0,
+          qrLast4: m.qrCredentials[0]?.tokenLast4 ?? null,
+        };
+      }),
       pagination: {
         page,
         pageSize,

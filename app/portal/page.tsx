@@ -23,6 +23,7 @@ import {
   Menu,
   X,
   AlertCircle,
+  ChevronDown,
 } from "lucide-react";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -149,6 +150,7 @@ export default function MemberPortalDashboardPage() {
 
   const [section, setSection] = useState<PortalSection>("overview");
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [data, setData] = useState<PortalDashboardPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [generatingQr, setGeneratingQr] = useState(false);
@@ -444,11 +446,12 @@ export default function MemberPortalDashboardPage() {
             </span>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="relative">
             <button
               type="button"
-              onClick={() => setSection("settings")}
-              className="flex items-center gap-2 rounded-lg border border-[#242934] bg-[#111318] px-2.5 py-1 text-left transition-colors hover:bg-[#171A21]"
+              onClick={() => setAccountOpen((o) => !o)}
+              className="flex h-9 items-center gap-2 rounded-lg border border-[#242934] bg-[#111318] px-2 transition-colors hover:bg-[#171A21] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]"
+              aria-expanded={accountOpen}
             >
               {data.member.photoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -458,29 +461,50 @@ export default function MemberPortalDashboardPage() {
                   className="h-6 w-6 rounded-full object-cover ring-1 ring-[#E32935]/40"
                 />
               ) : (
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#E32935]/18 text-[10px] font-semibold text-[#E32935]">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#E32935]/18 text-[11px] font-semibold text-[#E32935] ring-1 ring-[#E32935]/35">
                   {initials}
                 </div>
               )}
-              <div className="hidden sm:block">
+              <div className="hidden text-left sm:block">
                 <p className="text-xs font-medium leading-tight text-[#F5F6F8]">
                   {data.member.name}
                 </p>
-                <p className="font-mono text-[10px] leading-tight text-[#8A93A2]">
+                <p className="text-[10px] leading-tight text-[#8A93A2]">
                   Client · {data.member.memberCode}
                 </p>
               </div>
+              <ChevronDown className="h-3 w-3 text-[#8A93A2]" />
             </button>
 
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#242934] bg-[#111318] px-2.5 text-xs text-[#A4AAB5] hover:text-[#F05252]"
-              title="Sign Out"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Sign Out</span>
-            </button>
+            {accountOpen && (
+              <div className="absolute right-0 top-11 z-50 w-48 rounded-xl border border-[#292E38] bg-[#171A21] p-1.5 shadow-2xl">
+                <div className="border-b border-[#292E38] px-2.5 py-1.5">
+                  <p className="truncate text-xs font-medium text-[#F5F6F8]">{data.member.name}</p>
+                  <p className="truncate text-[10px] text-[#8A93A2]">
+                    {data.member.email ?? data.member.memberCode}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSection("settings");
+                    setAccountOpen(false);
+                  }}
+                  className="mt-1 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs text-[#A4AAB5] hover:bg-[#20242D] hover:text-white"
+                >
+                  <Settings className="h-3.5 w-3.5" />
+                  <span>Settings &amp; Account</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs text-[#F05252] hover:bg-[#F05252]/10"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            )}
           </div>
         </header>
 
@@ -706,9 +730,9 @@ export default function MemberPortalDashboardPage() {
             </div>
           )}
 
-          {/* SECTION 2: MY QR PASS (Compressed) */}
+          {/* SECTION 2: MY QR PASS */}
           {section === "qr" && (
-            <div className="mx-auto grid max-w-[780px] grid-cols-1 gap-3 animate-panel-enter md:grid-cols-12">
+            <div className="grid grid-cols-1 gap-3 animate-panel-enter md:grid-cols-12">
               <div className="space-y-3 rounded-xl border border-[#242934] bg-[#111318] p-4 print:hidden md:col-span-5">
                 <div>
                   <h1 className="text-base font-semibold text-[#F5F6F8]">My Personal QR Pass</h1>
@@ -853,9 +877,9 @@ export default function MemberPortalDashboardPage() {
             </div>
           )}
 
-          {/* SECTION 3: ATTENDANCE HISTORY WITH PAGINATION (Compressed) */}
+          {/* SECTION 3: ATTENDANCE HISTORY WITH PAGINATION */}
           {section === "attendance" && (
-            <div className="mx-auto max-w-[820px] space-y-2.5 animate-panel-enter">
+            <div className="space-y-3 animate-panel-enter">
               <div>
                 <h1 className="text-lg font-semibold text-[#F5F6F8]">My Attendance Log</h1>
                 <p className="text-[11px] text-[#A4AAB5]">
@@ -918,9 +942,9 @@ export default function MemberPortalDashboardPage() {
             </div>
           )}
 
-          {/* SECTION 4: MEMBERSHIP & RECEIPTS WITH PAGINATION (Compressed) */}
+          {/* SECTION 4: MEMBERSHIP & RECEIPTS WITH PAGINATION */}
           {section === "membership" && (
-            <div className="mx-auto max-w-[840px] space-y-2.5 animate-panel-enter">
+            <div className="space-y-3 animate-panel-enter">
               <div>
                 <h1 className="text-lg font-semibold text-[#F5F6F8]">
                   Membership Plan &amp; Receipts
@@ -1023,11 +1047,11 @@ export default function MemberPortalDashboardPage() {
             </div>
           )}
 
-          {/* SECTION 5: SETTINGS & PROFILE PICTURE UPLOAD (Compressed) */}
+          {/* SECTION 5: SETTINGS & PROFILE PICTURE UPLOAD */}
           {section === "settings" && (
             <form
               onSubmit={handleSaveSettings}
-              className="mx-auto grid max-w-[820px] grid-cols-1 gap-3 animate-panel-enter lg:grid-cols-12"
+              className="grid grid-cols-1 gap-3 animate-panel-enter lg:grid-cols-12"
             >
               {/* Left: Photo Upload Card */}
               <div className="flex flex-col items-center justify-center rounded-xl border border-[#242934] bg-[#111318] p-4 text-center lg:col-span-4">

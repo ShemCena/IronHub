@@ -206,9 +206,13 @@ export default function MembersPage() {
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-lg font-semibold tracking-tight text-[#F5F6F8]">Members</h1>
+          <h1 className="text-lg font-semibold tracking-tight text-[#F5F6F8]">
+            {role === "TRAINER" ? "Clients" : "Members"}
+          </h1>
           <p className="text-[11px] text-[#A4AAB5]">
-            Manage gym clients, coach assignments, and memberships.
+            {role === "TRAINER"
+              ? "View your coached clients and gym client directory."
+              : "Manage gym clients, coach assignments, and memberships."}
           </p>
         </div>
 

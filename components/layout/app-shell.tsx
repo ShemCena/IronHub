@@ -81,6 +81,10 @@ export function AppShell({
 
   const visibleNav = NAV_ITEMS.filter(
     (item) => !item.permission || hasPermission(session.role, item.permission)
+  ).map((item) =>
+    session.role === "TRAINER" && item.href === "/members"
+      ? { ...item, label: "Clients" }
+      : item
   );
 
   useEffect(() => {

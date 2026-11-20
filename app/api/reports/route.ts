@@ -20,53 +20,59 @@ export async function GET(request: Request) {
     rangeStart.setDate(rangeStart.getDate() - (days - 1));
     rangeStart.setHours(0, 0, 0, 0);
 
-    const [payments, newMembers, checkIns, renewals, activeMemberships, trainers] =
-      await Promise.all([
-        prisma.payment.findMany({
-          where: { paidAt: { gte: rangeStart }, status: { in: ["PAID", "REFUNDED"] } },
-          orderBy: { paidAt: "asc" },
-          include: {
-            member: { select: { memberCode: true, firstName: true, lastName: true } },
-            membership: { select: { planNameSnapshot: true } },
-          },
-        }),
-        prisma.member.count({
-          where: { createdAt: { gte: rangeStart }, status: { not: "ARCHIVED" } },
-        }),
-        prisma.attendanceRecord.count({
-          where: { checkedInAt: { gte: rangeStart }, outcome: "APPROVED" },
-        }),
-        prisma.membership.count({
-          where: { createdAt: { gte: rangeStart }, isRenewal: true },
-        }),
-        prisma.membership.groupBy({
-          by: ["planNameSnapshot"],
-          where: { status: "ACTIVE", endDate: { gte: now } },
-          _count: { _all: true },
-        }),
-        prisma.user.findMany({
-          where: { role: "TRAINER", isActive: true },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            coachedMembers: {
-              where: { status: { not: "ARCHIVED" } },
-              select: {
-                status: true,
-                payments: {
-                  where: { status: "PAID" },
-                  select: { amount: true },
-                },
-                attendanceRecords: {
-                  where: { outcome: "APPROVED" },
-                  select: { id: true },
-                },
-              },
-            },
-          },
-        }),
-      ]);
+    const [
+      payments,
+      newMembers,
+      checkIns,
+      renewals,
+      activeMemberships,
+      trainers,
+      allMembers,
+      trainerAssignments,
+    ] = await Promise.all([
+      prisma.payment.findMany({
+        where: { paidAt: { gte: rangeStart }, status: { in: ["PAID", "REFUNDED"] } },
+        orderBy: { paidAt: "asc" },
+        include: {
+          member: { select: { memberCode: true, firstName: true, lastName: true } },
+          membership: { select: { planNameSnapshot: true } },
+        },
+      }),
+      prisma.member.count({
+        where: { createdAt: { gte: rangeStart }, status: { not: "ARCHIVED" } },
+      }),
+      prisma.attendanceRecord.count({
+        where: { checkedInAt: { gte: rangeStart }, outcome: "APPROVED" },
+      }),
+      prisma.membership.count({
+        where: { createdAt: { gte: rangeStart }, isRenewal: true },
+      }),
+      prisma.membership.groupBy({
+        by: ["planNameSnapshot"],
+        where: { status: "ACTIVE", endDate: { gte: now } },
+        _count: { _all: true },
+      }),
+      prisma.user.findMany({
+        where: { role: "TRAINER", isActive: true },
+        select: { id: true, name: true, email: true },
+      }),
+      prisma.member.findMany({
+        where: { status: { not: "ARCHIVED" } },
+        select: {
+          id: true,
+          status: true,
+          payments: { where: { status: "PAID" }, select: { amount: true } },
+          attendanceRecords: { where: { outcome: "APPROVED" }, select: { id: true } },
+        },
+      }),
+      prisma.$queryRaw<{ id: string; trainerId: string | null }[]>`
+        SELECT id, "trainerId" FROM members WHERE status <> 'ARCHIVED'
+      `,
+    ]);
+
+    const trainerByMemberId = new Map<string, string | null>(
+      trainerAssignments.map((r) => [r.id, r.trainerId])
+    );
 
     const grossRevenue = payments
       .filter((p) => p.status === "PAID")
@@ -146,13 +152,11 @@ export async function GET(request: Request) {
 
     const topCoaches = trainers
       .map((t) => {
-        const totalClients = t.coachedMembers.length;
-        const activeClients = t.coachedMembers.filter((m) => m.status === "ACTIVE").length;
-        const totalSessions = t.coachedMembers.reduce(
-          (sum, m) => sum + m.attendanceRecords.length,
-          0
-        );
-        const clientRevenue = t.coachedMembers.reduce(
+        const coached = allMembers.filter((m) => trainerByMemberId.get(m.id) === t.id);
+        const totalClients = coached.length;
+        const activeClients = coached.filter((m) => m.status === "ACTIVE").length;
+        const totalSessions = coached.reduce((sum, m) => sum + m.attendanceRecords.length, 0);
+        const clientRevenue = coached.reduce(
           (sum, m) => sum + m.payments.reduce((pSum, p) => pSum + Number(p.amount), 0),
           0
         );

@@ -56,7 +56,9 @@ export async function GET(request: Request) {
       renewalsInRange,
       newMembersInRange,
       activeMembershipsByPlan,
-      trainersData,
+      trainersList,
+      allActiveMembers,
+      trainerAssignments,
     ] = await Promise.all([
       prisma.member.count({ where: { status: { not: "ARCHIVED" } } }),
       prisma.member.count({
@@ -126,37 +128,40 @@ export async function GET(request: Request) {
       }),
       prisma.user.findMany({
         where: { role: "TRAINER", isActive: true },
+        select: { id: true, name: true, email: true },
+      }),
+      prisma.member.findMany({
+        where: { status: { not: "ARCHIVED" } },
         select: {
           id: true,
-          name: true,
-          email: true,
-          coachedMembers: {
-            where: { status: { not: "ARCHIVED" } },
-            select: {
-              id: true,
-              memberCode: true,
-              firstName: true,
-              lastName: true,
-              status: true,
-              photoUrl: true,
-              memberships: {
-                orderBy: { endDate: "desc" },
-                take: 1,
-                select: { planNameSnapshot: true, endDate: true },
-              },
-              payments: {
-                where: { status: "PAID" },
-                select: { amount: true, paidAt: true },
-              },
-              attendanceRecords: {
-                where: { outcome: "APPROVED" },
-                select: { checkedInAt: true },
-              },
-            },
+          memberCode: true,
+          firstName: true,
+          lastName: true,
+          status: true,
+          photoUrl: true,
+          memberships: {
+            orderBy: { endDate: "desc" },
+            take: 1,
+            select: { planNameSnapshot: true, endDate: true },
+          },
+          payments: {
+            where: { status: "PAID" },
+            select: { amount: true },
+          },
+          attendanceRecords: {
+            where: { outcome: "APPROVED" },
+            select: { id: true },
           },
         },
       }),
+      prisma.$queryRaw<{ id: string; trainerId: string | null }[]>`
+        SELECT id, "trainerId" FROM members WHERE status <> 'ARCHIVED'
+      `,
     ]);
+
+    const trainerByMemberId = new Map<string, string | null>(
+      trainerAssignments.map((r) => [r.id, r.trainerId])
+    );
 
     const dayBuckets = new Map<string, { label: string; newMembers: number; renewals: number }>();
     for (let i = 0; i < days; i++) {
@@ -204,20 +209,16 @@ export async function GET(request: Request) {
     const revenueLastMonth = Number(revenueLastMonthAgg._sum.amount ?? 0);
     const revenueToday = Number(revenueTodayAgg._sum.amount ?? 0);
 
-    // Compute per-coach performance rankings for Admin & personal stats for Trainor
-    const coachRankings = trainersData
+    const coachRankings = trainersList
       .map((t) => {
-        const totalClients = t.coachedMembers.length;
-        const activeClients = t.coachedMembers.filter((m) => m.status === "ACTIVE").length;
-        const totalSessions = t.coachedMembers.reduce(
-          (sum, m) => sum + m.attendanceRecords.length,
-          0
-        );
-        const clientRevenue = t.coachedMembers.reduce(
+        const coached = allActiveMembers.filter((m) => trainerByMemberId.get(m.id) === t.id);
+        const totalClients = coached.length;
+        const activeClients = coached.filter((m) => m.status === "ACTIVE").length;
+        const totalSessions = coached.reduce((sum, m) => sum + m.attendanceRecords.length, 0);
+        const clientRevenue = coached.reduce(
           (sum, m) => sum + m.payments.reduce((pSum, p) => pSum + Number(p.amount), 0),
           0
         );
-        // Trainor coaching revenue = 40% commission on coached clients' plans + ₱250/session
         const coachingRevenue = Math.round(clientRevenue * 0.4 + totalSessions * 250);
         const monthlySalary = 22000 + coachingRevenue;
 
@@ -232,7 +233,7 @@ export async function GET(request: Request) {
           coachingRevenue,
           monthlySalary,
           deltaPercent: totalClients > 0 ? 6 + activeClients * 2 : 0,
-          clients: t.coachedMembers.map((m) => ({
+          clients: coached.map((m) => ({
             id: m.id,
             memberCode: m.memberCode,
             name: `${m.firstName} ${m.lastName}`,

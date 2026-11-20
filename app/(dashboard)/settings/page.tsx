@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { Save, CheckCircle2, AlertCircle, KeyRound, Building2 } from "lucide-react";
+import { Save, CheckCircle2, AlertCircle, KeyRound, Building2, UserCircle2 } from "lucide-react";
 import { BrandMark } from "@/components/ui/brand-mark";
 import type { BusinessHoursMap } from "@/lib/domain/membership";
 
@@ -39,6 +39,10 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [savedNotice, setSavedNotice] = useState<string | null>(null);
 
+  const [profileName, setProfileName] = useState("");
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+
   const [pwForm, setPwForm] = useState({ currentPassword: "", newPassword: "" });
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwSaving, setPwSaving] = useState(false);
@@ -48,6 +52,7 @@ export default function SettingsPage() {
     if (!res.ok) return;
     const data = await res.json();
     setCurrentUser(data.currentUser ?? null);
+    setProfileName(data.currentUser?.name ?? "");
     setPermissions(data.permissions ?? null);
     setSettings(data.settings ?? null);
   }, []);
@@ -77,6 +82,28 @@ export default function SettingsPage() {
       }
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSaveProfile(e: React.FormEvent) {
+    e.preventDefault();
+    setProfileError(null);
+    setProfileSaving(true);
+    try {
+      const res = await fetch("/api/account/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: profileName }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setProfileError(data.error ?? "Failed to update profile.");
+        return;
+      }
+      setCurrentUser((prev) => (prev ? { ...prev, name: data.user.name } : prev));
+      flashSaved("Profile updated");
+    } finally {
+      setProfileSaving(false);
     }
   }
 
@@ -114,7 +141,7 @@ export default function SettingsPage() {
           <p className="text-[11px] text-[#A4AAB5]">
             {permissions.canViewGymSettings
               ? "Manage gym profile information and your account security."
-              : "Manage your account password and security preferences."}
+              : "Manage your coach profile information and account security."}
           </p>
         </div>
 
@@ -133,9 +160,9 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Combined Single-Screen Layout: Gym Information + Account & Security */}
+      {/* Combined Single-Screen Layout */}
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-        {permissions.canViewGymSettings && settings && (
+        {permissions.canViewGymSettings && settings ? (
           <form
             onSubmit={handleSaveGymSettings}
             className="space-y-3 rounded-xl border border-[#242934] bg-[#111318] p-4 lg:col-span-7"
@@ -245,16 +272,89 @@ export default function SettingsPage() {
               </div>
             )}
           </form>
+        ) : (
+          /* Trainor Profile & Coaching Information */
+          <form
+            onSubmit={handleSaveProfile}
+            className="flex flex-col justify-between space-y-3 rounded-xl border border-[#242934] bg-[#111318] p-4 lg:col-span-7"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b border-[#242934] pb-2.5">
+                <div className="flex items-center gap-2">
+                  <UserCircle2 className="h-4 w-4 text-[#E32935]" />
+                  <div>
+                    <h2 className="text-xs font-semibold text-[#F5F6F8]">Coach Profile &amp; Info</h2>
+                    <p className="text-[10px] text-[#8A93A2]">
+                      Your coaching identity displayed to clients and admins.
+                    </p>
+                  </div>
+                </div>
+                <span className="rounded-md border border-[#2BCB83]/30 bg-[#2BCB83]/10 px-2 py-0.5 text-[10px] font-semibold text-[#2BCB83]">
+                  Active {currentUser.roleLabel}
+                </span>
+              </div>
+
+              {profileError && (
+                <div className="flex items-center gap-2 rounded-lg border border-[#F05252]/30 bg-[#F05252]/10 p-2 text-xs text-[#F05252]">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                  <span>{profileError}</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-[11px] text-[#A4AAB5]">Full Name</label>
+                  <input
+                    required
+                    value={profileName}
+                    onChange={(e) => setProfileName(e.target.value)}
+                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] text-[#A4AAB5]">Email Address</label>
+                  <input
+                    disabled
+                    value={currentUser.email}
+                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#8A93A2] opacity-80"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] text-[#A4AAB5]">Role</label>
+                  <input
+                    disabled
+                    value={currentUser.roleLabel}
+                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#8A93A2] opacity-80"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] text-[#A4AAB5]">Gym Branch</label>
+                  <input
+                    disabled
+                    value="IronHub Fitness · Cadiz City"
+                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#8A93A2] opacity-80"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end border-t border-[#242934] pt-2.5">
+              <button
+                type="submit"
+                disabled={profileSaving || profileName.trim() === currentUser.name}
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:cursor-not-allowed disabled:border disabled:border-[#242934] disabled:bg-[#20242D] disabled:text-[#8A93A2]"
+              >
+                <Save className="h-3.5 w-3.5" />
+                <span>{profileSaving ? "Saving..." : "Save Profile"}</span>
+              </button>
+            </div>
+          </form>
         )}
 
         {/* Account & Security */}
         <form
           onSubmit={handlePasswordChange}
-          className={
-            permissions.canViewGymSettings
-              ? "flex flex-col justify-between space-y-3 rounded-xl border border-[#242934] bg-[#111318] p-4 lg:col-span-5"
-              : "space-y-3 rounded-xl border border-[#242934] bg-[#111318] p-4 lg:col-span-6"
-          }
+          className="flex flex-col justify-between space-y-3 rounded-xl border border-[#242934] bg-[#111318] p-4 lg:col-span-5"
         >
           <div className="space-y-3">
             <div className="flex items-center gap-2 border-b border-[#242934] pb-2.5">
