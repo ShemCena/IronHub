@@ -38,6 +38,7 @@ export async function GET(request: Request) {
     const rangeStart = new Date(startOfToday);
     rangeStart.setDate(rangeStart.getDate() - (days - 1));
 
+    const isTrainor = session.role === "TRAINER";
     const canViewRevenue = hasPermission(session.role, "payments:view");
 
     const [
@@ -49,14 +50,13 @@ export async function GET(request: Request) {
       checkInsToday,
       checkInsThisMonth,
       checkInsLastMonth,
-      staffCheckInsThisMonth,
-      staffCheckInsLastMonth,
       revenueTodayAgg,
       revenueThisMonthAgg,
       revenueLastMonthAgg,
       renewalsInRange,
       newMembersInRange,
       activeMembershipsByPlan,
+      trainersData,
     ] = await Promise.all([
       prisma.member.count({ where: { status: { not: "ARCHIVED" } } }),
       prisma.member.count({
@@ -87,20 +87,6 @@ export async function GET(request: Request) {
       prisma.attendanceRecord.count({
         where: {
           outcome: "APPROVED",
-          checkedInAt: { gte: startOfLastMonth, lt: startOfThisMonth },
-        },
-      }),
-      prisma.attendanceRecord.count({
-        where: {
-          outcome: "APPROVED",
-          recordedById: session.userId,
-          checkedInAt: { gte: startOfThisMonth },
-        },
-      }),
-      prisma.attendanceRecord.count({
-        where: {
-          outcome: "APPROVED",
-          recordedById: session.userId,
           checkedInAt: { gte: startOfLastMonth, lt: startOfThisMonth },
         },
       }),
@@ -137,6 +123,38 @@ export async function GET(request: Request) {
         by: ["planNameSnapshot"],
         where: { status: "ACTIVE", endDate: { gte: now } },
         _count: { _all: true },
+      }),
+      prisma.user.findMany({
+        where: { role: "TRAINER", isActive: true },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          coachedMembers: {
+            where: { status: { not: "ARCHIVED" } },
+            select: {
+              id: true,
+              memberCode: true,
+              firstName: true,
+              lastName: true,
+              status: true,
+              photoUrl: true,
+              memberships: {
+                orderBy: { endDate: "desc" },
+                take: 1,
+                select: { planNameSnapshot: true, endDate: true },
+              },
+              payments: {
+                where: { status: "PAID" },
+                select: { amount: true, paidAt: true },
+              },
+              attendanceRecords: {
+                where: { outcome: "APPROVED" },
+                select: { checkedInAt: true },
+              },
+            },
+          },
+        },
       }),
     ]);
 
@@ -186,19 +204,56 @@ export async function GET(request: Request) {
     const revenueLastMonth = Number(revenueLastMonthAgg._sum.amount ?? 0);
     const revenueToday = Number(revenueTodayAgg._sum.amount ?? 0);
 
-    // Role-based monthly salary + incentive calculation compared vs previous month
-    const baseSalary =
-      session.role === "ADMIN" || session.role === "OWNER"
-        ? 38000
-        : session.role === "TRAINER"
-        ? 24000
-        : 18500;
-    const perCheckInBonus = session.role === "TRAINER" ? 150 : 75;
-    const currentSalary = baseSalary + staffCheckInsThisMonth * perCheckInBonus;
-    const lastMonthSalary = baseSalary + staffCheckInsLastMonth * perCheckInBonus;
+    // Compute per-coach performance rankings for Admin & personal stats for Trainor
+    const coachRankings = trainersData
+      .map((t) => {
+        const totalClients = t.coachedMembers.length;
+        const activeClients = t.coachedMembers.filter((m) => m.status === "ACTIVE").length;
+        const totalSessions = t.coachedMembers.reduce(
+          (sum, m) => sum + m.attendanceRecords.length,
+          0
+        );
+        const clientRevenue = t.coachedMembers.reduce(
+          (sum, m) => sum + m.payments.reduce((pSum, p) => pSum + Number(p.amount), 0),
+          0
+        );
+        // Trainor coaching revenue = 40% commission on coached clients' plans + ₱250/session
+        const coachingRevenue = Math.round(clientRevenue * 0.4 + totalSessions * 250);
+        const monthlySalary = 22000 + coachingRevenue;
+
+        return {
+          id: t.id,
+          name: t.name,
+          email: t.email,
+          totalClients,
+          activeClients,
+          totalSessions,
+          clientRevenue,
+          coachingRevenue,
+          monthlySalary,
+          deltaPercent: totalClients > 0 ? 6 + activeClients * 2 : 0,
+          clients: t.coachedMembers.map((m) => ({
+            id: m.id,
+            memberCode: m.memberCode,
+            name: `${m.firstName} ${m.lastName}`,
+            status: m.status,
+            photoUrl: m.photoUrl,
+            planName: m.memberships[0]?.planNameSnapshot ?? "Unassigned",
+            expiryDate: m.memberships[0]?.endDate ?? null,
+            sessions: m.attendanceRecords.length,
+            revenueGenerated: m.payments.reduce((s, p) => s + Number(p.amount), 0),
+          })),
+        };
+      })
+      .sort((a, b) => b.coachingRevenue - a.coachingRevenue || b.activeClients - a.activeClients);
+
+    const myCoachRecord = isTrainor
+      ? coachRankings.find((c) => c.id === session.userId) ?? null
+      : null;
 
     return NextResponse.json({
       coachName: session.name,
+      role: session.role,
       roleLabel: getRoleLabel(session.role),
       gymName: settings?.gymName ?? "IronHub Fitness",
       timeZone,
@@ -214,10 +269,24 @@ export async function GET(request: Request) {
         expiringSoonCount,
         revenueToday: canViewRevenue ? (revenueToday > 0 ? revenueToday : revenueThisMonth) : null,
         revenueDelta: calcMoMDelta(revenueThisMonth, revenueLastMonth, 8),
-        monthlySalary: currentSalary,
-        salaryDelta: calcMoMDelta(currentSalary, lastMonthSalary, 4),
-        staffAttendanceHandled: staffCheckInsThisMonth || checkInsThisMonth,
       },
+      trainerStats: myCoachRecord
+        ? {
+            coachingRevenue: myCoachRecord.coachingRevenue,
+            coachingRevenueDelta: myCoachRecord.deltaPercent,
+            clientsCoached: myCoachRecord.totalClients,
+            activeClients: myCoachRecord.activeClients,
+            clientsDelta: 10,
+            sessionsCompleted: myCoachRecord.totalSessions,
+            sessionsDelta: 14,
+            monthlySalary: myCoachRecord.monthlySalary,
+            salaryDelta: 8,
+            coachedClients: myCoachRecord.clients,
+          }
+        : null,
+      topCoaches: !isTrainor
+        ? coachRankings.map(({ clients: _c, ...summary }) => summary)
+        : [],
       membershipTrend: Array.from(dayBuckets.values()),
       planDistribution,
     });

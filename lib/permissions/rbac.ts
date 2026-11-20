@@ -42,26 +42,16 @@ const ADMIN_PERMISSIONS = new Set<Permission>([
 ]);
 
 /**
- * 4-Role System:
- * 1. ADMIN -> "Admin"
- * 2. FRONT_DESK -> "Staff"
- * 3. TRAINER -> "Trainor"
- * 4. Member -> "Client" (Member Portal /portal)
- * (Legacy OWNER enum maps identically to ADMIN)
+ * 3-Role System:
+ * 1. ADMIN   -> "Admin" (handles all gym operations, front-desk, billing, coach tracking, settings)
+ * 2. TRAINER -> "Trainor" (views personal coaching revenue, coached clients, attendance, salary)
+ * 3. Member  -> "Client" (Client Portal /portal — attendance, plan expiry, photo upload, QR pass)
+ * (Legacy OWNER / FRONT_DESK enum values map to ADMIN for backward compatibility)
  */
 const ROLE_PERMISSIONS: Record<StaffRole, ReadonlySet<Permission>> = {
   OWNER: ADMIN_PERMISSIONS,
   ADMIN: ADMIN_PERMISSIONS,
-  FRONT_DESK: new Set<Permission>([
-    "dashboard:view",
-    "members:view",
-    "members:write",
-    "checkin:perform",
-    "plans:view",
-    "payments:view",
-    "payments:record",
-    "account:self",
-  ]),
+  FRONT_DESK: ADMIN_PERMISSIONS,
   TRAINER: new Set<Permission>([
     "dashboard:view",
     "members:view",
@@ -80,22 +70,17 @@ export function assertPermission(role: StaffRole, permission: Permission): void 
   }
 }
 
-/** Admins can add and manage Admin, Staff (FRONT_DESK), and Trainor (TRAINER). */
+/** Admins can add and manage Admin and Trainor accounts (3-role model). */
 export function getAssignableRoles(actor: StaffRole): StaffRole[] {
   if (actor === "ADMIN" || actor === "OWNER") {
-    return ["ADMIN", "FRONT_DESK", "TRAINER"];
+    return ["ADMIN", "TRAINER"];
   }
   return [];
 }
 
 export function canManageStaffRole(actor: StaffRole, target: StaffRole): boolean {
   if (actor === "ADMIN" || actor === "OWNER") {
-    return (
-      target === "ADMIN" ||
-      target === "FRONT_DESK" ||
-      target === "TRAINER" ||
-      target === "OWNER"
-    );
+    return target === "ADMIN" || target === "TRAINER" || target === "OWNER";
   }
   return false;
 }
@@ -104,9 +89,8 @@ export function getRoleLabel(role: StaffRole): string {
   switch (role) {
     case "OWNER":
     case "ADMIN":
-      return "Admin";
     case "FRONT_DESK":
-      return "Staff";
+      return "Admin";
     case "TRAINER":
       return "Trainor";
   }

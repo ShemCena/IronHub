@@ -32,8 +32,15 @@ interface MemberRow {
   photoUrl: string | null;
   currentPlan: string | null;
   expiryDate: string | null;
+  trainerId: string | null;
+  trainerName: string | null;
   hasActiveQr: boolean;
   qrLast4: string | null;
+}
+
+interface TrainerOption {
+  id: string;
+  name: string;
 }
 
 interface PlanOption {
@@ -61,6 +68,9 @@ export default function MembersPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<MemberRow | null>(null);
   const [plans, setPlans] = useState<PlanOption[]>([]);
+  const [trainers, setTrainers] = useState<TrainerOption[]>([]);
+  const [role, setRole] = useState<string>("ADMIN");
+  const [scope, setScope] = useState<"all" | "mine">("all");
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -70,6 +80,7 @@ export default function MembersPage() {
     email: "",
     phone: "",
     address: "",
+    trainerId: "",
     planId: "",
     paymentMethod: "CASH" as "CASH" | "CARD" | "EWALLET" | "BANK_TRANSFER" | "OTHER",
     paymentReference: "",
@@ -84,12 +95,15 @@ export default function MembersPage() {
         pageSize: String(PAGE_SIZE),
         status: statusFilter,
         planId: planFilter,
+        scope,
       });
       if (search.trim()) params.set("q", search.trim());
       const res = await fetch(`/api/members?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setMembers(data.members ?? []);
+        setTrainers(data.trainers ?? []);
+        if (data.role) setRole(data.role);
         setSummary(data.summary ?? { total: 0, active: 0, expired: 0, suspended: 0 });
         setTotalPages(data.pagination?.totalPages ?? 1);
         setTotalFiltered(data.pagination?.total ?? 0);
@@ -97,7 +111,7 @@ export default function MembersPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, planFilter, search]);
+  }, [page, statusFilter, planFilter, search, scope]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -126,6 +140,7 @@ export default function MembersPage() {
       email: "",
       phone: "",
       address: "",
+      trainerId: trainers[0]?.id ?? "",
       planId: "",
       paymentMethod: "CASH",
       paymentReference: "",
@@ -143,6 +158,7 @@ export default function MembersPage() {
       email: m.email ?? "",
       phone: m.phone ?? "",
       address: "",
+      trainerId: m.trainerId ?? "",
       planId: "",
       paymentMethod: "CASH",
       paymentReference: "",
@@ -188,26 +204,60 @@ export default function MembersPage() {
   return (
     <div className="space-y-3.5 animate-panel-enter">
       {/* Header */}
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[#F5F6F8]">Members</h1>
-          <p className="mt-0.5 text-xs text-[#A4AAB5]">
-            Manage gym member profiles. Clients sign in with their Member ID to generate their own QR pass.
+          <h1 className="text-lg font-semibold tracking-tight text-[#F5F6F8]">Members</h1>
+          <p className="text-[11px] text-[#A4AAB5]">
+            Manage gym clients, coach assignments, and memberships.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={openAddModal}
-          className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[#F13A46]"
-        >
-          <UserPlus className="h-3.5 w-3.5" />
-          <span>Add Member</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {role === "TRAINER" && (
+            <div className="flex items-center gap-1 rounded-lg border border-[#242934] bg-[#111318] p-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setScope("mine");
+                  setPage(1);
+                }}
+                className={cn(
+                  "rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors",
+                  scope === "mine" ? "bg-[#E32935] text-white" : "text-[#A4AAB5] hover:text-white"
+                )}
+              >
+                My Coached
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setScope("all");
+                  setPage(1);
+                }}
+                className={cn(
+                  "rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors",
+                  scope === "all" ? "bg-[#E32935] text-white" : "text-[#A4AAB5] hover:text-white"
+                )}
+              >
+                All Clients
+              </button>
+            </div>
+          )}
+          {role !== "TRAINER" && (
+            <button
+              type="button"
+              onClick={openAddModal}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E32935] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#F13A46]"
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              <span>Add Member</span>
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Compressed KPI Strip with MoM Comparisons */}
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      {/* 4 Compact KPI Cards in 1 Horizontal Row (md:grid-cols-4) */}
+      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
         <KpiCard
           label="Total Members"
           value={summary.total}
@@ -301,12 +351,13 @@ export default function MembersPage() {
           <table className="w-full text-left text-xs">
             <thead className="border-b border-[#242934] bg-[#171A21] text-[10px] font-medium uppercase tracking-wider text-[#8A93A2]">
               <tr>
-                <th className="px-3.5 py-2">Member</th>
-                <th className="px-3.5 py-2">ID</th>
-                <th className="px-3.5 py-2">Membership Plan</th>
-                <th className="px-3.5 py-2">Status</th>
-                <th className="px-3.5 py-2">Expiry Date</th>
-                <th className="px-3.5 py-2 text-right">Actions</th>
+                <th className="px-3 py-2">Member</th>
+                <th className="px-3 py-2">ID</th>
+                <th className="px-3 py-2">Plan</th>
+                <th className="px-3 py-2">Trainor</th>
+                <th className="px-3 py-2">Status</th>
+                <th className="px-3 py-2">Expiry</th>
+                <th className="px-3 py-2 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#242934]">
@@ -357,7 +408,7 @@ export default function MembersPage() {
                       <td className="px-3.5 py-2 font-mono text-[11px] text-[#A4AAB5]">
                         {m.memberCode}
                       </td>
-                      <td className="px-3.5 py-2">
+                      <td className="px-3 py-2">
                         {m.currentPlan ? (
                           <span className="inline-flex items-center gap-1.5 text-[#F5F6F8]">
                             <span
@@ -371,38 +422,44 @@ export default function MembersPage() {
                           <span className="text-[#8A93A2]">Unassigned</span>
                         )}
                       </td>
-                      <td className="px-3.5 py-2">
+                      <td className="px-3 py-2 text-[11px] text-[#A4AAB5]">
+                        {m.trainerName ?? <span className="text-[#8A93A2]">—</span>}
+                      </td>
+                      <td className="px-3 py-2">
                         <StatusBadge status={m.status} />
                       </td>
-                      <td className="px-3.5 py-2 text-[11px] text-[#A4AAB5] tabular-nums">
+                      <td className="px-3 py-2 text-[11px] text-[#A4AAB5] tabular-nums">
                         {m.expiryDate ? formatDate(m.expiryDate) : "—"}
                       </td>
-                      <td className="px-3.5 py-2 text-right">
-                        <div className="inline-flex items-center gap-1.5">
+                      <td className="px-3 py-2 text-right">
+                        <div className="inline-flex items-center gap-1">
                           <Link
                             href={`/members/${m.id}`}
                             className="inline-flex h-7 items-center rounded-md border border-[#242934] bg-[#171A21] px-2 text-[11px] text-[#F5F6F8] hover:bg-[#20242D]"
                           >
                             View
                           </Link>
-                          <button
-                            type="button"
-                            onClick={() => openEditModal(m)}
-                            className="inline-flex h-7 items-center gap-1 rounded-md border border-[#242934] bg-[#171A21] px-2 text-[11px] text-[#A4AAB5] hover:bg-[#20242D] hover:text-white"
-                            title="Edit member"
-                          >
-                            <Pencil className="h-3 w-3" />
-                            <span>Edit</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleArchiveMember(m)}
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#242934] bg-[#171A21] text-[#8A93A2] hover:border-[#F05252]/40 hover:text-[#F05252]"
-                            title="Archive member"
-                            aria-label="Archive member"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
+                          {role !== "TRAINER" && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => openEditModal(m)}
+                                className="inline-flex h-7 items-center gap-1 rounded-md border border-[#242934] bg-[#171A21] px-2 text-[11px] text-[#A4AAB5] hover:bg-[#20242D] hover:text-white"
+                                title="Edit member"
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleArchiveMember(m)}
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#242934] bg-[#171A21] text-[#8A93A2] hover:border-[#F05252]/40 hover:text-[#F05252]"
+                                title="Archive member"
+                                aria-label="Archive member"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -490,6 +547,22 @@ export default function MembersPage() {
                     className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs text-[#A4AAB5]">Assigned Trainor / Coach</label>
+                <select
+                  value={form.trainerId}
+                  onChange={(e) => setForm({ ...form, trainerId: e.target.value })}
+                  className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
+                >
+                  <option value="">No assigned trainor</option>
+                  {trainers.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {editTarget ? (

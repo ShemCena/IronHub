@@ -86,9 +86,8 @@ function formatRoleLabel(role: string): string {
   switch (role) {
     case "OWNER":
     case "ADMIN":
-      return "Admin";
     case "FRONT_DESK":
-      return "Staff";
+      return "Admin";
     case "TRAINER":
       return "Trainor";
     default:
@@ -111,14 +110,14 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [savedNotice, setSavedNotice] = useState<string | null>(null);
 
-  // Add Staff Modal state
+  // Add Team Modal state (3-role model: Admin & Trainor)
   const [staffModal, setStaffModal] = useState(false);
   const [staffError, setStaffError] = useState<string | null>(null);
   const [staffForm, setStaffForm] = useState({
     name: "",
     email: "",
     password: "",
-    role: "FRONT_DESK" as "ADMIN" | "FRONT_DESK" | "TRAINER",
+    role: "TRAINER" as "ADMIN" | "TRAINER",
   });
 
   // Password Change state
@@ -185,7 +184,7 @@ export default function SettingsPage() {
         return;
       }
       setStaffModal(false);
-      setStaffForm({ name: "", email: "", password: "", role: "FRONT_DESK" });
+      setStaffForm({ name: "", email: "", password: "", role: "TRAINER" });
       flashSaved(`Added ${data.staff.name}`);
       loadSettings();
     } finally {
@@ -248,7 +247,7 @@ export default function SettingsPage() {
           ["policy", "Check-In & Hours", Clock],
         ] as const)
       : []),
-    ...(permissions.canManageStaff ? ([["staff", "Staff & Roles", Users]] as const) : []),
+    ...(permissions.canManageStaff ? ([["staff", "Admins & Trainors", Users]] as const) : []),
     ["account", "Account & Security", KeyRound] as const,
     ...(permissions.canViewAudit ? ([["audit", "Audit Log", ShieldAlert]] as const) : []),
   ];
@@ -641,9 +640,9 @@ export default function SettingsPage() {
 
           <div className="flex items-center justify-between rounded-xl border border-[#242934] bg-[#111318] p-3">
             <div>
-              <h2 className="text-sm font-semibold text-[#F5F6F8]">Staff Accounts &amp; Roles</h2>
+              <h2 className="text-sm font-semibold text-[#F5F6F8]">Admins &amp; Trainors</h2>
               <p className="text-[11px] text-[#8A93A2]">
-                Add and manage Admins, Staff, and Trainors.
+                Add and manage Admin and Trainor accounts.
               </p>
             </div>
             {permissions.assignableRoles.length > 0 && (
@@ -655,14 +654,14 @@ export default function SettingsPage() {
                     name: "",
                     email: "",
                     password: "",
-                    role: permissions.assignableRoles[0] ?? "FRONT_DESK",
+                    role: (permissions.assignableRoles[0] as "ADMIN" | "TRAINER") ?? "TRAINER",
                   });
                   setStaffModal(true);
                 }}
                 className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E32935] px-3 text-xs font-semibold text-white hover:bg-[#F13A46]"
               >
                 <UserPlus className="h-3.5 w-3.5" />
-                <span>Add Staff</span>
+                <span>Add Account</span>
               </button>
             )}
           </div>
@@ -794,7 +793,7 @@ export default function SettingsPage() {
 
           <div className="space-y-2.5 rounded-xl border border-[#242934] bg-[#111318] p-4 lg:col-span-6">
             <div>
-              <h2 className="text-sm font-semibold text-[#F5F6F8]">Role Access Policy (4 Roles)</h2>
+              <h2 className="text-sm font-semibold text-[#F5F6F8]">Role Access Policy (3 Roles)</h2>
               <p className="text-[11px] text-[#8A93A2]">
                 Signed in as <span className="text-[#F5F6F8]">{currentUser.name}</span> (
                 {currentUser.roleLabel})
@@ -803,17 +802,13 @@ export default function SettingsPage() {
 
             <ul className="space-y-1.5 rounded-xl border border-[#242934] bg-[#171A21] p-3 text-xs text-[#A4AAB5]">
               <li>
-                • <strong className="text-[#F5F6F8]">Admin:</strong> Full access to Dashboard,
-                Members, Check-In, Plans &amp; Payments, Reports, and adding Admins, Staff, and
-                Trainors.
+                • <strong className="text-[#F5F6F8]">Admin:</strong> Full gym operations —
+                Dashboard, Members, Check-In scanning, Plans &amp; Payments, Reports, Top Performing
+                Coaches tracking, and adding Admins &amp; Trainors.
               </li>
               <li>
-                • <strong className="text-[#F5F6F8]">Staff:</strong> Front-desk check-in scanning,
-                member enrollment, and over-the-counter payment collection.
-              </li>
-              <li>
-                • <strong className="text-[#F5F6F8]">Trainor:</strong> Floor attendance monitoring,
-                member lookup, and personal salary &amp; check-in metrics.
+                • <strong className="text-[#F5F6F8]">Trainor:</strong> Personal coaching dashboard —
+                coaching revenue, clients coached, session check-ins, and monthly salary.
               </li>
               <li>
                 • <strong className="text-[#F5F6F8]">Client:</strong> Logs into{" "}

@@ -571,8 +571,8 @@ export default function MemberPortalDashboardPage() {
                 </div>
               </section>
 
-              {/* 4 Client KPIs with vs last mo comparison */}
-              <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-4">
+              {/* 4 Client KPIs in 1 Horizontal Row (md:grid-cols-4) */}
+              <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
                 <KpiCard
                   label="Current Plan"
                   value={

@@ -75,6 +75,7 @@ export async function PATCH(
           emergencyContactPhone: data.emergencyContactPhone || null,
           address: data.address || null,
           notes: data.notes || null,
+          trainerId: data.trainerId === "" ? null : data.trainerId,
           status: data.status,
           archivedAt: data.status === "ARCHIVED" ? new Date() : undefined,
         },

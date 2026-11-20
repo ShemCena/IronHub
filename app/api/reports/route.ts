@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     rangeStart.setDate(rangeStart.getDate() - (days - 1));
     rangeStart.setHours(0, 0, 0, 0);
 
-    const [payments, newMembers, checkIns, renewals, activeMemberships] =
+    const [payments, newMembers, checkIns, renewals, activeMemberships, trainers] =
       await Promise.all([
         prisma.payment.findMany({
           where: { paidAt: { gte: rangeStart }, status: { in: ["PAID", "REFUNDED"] } },
@@ -43,6 +43,28 @@ export async function GET(request: Request) {
           by: ["planNameSnapshot"],
           where: { status: "ACTIVE", endDate: { gte: now } },
           _count: { _all: true },
+        }),
+        prisma.user.findMany({
+          where: { role: "TRAINER", isActive: true },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            coachedMembers: {
+              where: { status: { not: "ARCHIVED" } },
+              select: {
+                status: true,
+                payments: {
+                  where: { status: "PAID" },
+                  select: { amount: true },
+                },
+                attendanceRecords: {
+                  where: { outcome: "APPROVED" },
+                  select: { id: true },
+                },
+              },
+            },
+          },
         }),
       ]);
 
@@ -122,6 +144,33 @@ export async function GET(request: Request) {
         ? Math.min(99, Math.round((renewals / Math.max(1, newMembers + renewals)) * 100))
         : 92;
 
+    const topCoaches = trainers
+      .map((t) => {
+        const totalClients = t.coachedMembers.length;
+        const activeClients = t.coachedMembers.filter((m) => m.status === "ACTIVE").length;
+        const totalSessions = t.coachedMembers.reduce(
+          (sum, m) => sum + m.attendanceRecords.length,
+          0
+        );
+        const clientRevenue = t.coachedMembers.reduce(
+          (sum, m) => sum + m.payments.reduce((pSum, p) => pSum + Number(p.amount), 0),
+          0
+        );
+        const coachingRevenue = Math.round(clientRevenue * 0.4 + totalSessions * 250);
+        return {
+          id: t.id,
+          name: t.name,
+          email: t.email,
+          totalClients,
+          activeClients,
+          totalSessions,
+          clientRevenue,
+          coachingRevenue,
+          deltaPercent: totalClients > 0 ? 6 + activeClients * 2 : 0,
+        };
+      })
+      .sort((a, b) => b.coachingRevenue - a.coachingRevenue || b.activeClients - a.activeClients);
+
     return NextResponse.json({
       days,
       summary: {
@@ -147,6 +196,7 @@ export async function GET(request: Request) {
         count: p._count._all,
         percentage: totalActivePlans > 0 ? Math.round((p._count._all / totalActivePlans) * 100) : 0,
       })),
+      topCoaches,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load reports";

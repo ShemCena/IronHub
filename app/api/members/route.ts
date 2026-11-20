@@ -8,17 +8,22 @@ import { writeAuditLog } from "@/lib/audit/log";
 
 export async function GET(request: Request) {
   try {
-    await requireStaffSession("members:view");
+    const session = await requireStaffSession("members:view");
     const { searchParams } = new URL(request.url);
     const q = (searchParams.get("q") ?? "").trim();
     const status = searchParams.get("status") ?? "ALL";
     const planId = searchParams.get("planId") ?? "ALL";
+    const scope = searchParams.get("scope") ?? "all";
     const page = Math.max(1, Number(searchParams.get("page") ?? "1"));
     const pageSize = Math.min(50, Math.max(5, Number(searchParams.get("pageSize") ?? "12")));
 
     const where: Prisma.MemberWhereInput = {
       status: status === "ALL" ? { not: "ARCHIVED" } : (status as MemberStatus),
     };
+
+    if (session.role === "TRAINER" && scope === "mine") {
+      where.trainerId = session.userId;
+    }
 
     if (q) {
       where.OR = [
@@ -36,7 +41,7 @@ export async function GET(request: Request) {
       };
     }
 
-    const [members, total, totalCount, activeCount, expiredCount, suspendedCount] =
+    const [members, total, totalCount, activeCount, expiredCount, suspendedCount, trainers] =
       await Promise.all([
         prisma.member.findMany({
           where,
@@ -44,6 +49,7 @@ export async function GET(request: Request) {
           take: pageSize,
           orderBy: { createdAt: "desc" },
           include: {
+            trainer: { select: { id: true, name: true } },
             memberships: {
               orderBy: { endDate: "desc" },
               take: 1,
@@ -60,9 +66,16 @@ export async function GET(request: Request) {
         prisma.member.count({ where: { status: "ACTIVE" } }),
         prisma.member.count({ where: { status: "EXPIRED" } }),
         prisma.member.count({ where: { status: "SUSPENDED" } }),
+        prisma.user.findMany({
+          where: { role: "TRAINER", isActive: true },
+          select: { id: true, name: true },
+          orderBy: { name: "asc" },
+        }),
       ]);
 
     return NextResponse.json({
+      role: session.role,
+      trainers,
       members: members.map((m) => ({
         id: m.id,
         memberCode: m.memberCode,
@@ -73,6 +86,8 @@ export async function GET(request: Request) {
         photoUrl: m.photoUrl,
         status: m.status,
         joinedAt: m.joinedAt,
+        trainerId: m.trainerId,
+        trainerName: m.trainer?.name ?? null,
         currentPlan: m.memberships[0]?.planNameSnapshot ?? null,
         expiryDate: m.memberships[0]?.endDate ?? null,
         hasActiveQr: m.qrCredentials.length > 0,
@@ -148,6 +163,7 @@ export async function POST(request: Request) {
           emergencyContactPhone: data.emergencyContactPhone || null,
           address: data.address || null,
           notes: data.notes || null,
+          trainerId: data.trainerId || null,
           status: assignedPlan ? "ACTIVE" : "EXPIRED",
         },
       });

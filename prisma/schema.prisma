@@ -79,6 +79,7 @@ model User {
   issuedCredentials QRCredential[]     @relation("IssuedByStaff")
   attendanceRecords AttendanceRecord[] @relation("RecordedByStaff")
   recordedPayments  Payment[]          @relation("PaymentRecordedBy")
+  coachedMembers    Member[]           @relation("TrainerClients")
   auditLogs         AuditLog[]         @relation("AuditActor")
   notifications     Notification[]
 
@@ -99,6 +100,7 @@ model Member {
   emergencyContactPhone String?
   address               String?
   status                MemberStatus @default(EXPIRED)
+  trainerId             String?
   notes                 String?
   passwordHash          String?
   portalActivatedAt     DateTime?    @db.Timestamptz(6)
@@ -108,12 +110,14 @@ model Member {
   createdAt             DateTime     @default(now()) @db.Timestamptz(6)
   updatedAt             DateTime     @updatedAt @db.Timestamptz(6)
 
+  trainer           User?              @relation("TrainerClients", fields: [trainerId], references: [id], onDelete: SetNull)
   memberships       Membership[]
   qrCredentials     QRCredential[]
   attendanceRecords AttendanceRecord[]
   payments          Payment[]
 
   @@index([status, createdAt])
+  @@index([trainerId])
   @@index([lastName, firstName])
   @@map("members")
 }

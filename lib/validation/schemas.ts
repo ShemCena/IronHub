@@ -19,6 +19,7 @@ export const memberCreateSchema = z.object({
   emergencyContactPhone: z.string().trim().max(30).optional().or(z.literal("")),
   address: z.string().trim().max(240).optional().or(z.literal("")),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
+  trainerId: z.string().trim().optional().or(z.literal("")),
   planId: z.string().trim().optional().or(z.literal("")),
   paymentMethod: z
     .enum(["CASH", "CARD", "EWALLET", "BANK_TRANSFER", "OTHER"])
@@ -71,14 +72,14 @@ export const manualCheckInSchema = z.object({
 });
 
 export const staffCreateSchema = z.object({
-  name: z.string().trim().min(2, "Staff name is required.").max(100),
+  name: z.string().trim().min(2, "Name is required.").max(100),
   email: z.string().trim().email("Enter a valid email address."),
   password: z.string().min(8, "Password must be at least 8 characters.").max(100),
-  role: z.enum(["ADMIN", "FRONT_DESK", "TRAINER"]),
+  role: z.enum(["ADMIN", "TRAINER"]),
 });
 
 export const staffUpdateSchema = z.object({
-  role: z.enum(["ADMIN", "FRONT_DESK", "TRAINER"]).optional(),
+  role: z.enum(["ADMIN", "TRAINER"]).optional(),
   isActive: z.boolean().optional(),
 });
 

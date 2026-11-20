@@ -91,24 +91,21 @@ describe("QR token security", () => {
   });
 });
 
-describe("RBAC permissions & 4-role hierarchy", () => {
-  it("maps roles strictly to Admin, Staff, and Trainor and allows Admin to manage all staff roles", () => {
+describe("RBAC permissions & 3-role hierarchy", () => {
+  it("maps roles strictly to Admin and Trainor and allows Admin full control", () => {
     expect(getRoleLabel("ADMIN")).toBe("Admin");
     expect(getRoleLabel("OWNER")).toBe("Admin");
-    expect(getRoleLabel("FRONT_DESK")).toBe("Staff");
     expect(getRoleLabel("TRAINER")).toBe("Trainor");
 
-    expect(hasPermission("OWNER", "settings:manage")).toBe(true);
     expect(hasPermission("ADMIN", "settings:manage")).toBe(true);
     expect(hasPermission("ADMIN", "staff:manage")).toBe(true);
-    expect(canManageStaffRole("OWNER", "ADMIN")).toBe(true);
-    expect(canManageStaffRole("ADMIN", "FRONT_DESK")).toBe(true);
-    expect(canManageStaffRole("ADMIN", "TRAINER")).toBe(true);
+    expect(hasPermission("ADMIN", "payments:record")).toBe(true);
+    expect(hasPermission("ADMIN", "reports:view")).toBe(true);
     expect(canManageStaffRole("ADMIN", "ADMIN")).toBe(true);
-    expect(canManageStaffRole("FRONT_DESK", "ADMIN")).toBe(false);
-    expect(canManageStaffRole("TRAINER", "FRONT_DESK")).toBe(false);
-    expect(hasPermission("FRONT_DESK", "payments:record")).toBe(true);
-    expect(hasPermission("FRONT_DESK", "payments:refund_void")).toBe(false);
+    expect(canManageStaffRole("ADMIN", "TRAINER")).toBe(true);
+    expect(canManageStaffRole("TRAINER", "ADMIN")).toBe(false);
+    expect(hasPermission("TRAINER", "dashboard:view")).toBe(true);
+    expect(hasPermission("TRAINER", "members:view")).toBe(true);
     expect(hasPermission("TRAINER", "reports:view")).toBe(false);
   });
 });

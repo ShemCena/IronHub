@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Download, Banknote, UserPlus, ScanLine, RefreshCw } from "lucide-react";
+import { Download, Banknote, UserPlus, ScanLine, RefreshCw, Trophy } from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -14,6 +14,19 @@ import {
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PlanDistributionDonut } from "@/components/charts/plan-distribution-donut";
 import { formatCurrency } from "@/lib/formatting/currency";
+import { cn } from "@/lib/utils";
+
+interface CoachRow {
+  id: string;
+  name: string;
+  email: string;
+  totalClients: number;
+  activeClients: number;
+  totalSessions: number;
+  clientRevenue: number;
+  coachingRevenue: number;
+  deltaPercent: number;
+}
 
 interface ReportPayload {
   days: number;
@@ -32,6 +45,7 @@ interface ReportPayload {
   };
   revenueSeries: { label: string; revenue: number }[];
   topPlans: { name: string; count: number; percentage: number }[];
+  topCoaches: CoachRow[];
 }
 
 export default function ReportsPage() {
@@ -50,12 +64,12 @@ export default function ReportsPage() {
   }, [days]);
 
   return (
-    <div className="space-y-3.5 animate-panel-enter">
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-3 animate-panel-enter">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[#F5F6F8]">Reports</h1>
-          <p className="mt-0.5 text-xs text-[#A4AAB5]">
-            Track performance and business insights compared to last month.
+          <h1 className="text-lg font-semibold tracking-tight text-[#F5F6F8]">Reports</h1>
+          <p className="text-[11px] text-[#A4AAB5]">
+            Track revenue, membership plans, and top performing coaches compared to last month.
           </p>
         </div>
 
@@ -80,8 +94,8 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {/* 4 Reference KPI Summary Cards with Month-over-Month Deltas */}
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      {/* 4 Compact KPI Cards in 1 Horizontal Row (md:grid-cols-4) */}
+      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
         <KpiCard
           label="Total Revenue"
           value={loading ? "—" : formatCurrency(data?.summary.netRevenue ?? 0)}
@@ -113,13 +127,13 @@ export default function ReportsPage() {
       </div>
 
       {/* Reference 2-Column Chart Row: Revenue Overview | Top Membership Plans */}
-      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-12">
-        <div className="rounded-xl border border-[#242934] bg-[#111318] p-4 lg:col-span-7">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
+        <div className="rounded-xl border border-[#242934] bg-[#111318] p-3.5 lg:col-span-7">
           <h2 className="text-xs font-semibold text-[#F5F6F8]">
             Revenue Overview (Last {days} Days)
           </h2>
-          <p className="text-[11px] text-[#8A93A2]">Posted over-the-counter payments (PHP)</p>
-          <div className="mt-3 h-52 w-full">
+          <p className="text-[10px] text-[#8A93A2]">Posted over-the-counter payments (PHP)</p>
+          <div className="mt-2.5 h-44 w-full">
             {loading ? (
               <div className="flex h-full items-center justify-center text-xs text-[#8A93A2]">
                 Loading revenue chart...
@@ -146,6 +160,7 @@ export default function ReportsPage() {
                     fontSize={10}
                     tickLine={false}
                     axisLine={false}
+                    width={40}
                     domain={[0, (max: number) => Math.max(500, Math.ceil((max * 1.18) / 100) * 100)]}
                     tickFormatter={(v: number) => (v >= 1000 ? `₱${(v / 1000).toFixed(1)}k` : `₱${v}`)}
                   />
@@ -164,7 +179,7 @@ export default function ReportsPage() {
                     name="Revenue (PHP)"
                     fill="url(#revBarGrad)"
                     radius={[5, 5, 0, 0]}
-                    maxBarSize={22}
+                    maxBarSize={20}
                     isAnimationActive={false}
                   />
                 </BarChart>
@@ -173,14 +188,89 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        <div className="flex flex-col justify-between rounded-xl border border-[#242934] bg-[#111318] p-4 lg:col-span-5">
+        <div className="flex flex-col justify-between rounded-xl border border-[#242934] bg-[#111318] p-3.5 lg:col-span-5">
           <div>
             <h2 className="text-xs font-semibold text-[#F5F6F8]">Top Membership Plans</h2>
-            <p className="text-[11px] text-[#8A93A2]">Active subscriptions by tier</p>
+            <p className="text-[10px] text-[#8A93A2]">Active subscriptions by tier</p>
           </div>
-          <div className="my-auto py-2">
+          <div className="my-auto py-1">
             <PlanDistributionDonut data={data?.topPlans ?? []} loading={loading} />
           </div>
+        </div>
+      </div>
+
+      {/* Top Performing Coaches Leaderboard */}
+      <div className="overflow-hidden rounded-xl border border-[#242934] bg-[#111318]">
+        <div className="flex items-center justify-between border-b border-[#242934] px-3.5 py-2.5">
+          <div className="flex items-center gap-2">
+            <Trophy className="h-3.5 w-3.5 text-[#F2B84B]" />
+            <h2 className="text-xs font-semibold text-[#F5F6F8]">Top Performing Coaches</h2>
+          </div>
+          <span className="text-[10px] text-[#8A93A2]">
+            Ranked by coaching revenue &amp; active coached clients
+          </span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="border-b border-[#242934] bg-[#171A21] text-[10px] font-medium uppercase tracking-wider text-[#8A93A2]">
+              <tr>
+                <th className="px-3.5 py-2">Rank</th>
+                <th className="px-3.5 py-2">Coach / Trainor</th>
+                <th className="px-3.5 py-2">Clients Coached</th>
+                <th className="px-3.5 py-2">Sessions</th>
+                <th className="px-3.5 py-2">Client Plan Rev</th>
+                <th className="px-3.5 py-2 text-right">Coaching Revenue</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#242934]">
+              {!data?.topCoaches?.length ? (
+                <tr>
+                  <td colSpan={6} className="px-3.5 py-6 text-center text-xs text-[#8A93A2]">
+                    No active trainors found.
+                  </td>
+                </tr>
+              ) : (
+                data.topCoaches.map((c, idx) => (
+                  <tr key={c.id} className="hover:bg-[#171A21]">
+                    <td className="px-3.5 py-2">
+                      <span
+                        className={cn(
+                          "inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold",
+                          idx === 0
+                            ? "bg-[#F2B84B]/20 text-[#F2B84B]"
+                            : idx === 1
+                            ? "bg-[#4B91F1]/20 text-[#4B91F1]"
+                            : "bg-[#8B5CF6]/20 text-[#A78BFA]"
+                        )}
+                      >
+                        #{idx + 1}
+                      </span>
+                    </td>
+                    <td className="px-3.5 py-2">
+                      <p className="font-medium text-[#F5F6F8]">{c.name}</p>
+                      <p className="text-[10px] text-[#8A93A2]">{c.email}</p>
+                    </td>
+                    <td className="px-3.5 py-2 text-[#A4AAB5] tabular-nums">
+                      <span className="font-semibold text-[#F5F6F8]">{c.activeClients}</span> active /{" "}
+                      {c.totalClients} total
+                    </td>
+                    <td className="px-3.5 py-2 text-[#F5F6F8] tabular-nums">{c.totalSessions}</td>
+                    <td className="px-3.5 py-2 text-[#A4AAB5] tabular-nums">
+                      {formatCurrency(c.clientRevenue)}
+                    </td>
+                    <td className="px-3.5 py-2 text-right">
+                      <p className="font-bold text-[#F5F6F8] tabular-nums">
+                        {formatCurrency(c.coachingRevenue)}
+                      </p>
+                      <p className="text-[10px] font-semibold text-[#2BCB83] tabular-nums">
+                        ↑ +{c.deltaPercent}% vs last mo
+                      </p>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
