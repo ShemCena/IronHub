@@ -1,0 +1,274 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum StaffRole {
+  OWNER
+  ADMIN
+  FRONT_DESK
+  TRAINER
+}
+
+enum MemberStatus {
+  ACTIVE
+  EXPIRED
+  SUSPENDED
+  ARCHIVED
+}
+
+enum PlanDurationUnit {
+  DAYS
+  WEEKS
+  MONTHS
+}
+
+enum MembershipStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  EWALLET
+  BANK_TRANSFER
+  OTHER
+}
+
+enum PaymentStatus {
+  PAID
+  PENDING
+  FAILED
+  REFUNDED
+  VOIDED
+}
+
+enum CheckInMethod {
+  QR
+  MANUAL
+}
+
+enum CheckInOutcome {
+  APPROVED
+  DENIED
+}
+
+enum NotificationType {
+  EXPIRY_REMINDER
+  PAYMENT_ALERT
+  CHECK_IN_DENIED
+  SYSTEM
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  role         StaffRole @default(FRONT_DESK)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime? @db.Timestamptz(6)
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+
+  issuedCredentials QRCredential[]     @relation("IssuedByStaff")
+  attendanceRecords AttendanceRecord[] @relation("RecordedByStaff")
+  recordedPayments  Payment[]          @relation("PaymentRecordedBy")
+  auditLogs         AuditLog[]         @relation("AuditActor")
+  notifications     Notification[]
+
+  @@index([role, isActive])
+  @@map("users")
+}
+
+model Member {
+  id                    String       @id @default(cuid())
+  memberCode            String       @unique
+  firstName             String
+  lastName              String
+  email                 String?      @unique
+  phone                 String?
+  photoUrl              String?
+  dateOfBirth           DateTime?    @db.Date
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  address               String?
+  status                MemberStatus @default(EXPIRED)
+  notes                 String?
+  joinedAt              DateTime     @default(now()) @db.Timestamptz(6)
+  archivedAt            DateTime?    @db.Timestamptz(6)
+  createdAt             DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime     @updatedAt @db.Timestamptz(6)
+
+  memberships       Membership[]
+  qrCredentials     QRCredential[]
+  attendanceRecords AttendanceRecord[]
+  payments          Payment[]
+
+  @@index([status, createdAt])
+  @@index([lastName, firstName])
+  @@map("members")
+}
+
+model MembershipPlan {
+  id            String           @id @default(cuid())
+  name          String           @unique
+  description   String?
+  price         Decimal          @db.Decimal(12, 2)
+  enrollmentFee Decimal          @default(0) @db.Decimal(12, 2)
+  durationValue Int
+  durationUnit  PlanDurationUnit @default(MONTHS)
+  benefits      String[]
+  isPopular     Boolean          @default(false)
+  isActive      Boolean          @default(true)
+  createdAt     DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime         @updatedAt @db.Timestamptz(6)
+
+  memberships Membership[]
+
+  @@index([isActive])
+  @@map("membership_plans")
+}
+
+model Membership {
+  id               String           @id @default(cuid())
+  memberId         String
+  planId           String
+  planNameSnapshot String
+  priceSnapshot    Decimal          @db.Decimal(12, 2)
+  startDate        DateTime         @db.Timestamptz(6)
+  endDate          DateTime         @db.Timestamptz(6)
+  status           MembershipStatus @default(ACTIVE)
+  isRenewal        Boolean          @default(false)
+  createdAt        DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime         @updatedAt @db.Timestamptz(6)
+
+  member   Member         @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  plan     MembershipPlan @relation(fields: [planId], references: [id], onDelete: Restrict)
+  payments Payment[]
+
+  @@index([memberId, status, endDate])
+  @@index([planId])
+  @@index([createdAt])
+  @@map("memberships")
+}
+
+model QRCredential {
+  id            String    @id @default(cuid())
+  memberId      String
+  tokenHash     String    @unique
+  tokenLast4    String
+  isActive      Boolean   @default(true)
+  issuedById    String?
+  issuedAt      DateTime  @default(now()) @db.Timestamptz(6)
+  revokedAt     DateTime? @db.Timestamptz(6)
+  revokedReason String?
+
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  issuedBy User?  @relation("IssuedByStaff", fields: [issuedById], references: [id], onDelete: SetNull)
+
+  @@index([memberId, isActive])
+  @@map("qr_credentials")
+}
+
+model AttendanceRecord {
+  id           String         @id @default(cuid())
+  memberId     String
+  recordedById String?
+  method       CheckInMethod
+  outcome      CheckInOutcome
+  denialReason String?
+  deviceLabel  String?
+  checkedInAt  DateTime       @default(now()) @db.Timestamptz(6)
+
+  member     Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  recordedBy User?  @relation("RecordedByStaff", fields: [recordedById], references: [id], onDelete: SetNull)
+
+  @@index([memberId, checkedInAt])
+  @@index([outcome, checkedInAt])
+  @@map("attendance_records")
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  receiptNumber   String        @unique
+  memberId        String
+  membershipId    String?
+  recordedById    String?
+  amount          Decimal       @db.Decimal(12, 2)
+  method          PaymentMethod @default(CASH)
+  status          PaymentStatus @default(PAID)
+  referenceNumber String?
+  notes           String?
+  paidAt          DateTime      @default(now()) @db.Timestamptz(6)
+  refundedAt      DateTime?     @db.Timestamptz(6)
+  refundReason    String?
+  voidedAt        DateTime?     @db.Timestamptz(6)
+  voidReason      String?
+  createdAt       DateTime      @default(now()) @db.Timestamptz(6)
+
+  member     Member      @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  membership Membership? @relation(fields: [membershipId], references: [id], onDelete: SetNull)
+  recordedBy User?       @relation("PaymentRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+
+  @@index([memberId, paidAt])
+  @@index([status, paidAt])
+  @@index([method])
+  @@map("payments")
+}
+
+model GymSetting {
+  id                            String   @id @default("default")
+  gymName                       String   @default("IronHub Fitness")
+  email                         String   @default("support@ironhub.ph")
+  phone                         String   @default("+63 917 000 0000")
+  address                       String   @default("Cadiz City, Negros Occidental")
+  timezone                      String   @default("Asia/Manila")
+  currency                      String   @default("PHP")
+  businessHours                 Json
+  allowMultipleCheckInsPerDay   Boolean  @default(false)
+  duplicateCheckInWindowMinutes Int      @default(30)
+  expiryReminderDays            Int      @default(7)
+  updatedAt                     DateTime @updatedAt @db.Timestamptz(6)
+
+  @@map("gym_settings")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String?
+  type      NotificationType
+  title     String
+  message   String
+  href      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now()) @db.Timestamptz(6)
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+
+  actor User? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([actorId, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
