@@ -36,26 +36,26 @@ export function KpiCard({
   const isPositive = (deltaPercent ?? 0) >= 0;
 
   const content = (
-    <div className="flex items-center gap-2.5">
+    <div className="flex items-center gap-3.5">
       <div
         className={cn(
-          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
           TONE_CLASSES[tone]
         )}
       >
-        <Icon className="h-4 w-4" aria-hidden="true" />
+        <Icon className="h-5 w-5" aria-hidden="true" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[10px] font-medium text-[#A4AAB5]">{label}</p>
+        <p className="truncate text-xs font-medium text-[#A4AAB5]">{label}</p>
         <p
           className={cn(
-            "mt-0.5 truncate text-base font-bold leading-tight tracking-tight text-[#F5F6F8] tabular-nums",
+            "mt-0.5 truncate text-xl font-bold leading-tight tracking-tight text-[#F5F6F8] tabular-nums",
             valueClassName
           )}
         >
           {value}
         </p>
-        <div className="mt-0.5 flex items-center gap-1 truncate text-[10px]">
+        <div className="mt-1 flex items-center gap-1 truncate text-[11px]">
           {hasDelta && (
             <span
               className={cn(
@@ -78,7 +78,7 @@ export function KpiCard({
     return (
       <Link
         href={href}
-        className="card-interactive block rounded-xl border border-[#242934] bg-[#111318]/95 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]"
+        className="card-interactive block rounded-xl border border-[#242934] bg-[#111318]/95 px-4 py-3.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]"
       >
         {content}
       </Link>
@@ -86,7 +86,7 @@ export function KpiCard({
   }
 
   return (
-    <div className="card-interactive rounded-xl border border-[#242934] bg-[#111318]/95 px-3 py-2.5">
+    <div className="card-interactive rounded-xl border border-[#242934] bg-[#111318]/95 px-4 py-3.5">
       {content}
     </div>
   );

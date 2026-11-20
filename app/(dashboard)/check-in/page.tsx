@@ -203,30 +203,30 @@ export default function CheckInPage() {
   const pagedRecent = recent.slice((logPage - 1) * LOG_PAGE_SIZE, logPage * LOG_PAGE_SIZE);
 
   return (
-    <div className="space-y-3 animate-panel-enter">
+    <div className="space-y-4 animate-panel-enter">
       <div>
-        <h1 className="text-lg font-semibold tracking-tight text-[#F5F6F8]">
+        <h1 className="text-xl font-semibold tracking-tight text-[#F5F6F8]">
           Check-In
         </h1>
-        <p className="text-[11px] text-[#A4AAB5]">
+        <p className="text-xs text-[#A4AAB5]">
           Scan a client&apos;s self-generated QR pass or record a manual front-desk check-in.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
         {/* Scanner Panel */}
-        <div className="rounded-xl border border-[#242934] bg-[#111318] p-3.5 lg:col-span-5">
-          <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="rounded-xl border border-[#242934] bg-[#111318] p-4 md:p-5 lg:col-span-5">
+          <div className="mb-3.5 flex items-center justify-between gap-2">
             <div>
               <h2 className="text-sm font-semibold text-[#F5F6F8]">QR Scanner</h2>
-              <p className="text-[11px] text-[#8A93A2]">Camera or USB barcode wedge</p>
+              <p className="text-xs text-[#8A93A2]">Camera or USB barcode wedge</p>
             </div>
             {!scanning ? (
               <button
                 type="button"
                 disabled={scanState === "requesting"}
                 onClick={handleStartCamera}
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E32935] px-3 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:opacity-60"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:opacity-60"
               >
                 <Camera className="h-3.5 w-3.5" />
                 <span>{scanState === "requesting" ? "Starting..." : "Start Camera"}</span>
@@ -235,7 +235,7 @@ export default function CheckInPage() {
               <button
                 type="button"
                 onClick={handleStopCamera}
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#292E38] bg-[#171A21] px-3.5 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
               >
                 <CameraOff className="h-3.5 w-3.5" />
                 <span>Stop Camera</span>
@@ -244,12 +244,12 @@ export default function CheckInPage() {
           </div>
 
           {devices.length > 1 && (
-            <div className="mb-2.5">
+            <div className="mb-3">
               <select
                 value={selectedDeviceId}
                 onChange={(e) => setSelectedDeviceId(e.target.value)}
                 aria-label="Select camera device"
-                className="h-8 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
+                className="h-9 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
               >
                 {devices.map((d) => (
                   <option key={d.deviceId} value={d.deviceId}>
@@ -277,13 +277,13 @@ export default function CheckInPage() {
             )}
 
             {scanState === "idle" && (
-              <div className="flex flex-col items-center gap-2.5 px-6 text-center">
-                <div className="flex h-13 w-13 items-center justify-center rounded-2xl bg-[#E32935]/12 text-[#E32935] ring-1 ring-[#E32935]/30 shadow-[0_0_24px_rgba(227,41,53,0.2)]">
+              <div className="flex flex-col items-center gap-3 px-6 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E32935]/12 text-[#E32935] ring-1 ring-[#E32935]/30 shadow-[0_0_24px_rgba(227,41,53,0.2)]">
                   <QrCode className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-[#F5F6F8]">Scan Member QR Code</p>
-                  <p className="mt-0.5 text-[11px] text-[#8A93A2]">
+                  <p className="text-sm font-semibold text-[#F5F6F8]">Scan Member QR Code</p>
+                  <p className="mt-0.5 text-xs text-[#8A93A2]">
                     Click Start Camera or paste a token below
                   </p>
                 </div>
@@ -323,7 +323,7 @@ export default function CheckInPage() {
           </div>
 
           {cameraError && (
-            <p className="mt-2.5 rounded-lg border border-[#F2B84B]/30 bg-[#F2B84B]/10 p-2 text-[11px] text-[#F2B84B]">
+            <p className="mt-3 rounded-lg border border-[#F2B84B]/30 bg-[#F2B84B]/10 p-2.5 text-xs text-[#F2B84B]">
               {cameraError}
             </p>
           )}
@@ -335,18 +335,18 @@ export default function CheckInPage() {
               submitQrToken(tokenInput);
               setTokenInput("");
             }}
-            className="mt-3 flex gap-2"
+            className="mt-3.5 flex gap-2"
           >
             <input
               value={tokenInput}
               onChange={(e) => setTokenInput(e.target.value)}
               placeholder="Or scan / paste QR token (IH1:...)"
-              className="h-8 flex-1 rounded-lg border border-[#292E38] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none"
+              className="h-9 flex-1 rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none"
             />
             <button
               type="submit"
               disabled={submitting || !tokenInput.trim()}
-              className="h-8 rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D] disabled:opacity-40"
+              className="h-9 rounded-lg border border-[#292E38] bg-[#171A21] px-3.5 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D] disabled:opacity-40"
             >
               Verify
             </button>
@@ -354,11 +354,11 @@ export default function CheckInPage() {
         </div>
 
         {/* Result & Manual Fallback */}
-        <div className="space-y-3 lg:col-span-7">
-          {/* Compact Verification Card matching Reference */}
+        <div className="space-y-4 lg:col-span-7">
+          {/* Verification Card */}
           <div
             className={cn(
-              "flex min-h-[210px] flex-col items-center justify-center rounded-xl border p-5 text-center transition-colors",
+              "flex min-h-[230px] flex-col items-center justify-center rounded-xl border p-6 text-center transition-colors",
               result?.outcome === "APPROVED"
                 ? "border-[#2BCB83]/40 bg-gradient-to-b from-[#164A31]/80 via-[#0E1E17] to-[#111318]"
                 : result?.outcome === "DENIED"
@@ -367,21 +367,21 @@ export default function CheckInPage() {
             )}
           >
             {!result ? (
-              <div className="flex max-w-xs flex-col items-center gap-2">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#2BCB83]/15 text-[#2BCB83] ring-1 ring-[#2BCB83]/30">
+              <div className="flex max-w-sm flex-col items-center gap-2.5">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#2BCB83]/15 text-[#2BCB83] ring-1 ring-[#2BCB83]/30">
                   <UserCheck className="h-5 w-5" />
                 </div>
-                <p className="text-sm font-semibold text-[#F5F6F8]">Ready for Check-In</p>
-                <p className="text-[11px] text-[#A4AAB5]">
+                <p className="text-base font-semibold text-[#F5F6F8]">Ready for Check-In</p>
+                <p className="text-xs text-[#A4AAB5]">
                   Scan a member&apos;s QR code on the left or search manually below to verify membership access.
                 </p>
               </div>
             ) : result.outcome === "APPROVED" ? (
               <div className="flex w-full max-w-xs flex-col items-center">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#2BCB83] text-[#090A0D] shadow-[0_0_22px_rgba(43,203,131,0.45)]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#2BCB83] text-[#090A0D] shadow-[0_0_22px_rgba(43,203,131,0.45)]">
                   <CheckCircle2 className="h-6 w-6" />
                 </div>
-                <p className="mt-2.5 text-sm font-bold text-[#2BCB83]">
+                <p className="mt-3 text-base font-bold text-[#2BCB83]">
                   Check-In Successful!
                 </p>
                 {result.member?.photoUrl ? (
@@ -389,10 +389,10 @@ export default function CheckInPage() {
                   <img
                     src={result.member.photoUrl}
                     alt={result.member.name}
-                    className="mt-2.5 h-12 w-12 rounded-full border-2 border-[#2BCB83]/60 object-cover"
+                    className="mt-3 h-13 w-13 rounded-full border-2 border-[#2BCB83]/60 object-cover"
                   />
                 ) : (
-                  <div className="mt-2.5 flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#2BCB83]/50 bg-[#171A21] text-sm font-bold text-white">
+                  <div className="mt-3 flex h-13 w-13 items-center justify-center rounded-full border-2 border-[#2BCB83]/50 bg-[#171A21] text-sm font-bold text-white">
                     {(result.member?.name ?? "M")
                       .split(" ")
                       .map((n) => n[0])
@@ -401,23 +401,23 @@ export default function CheckInPage() {
                       .toUpperCase()}
                   </div>
                 )}
-                <p className="mt-2 text-sm font-semibold text-white">
+                <p className="mt-2.5 text-base font-semibold text-white">
                   {result.member?.name}
                 </p>
-                <p className="text-[11px] text-[#A4AAB5]">
+                <p className="text-xs text-[#A4AAB5]">
                   {result.member?.planName} · {result.member?.memberCode}
                 </p>
-                <p className="mt-0.5 text-[10px] text-[#8A93A2] tabular-nums">
+                <p className="mt-0.5 text-[11px] text-[#8A93A2] tabular-nums">
                   {result.checkedInAt ? `Today · ${formatTime(result.checkedInAt)}` : ""}
                   {result.member?.expiryDate
                     ? ` · Valid until ${formatDate(result.member.expiryDate)}`
                     : ""}
                 </p>
-                <div className="mt-3 flex w-full items-center gap-2">
+                <div className="mt-3.5 flex w-full items-center gap-2">
                   {result.member && (
                     <Link
                       href={`/members/${result.member.id}`}
-                      className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs font-semibold text-white hover:bg-[#20242D]"
+                      className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs font-semibold text-white hover:bg-[#20242D]"
                     >
                       <span>View Member</span>
                       <ArrowRight className="h-3.5 w-3.5" />
@@ -426,7 +426,7 @@ export default function CheckInPage() {
                   <button
                     type="button"
                     onClick={() => setResult(null)}
-                    className="h-8 rounded-lg border border-[#292E38] bg-[#111318] px-2.5 text-xs text-[#A4AAB5] hover:text-white"
+                    className="h-9 rounded-lg border border-[#292E38] bg-[#111318] px-3 text-xs text-[#A4AAB5] hover:text-white"
                   >
                     Clear
                   </button>
@@ -434,21 +434,21 @@ export default function CheckInPage() {
               </div>
             ) : (
               <div className="flex w-full max-w-xs flex-col items-center">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#F05252] text-white shadow-[0_0_22px_rgba(240,82,82,0.45)]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F05252] text-white shadow-[0_0_22px_rgba(240,82,82,0.45)]">
                   <XCircle className="h-6 w-6" />
                 </div>
-                <p className="mt-2.5 text-sm font-bold text-[#F05252]">Check-In Denied</p>
-                <p className="mt-1 text-xs font-semibold text-white">
+                <p className="mt-3 text-base font-bold text-[#F05252]">Check-In Denied</p>
+                <p className="mt-1 text-sm font-semibold text-white">
                   {result.member?.name ?? "Unrecognized Credential"}
                 </p>
-                <p className="mt-0.5 text-[11px] text-[#F05252]">
+                <p className="mt-0.5 text-xs text-[#F05252]">
                   {result.reason ?? "Access is not permitted."}
                 </p>
-                <div className="mt-3 flex w-full items-center gap-2">
+                <div className="mt-3.5 flex w-full items-center gap-2">
                   {result.member && (
                     <Link
                       href={`/members/${result.member.id}`}
-                      className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs font-semibold text-white hover:bg-[#20242D]"
+                      className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs font-semibold text-white hover:bg-[#20242D]"
                     >
                       <span>View Profile</span>
                     </Link>
@@ -456,7 +456,7 @@ export default function CheckInPage() {
                   <button
                     type="button"
                     onClick={() => setResult(null)}
-                    className="h-8 rounded-lg border border-[#292E38] bg-[#111318] px-2.5 text-xs text-[#A4AAB5] hover:text-white"
+                    className="h-9 rounded-lg border border-[#292E38] bg-[#111318] px-3 text-xs text-[#A4AAB5] hover:text-white"
                   >
                     Clear
                   </button>
@@ -466,37 +466,37 @@ export default function CheckInPage() {
           </div>
 
           {/* Manual Fallback */}
-          <div className="rounded-xl border border-[#242934] bg-[#111318] p-3.5">
-            <h2 className="text-xs font-semibold text-[#F5F6F8]">
+          <div className="rounded-xl border border-[#242934] bg-[#111318] p-4 md:p-5">
+            <h2 className="text-sm font-semibold text-[#F5F6F8]">
               Manual Check-In Fallback
             </h2>
-            <p className="text-[11px] text-[#8A93A2]">
+            <p className="text-xs text-[#8A93A2]">
               Search by name or member code if a client forgot their phone.
             </p>
 
-            <div className="relative mt-2">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8A93A2]" />
+            <div className="relative mt-2.5">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8A93A2]" />
               <input
                 type="search"
                 value={manualQuery}
                 onChange={(e) => setManualQuery(e.target.value)}
                 placeholder="Type member name or code (e.g. Juan or IH-1001)..."
-                className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] pl-8 pr-3 text-xs text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none"
+                className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] pl-8.5 pr-3 text-xs text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none"
               />
             </div>
 
             {manualMatches.length > 0 && (
-              <div className="mt-2 divide-y divide-[#242934] rounded-lg border border-[#242934] bg-[#171A21]">
+              <div className="mt-2.5 divide-y divide-[#242934] rounded-lg border border-[#242934] bg-[#171A21]">
                 {manualMatches.map((m) => (
                   <div
                     key={m.id}
-                    className="flex items-center justify-between gap-2 px-3 py-2 text-xs"
+                    className="flex items-center justify-between gap-3 px-3.5 py-2.5 text-[13px]"
                   >
                     <div>
                       <p className="font-medium text-[#F5F6F8]">
                         {m.firstName} {m.lastName}
                       </p>
-                      <p className="text-[11px] text-[#8A93A2]">
+                      <p className="text-xs text-[#8A93A2]">
                         {m.memberCode} · {m.currentPlan ?? "No Plan"}
                       </p>
                     </div>
@@ -506,7 +506,7 @@ export default function CheckInPage() {
                         type="button"
                         disabled={submitting}
                         onClick={() => handleManualCheckIn(m.id)}
-                        className="rounded-md bg-[#E32935] px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-[#F13A46]"
+                        className="rounded-md bg-[#E32935] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#F13A46]"
                       >
                         Check In
                       </button>
@@ -518,24 +518,24 @@ export default function CheckInPage() {
           </div>
 
           {/* Recent Attendance Log with Pagination */}
-          <div className="rounded-xl border border-[#242934] bg-[#111318] p-3.5">
-            <h2 className="mb-2 text-xs font-semibold text-[#F5F6F8]">
+          <div className="rounded-xl border border-[#242934] bg-[#111318] p-4 md:p-5">
+            <h2 className="mb-2.5 text-sm font-semibold text-[#F5F6F8]">
               Recent Attendance Log
             </h2>
             <div className="divide-y divide-[#242934]">
               {pagedRecent.length === 0 ? (
-                <p className="py-4 text-center text-xs text-[#8A93A2]">
+                <p className="py-5 text-center text-xs text-[#8A93A2]">
                   No check-ins recorded yet.
                 </p>
               ) : (
                 pagedRecent.map((r) => (
                   <div
                     key={r.id}
-                    className="flex items-center justify-between gap-2 py-2 text-xs"
+                    className="flex items-center justify-between gap-3 py-2.5 text-[13px]"
                   >
                     <div>
                       <p className="font-medium text-[#F5F6F8]">{r.memberName}</p>
-                      <p className="text-[11px] text-[#8A93A2]">
+                      <p className="text-xs text-[#8A93A2]">
                         {r.memberCode} · {r.method} · {formatTime(r.checkedInAt)}
                         {r.denialReason ? ` — ${r.denialReason}` : ""}
                       </p>
@@ -546,7 +546,7 @@ export default function CheckInPage() {
               )}
             </div>
             {recent.length > 0 && (
-              <div className="mt-2 border-t border-[#242934] pt-2">
+              <div className="mt-2.5 border-t border-[#242934] pt-2.5">
                 <PaginationBar
                   page={logPage}
                   totalPages={totalLogPages}

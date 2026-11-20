@@ -327,10 +327,10 @@ export default function PlansAndPaymentsPage() {
   );
 
   return (
-    <div className="space-y-3.5 animate-panel-enter">
+    <div className="space-y-4 animate-panel-enter">
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[#F5F6F8]">
+          <h1 className="text-xl font-semibold tracking-tight text-[#F5F6F8]">
             Plans &amp; Payments
           </h1>
           <p className="mt-0.5 text-xs text-[#A4AAB5]">
@@ -338,11 +338,11 @@ export default function PlansAndPaymentsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <button
             type="button"
             onClick={() => openRecordPayment()}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E32935] px-3 text-xs font-semibold text-white hover:bg-[#F13A46]"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46]"
           >
             <CreditCard className="h-3.5 w-3.5" />
             <span>Record Payment</span>
@@ -350,7 +350,7 @@ export default function PlansAndPaymentsPage() {
           <button
             type="button"
             onClick={openAddPlan}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#242934] bg-[#111318] px-3 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#242934] bg-[#111318] px-3.5 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
           >
             <Plus className="h-3.5 w-3.5" />
             <span>Add Plan</span>
@@ -366,7 +366,7 @@ export default function PlansAndPaymentsPage() {
           aria-selected={tab === "plans"}
           onClick={() => setTab("plans")}
           className={cn(
-            "border-b-2 px-3.5 py-2 text-xs font-medium transition-colors",
+            "border-b-2 px-4 py-2.5 text-xs font-medium transition-colors",
             tab === "plans"
               ? "border-[#E32935] text-[#F5F6F8]"
               : "border-transparent text-[#8A93A2] hover:text-[#A4AAB5]"
@@ -380,7 +380,7 @@ export default function PlansAndPaymentsPage() {
           aria-selected={tab === "payments"}
           onClick={() => setTab("payments")}
           className={cn(
-            "border-b-2 px-3.5 py-2 text-xs font-medium transition-colors",
+            "border-b-2 px-4 py-2.5 text-xs font-medium transition-colors",
             tab === "payments"
               ? "border-[#E32935] text-[#F5F6F8]"
               : "border-transparent text-[#8A93A2] hover:text-[#A4AAB5]"
@@ -391,7 +391,7 @@ export default function PlansAndPaymentsPage() {
       </div>
 
       {tab === "plans" ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {plans.map((p) => (
             <div
               key={p.id}
@@ -451,7 +451,7 @@ export default function PlansAndPaymentsPage() {
               </div>
 
               <div className="mt-5 space-y-2.5 border-t border-[#242934] pt-3.5">
-                <div className="flex items-center justify-between text-[11px] text-[#8A93A2]">
+                <div className="flex items-center justify-between text-xs text-[#8A93A2]">
                   <span className="inline-flex items-center gap-1.5">
                     <Users className="h-3.5 w-3.5" />
                     {p.activeSubscribers} active
@@ -476,8 +476,8 @@ export default function PlansAndPaymentsPage() {
           ))}
         </div>
       ) : (
-        <div className="space-y-3.5">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
             <KpiCard
               label="Total Collected"
               value={formatCurrency(totals.collected)}
@@ -502,9 +502,9 @@ export default function PlansAndPaymentsPage() {
           </div>
 
           {/* Payment Filters */}
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative w-full sm:w-64">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8A93A2]" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8A93A2]" />
               <input
                 type="search"
                 value={paySearch}
@@ -513,10 +513,10 @@ export default function PlansAndPaymentsPage() {
                   setPayPage(1);
                 }}
                 placeholder="Search receipt, ref #, member..."
-                className="h-8 w-full rounded-lg border border-[#242934] bg-[#111318] pl-8 pr-3 text-xs text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none"
+                className="h-9 w-full rounded-lg border border-[#242934] bg-[#111318] pl-8.5 pr-3 text-xs text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2.5">
               <select
                 value={payMethodFilter}
                 onChange={(e) => {
@@ -524,7 +524,7 @@ export default function PlansAndPaymentsPage() {
                   setPayPage(1);
                 }}
                 aria-label="Filter by payment method"
-                className="h-8 rounded-lg border border-[#242934] bg-[#111318] px-2.5 text-xs text-[#F5F6F8]"
+                className="h-9 rounded-lg border border-[#242934] bg-[#111318] px-3 text-xs text-[#F5F6F8]"
               >
                 <option value="ALL">All Methods</option>
                 <option value="CASH">Cash</option>
@@ -539,7 +539,7 @@ export default function PlansAndPaymentsPage() {
                   setPayPage(1);
                 }}
                 aria-label="Filter by payment status"
-                className="h-8 rounded-lg border border-[#242934] bg-[#111318] px-2.5 text-xs text-[#F5F6F8]"
+                className="h-9 rounded-lg border border-[#242934] bg-[#111318] px-3 text-xs text-[#F5F6F8]"
               >
                 <option value="ALL">All Statuses</option>
                 <option value="PAID">Paid</option>
@@ -551,52 +551,52 @@ export default function PlansAndPaymentsPage() {
 
           <div className="overflow-hidden rounded-xl border border-[#242934] bg-[#111318]">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="border-b border-[#242934] bg-[#171A21] text-[10px] font-medium uppercase tracking-wider text-[#8A93A2]">
+              <table className="w-full text-left text-[13px]">
+                <thead className="border-b border-[#242934] bg-[#171A21] text-[11px] font-medium uppercase tracking-wider text-[#8A93A2]">
                   <tr>
-                    <th className="px-3.5 py-2">Receipt</th>
-                    <th className="px-3.5 py-2">Member</th>
-                    <th className="px-3.5 py-2">Plan</th>
-                    <th className="px-3.5 py-2">Method</th>
-                    <th className="px-3.5 py-2">Amount</th>
-                    <th className="px-3.5 py-2">Status</th>
-                    <th className="px-3.5 py-2">Date</th>
-                    <th className="px-3.5 py-2 text-right">Actions</th>
+                    <th className="px-4 py-2.5">Receipt</th>
+                    <th className="px-4 py-2.5">Member</th>
+                    <th className="px-4 py-2.5">Plan</th>
+                    <th className="px-4 py-2.5">Method</th>
+                    <th className="px-4 py-2.5">Amount</th>
+                    <th className="px-4 py-2.5">Status</th>
+                    <th className="px-4 py-2.5">Date</th>
+                    <th className="px-4 py-2.5 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#242934]">
                   {pagedPayments.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-3.5 py-8 text-center text-xs text-[#8A93A2]">
+                      <td colSpan={8} className="px-4 py-10 text-center text-xs text-[#8A93A2]">
                         No payment records match your filters.
                       </td>
                     </tr>
                   ) : (
                     pagedPayments.map((p) => (
                       <tr key={p.id} className="hover:bg-[#171A21]">
-                        <td className="px-3.5 py-2 font-mono text-[11px] text-[#F5F6F8]">
+                        <td className="px-4 py-3 font-mono text-xs text-[#F5F6F8]">
                           {p.receiptNumber}
                         </td>
-                        <td className="px-3.5 py-2">
+                        <td className="px-4 py-3">
                           <p className="font-medium text-[#F5F6F8]">{p.memberName}</p>
-                          <p className="text-[11px] text-[#8A93A2]">{p.memberCode}</p>
+                          <p className="text-xs text-[#8A93A2]">{p.memberCode}</p>
                         </td>
-                        <td className="px-3.5 py-2 text-[#A4AAB5]">{p.planName}</td>
-                        <td className="px-3.5 py-2 text-[#A4AAB5]">
+                        <td className="px-4 py-3 text-[#A4AAB5]">{p.planName}</td>
+                        <td className="px-4 py-3 text-[#A4AAB5]">
                           <span>{METHOD_LABELS[p.method] ?? p.method}</span>
                           {p.referenceNumber && (
-                            <p className="font-mono text-[10px] text-[#8A93A2]">
+                            <p className="font-mono text-[11px] text-[#8A93A2]">
                               Ref: {p.referenceNumber}
                             </p>
                           )}
                         </td>
-                        <td className="px-3.5 py-2 font-medium text-[#F5F6F8] tabular-nums">
+                        <td className="px-4 py-3 font-medium text-[#F5F6F8] tabular-nums">
                           {formatCurrency(p.amount)}
                         </td>
-                        <td className="px-3.5 py-2">
+                        <td className="px-4 py-3">
                           <StatusBadge status={p.status} />
                         </td>
-                        <td className="px-3.5 py-2 text-[11px] text-[#8A93A2] tabular-nums">
+                        <td className="px-4 py-3 text-xs text-[#8A93A2] tabular-nums">
                           {formatDateTime(p.paidAt)}
                         </td>
                         <td className="px-3.5 py-2 text-right">

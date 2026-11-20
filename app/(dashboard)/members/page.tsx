@@ -233,23 +233,23 @@ export default function MembersPage() {
   }
 
   return (
-    <div className="space-y-3.5 animate-panel-enter">
+    <div className="space-y-4 animate-panel-enter">
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-lg font-semibold tracking-tight text-[#F5F6F8]">
+          <h1 className="text-xl font-semibold tracking-tight text-[#F5F6F8]">
             {role === "TRAINER" ? "Clients" : "Members"}
           </h1>
-          <p className="text-[11px] text-[#A4AAB5]">
+          <p className="text-xs text-[#A4AAB5]">
             {role === "TRAINER"
               ? "View your coached clients and gym client directory."
               : "Manage gym clients, coach assignments, and memberships."}
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           {role === "TRAINER" && (
-            <div className="flex items-center gap-1 rounded-lg border border-[#242934] bg-[#111318] p-0.5">
+            <div className="flex items-center gap-1 rounded-lg border border-[#242934] bg-[#111318] p-1">
               <button
                 type="button"
                 onClick={() => {
@@ -257,7 +257,7 @@ export default function MembersPage() {
                   setPage(1);
                 }}
                 className={cn(
-                  "rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors",
+                  "rounded-md px-3 py-1 text-xs font-medium transition-colors",
                   scope === "mine" ? "bg-[#E32935] text-white" : "text-[#A4AAB5] hover:text-white"
                 )}
               >
@@ -270,7 +270,7 @@ export default function MembersPage() {
                   setPage(1);
                 }}
                 className={cn(
-                  "rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors",
+                  "rounded-md px-3 py-1 text-xs font-medium transition-colors",
                   scope === "all" ? "bg-[#E32935] text-white" : "text-[#A4AAB5] hover:text-white"
                 )}
               >
@@ -281,7 +281,7 @@ export default function MembersPage() {
           <button
             type="button"
             onClick={openAddModal}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E32935] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#F13A46]"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[#F13A46]"
           >
             <UserPlus className="h-3.5 w-3.5" />
             <span>{role === "TRAINER" ? "Add Client" : "Add Member"}</span>
@@ -289,8 +289,8 @@ export default function MembersPage() {
         </div>
       </div>
 
-      {/* 4 Compact KPI Cards in 1 Horizontal Row (md:grid-cols-4) */}
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-4">
+      {/* 4 KPI Cards in 1 Horizontal Row (md:grid-cols-4) */}
+      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 md:grid-cols-4">
         <KpiCard
           label="Total Members"
           value={summary.total}
@@ -322,7 +322,7 @@ export default function MembersPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-1 rounded-lg border border-[#242934] bg-[#111318] p-1">
           {STATUS_TABS.map((tab) => (
             <button
@@ -333,7 +333,7 @@ export default function MembersPage() {
                 setPage(1);
               }}
               className={cn(
-                "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                 statusFilter === tab
                   ? "bg-[#E32935] text-white"
                   : "text-[#A4AAB5] hover:bg-[#20242D] hover:text-white"
@@ -344,7 +344,7 @@ export default function MembersPage() {
           ))}
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
           <select
             value={planFilter}
             onChange={(e) => {
@@ -352,7 +352,7 @@ export default function MembersPage() {
               setPage(1);
             }}
             aria-label="Filter by membership plan"
-            className="h-8 rounded-lg border border-[#242934] bg-[#111318] px-2.5 text-xs text-[#F5F6F8]"
+            className="h-9 rounded-lg border border-[#242934] bg-[#111318] px-3 text-xs text-[#F5F6F8]"
           >
             <option value="ALL">All Plans</option>
             {plans.map((p) => (
@@ -362,8 +362,8 @@ export default function MembersPage() {
             ))}
           </select>
 
-          <div className="relative w-full sm:w-56">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8A93A2]" />
+          <div className="relative w-full sm:w-64">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8A93A2]" />
             <input
               type="search"
               value={search}
@@ -372,37 +372,37 @@ export default function MembersPage() {
                 setPage(1);
               }}
               placeholder="Search name, code, email..."
-              className="h-8 w-full rounded-lg border border-[#242934] bg-[#111318] pl-8 pr-3 text-xs text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none"
+              className="h-9 w-full rounded-lg border border-[#242934] bg-[#111318] pl-8.5 pr-3 text-xs text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none"
             />
           </div>
         </div>
       </div>
 
-      {/* Compressed Table + Numbered Pagination */}
+      {/* Table + Numbered Pagination */}
       <div className="overflow-hidden rounded-xl border border-[#242934] bg-[#111318]">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="border-b border-[#242934] bg-[#171A21] text-[10px] font-medium uppercase tracking-wider text-[#8A93A2]">
+          <table className="w-full text-left text-[13px]">
+            <thead className="border-b border-[#242934] bg-[#171A21] text-[11px] font-medium uppercase tracking-wider text-[#8A93A2]">
               <tr>
-                <th className="px-3 py-2">Member</th>
-                <th className="px-3 py-2">ID</th>
-                <th className="px-3 py-2">Plan Type</th>
-                <th className="px-3 py-2">Trainor &amp; Fee</th>
-                <th className="px-3 py-2">Status</th>
-                <th className="px-3 py-2">Expiry</th>
-                <th className="px-3 py-2 text-right">Actions</th>
+                <th className="px-4 py-2.5">Member</th>
+                <th className="px-4 py-2.5">ID</th>
+                <th className="px-4 py-2.5">Plan Type</th>
+                <th className="px-4 py-2.5">Trainor &amp; Fee</th>
+                <th className="px-4 py-2.5">Status</th>
+                <th className="px-4 py-2.5">Expiry</th>
+                <th className="px-4 py-2.5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#242934]">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-3.5 py-8 text-center text-xs text-[#8A93A2]">
+                  <td colSpan={7} className="px-4 py-10 text-center text-xs text-[#8A93A2]">
                     Loading members...
                   </td>
                 </tr>
               ) : members.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-3.5 py-8 text-center text-xs text-[#8A93A2]">
+                  <td colSpan={7} className="px-4 py-10 text-center text-xs text-[#8A93A2]">
                     No members match your current filters.
                   </td>
                 </tr>
@@ -411,17 +411,17 @@ export default function MembersPage() {
                   const initials = `${m.firstName[0] ?? ""}${m.lastName[0] ?? ""}`.toUpperCase();
                   return (
                     <tr key={m.id} className="transition-colors hover:bg-[#171A21]">
-                      <td className="px-3.5 py-2">
-                        <div className="flex items-center gap-2.5">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
                           {m.photoUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={m.photoUrl}
                               alt={`${m.firstName} ${m.lastName}`}
-                              className="h-7 w-7 shrink-0 rounded-full border border-[#292E38] object-cover"
+                              className="h-8 w-8 shrink-0 rounded-full border border-[#292E38] object-cover"
                             />
                           ) : (
-                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#292E38] bg-[#171A21] text-[10px] font-semibold text-[#F5F6F8]">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#292E38] bg-[#171A21] text-xs font-semibold text-[#F5F6F8]">
                               {initials}
                             </div>
                           )}
@@ -432,16 +432,16 @@ export default function MembersPage() {
                             >
                               {m.firstName} {m.lastName}
                             </Link>
-                            <p className="text-[11px] text-[#8A93A2]">
+                            <p className="text-xs text-[#8A93A2]">
                               {m.email ?? m.phone ?? "No contact"}
                             </p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-3.5 py-2 font-mono text-[11px] text-[#A4AAB5]">
+                      <td className="px-4 py-3 font-mono text-xs text-[#A4AAB5]">
                         {m.memberCode}
                       </td>
-                      <td className="px-3 py-2">
+                      <td className="px-4 py-3">
                         {m.currentPlan ? (
                           <div>
                             <span className="inline-flex items-center gap-1.5 font-medium text-[#F5F6F8]">
@@ -452,21 +452,21 @@ export default function MembersPage() {
                               />
                               {m.currentPlan}
                             </span>
-                            <p className="text-[10px] text-[#8A93A2]">
+                            <p className="text-[11px] text-[#8A93A2]">
                               {m.currentPlan.toLowerCase().includes("daily")
                                 ? "Daily Pass"
                                 : "Membership"}
                             </p>
                           </div>
                         ) : (
-                          <span className="text-[11px] text-[#F2B84B]">No Plan</span>
+                          <span className="text-xs text-[#F2B84B]">No Plan</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-[11px]">
+                      <td className="px-4 py-3 text-xs">
                         {m.trainerName ? (
                           <div>
                             <p className="text-[#F5F6F8]">{m.trainerName}</p>
-                            <p className="font-mono text-[10px] text-[#2BCB83]">
+                            <p className="font-mono text-[11px] text-[#2BCB83]">
                               Fee: {formatCurrency(m.trainerFee ?? 0)}
                             </p>
                           </div>
@@ -474,17 +474,17 @@ export default function MembersPage() {
                           <span className="text-[#8A93A2]">—</span>
                         )}
                       </td>
-                      <td className="px-3 py-2">
+                      <td className="px-4 py-3">
                         <StatusBadge status={m.status} />
                       </td>
-                      <td className="px-3 py-2 text-[11px] text-[#A4AAB5] tabular-nums">
+                      <td className="px-4 py-3 text-xs text-[#A4AAB5] tabular-nums">
                         {m.expiryDate ? formatDate(m.expiryDate) : "—"}
                       </td>
-                      <td className="px-3 py-2 text-right">
-                        <div className="inline-flex items-center gap-1">
+                      <td className="px-4 py-3 text-right">
+                        <div className="inline-flex items-center gap-1.5">
                           <Link
                             href={`/members/${m.id}`}
-                            className="inline-flex h-7 items-center rounded-md border border-[#242934] bg-[#171A21] px-2 text-[11px] text-[#F5F6F8] hover:bg-[#20242D]"
+                            className="inline-flex h-7 items-center rounded-md border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8] hover:bg-[#20242D]"
                           >
                             View
                           </Link>
@@ -493,10 +493,10 @@ export default function MembersPage() {
                               <button
                                 type="button"
                                 onClick={() => openEditModal(m)}
-                                className="inline-flex h-7 items-center gap-1 rounded-md border border-[#242934] bg-[#171A21] px-2 text-[11px] text-[#A4AAB5] hover:bg-[#20242D] hover:text-white"
+                                className="inline-flex h-7 items-center gap-1 rounded-md border border-[#242934] bg-[#171A21] px-2 text-xs text-[#A4AAB5] hover:bg-[#20242D] hover:text-white"
                                 title="Edit member"
                               >
-                                <Pencil className="h-3 w-3" />
+                                <Pencil className="h-3.5 w-3.5" />
                               </button>
                               <button
                                 type="button"
@@ -505,7 +505,7 @@ export default function MembersPage() {
                                 title="Archive member"
                                 aria-label="Archive member"
                               >
-                                <Trash2 className="h-3 w-3" />
+                                <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             </>
                           )}

@@ -192,45 +192,45 @@ export default function MemberDetailPage() {
       </div>
 
       {/* Summary Strip */}
-      <div className="grid grid-cols-1 gap-3.5 md:grid-cols-3">
-        <div className="rounded-xl border border-[#242934] bg-[#111318] p-3.5">
-          <span className="text-[11px] text-[#8A93A2]">Current Plan</span>
-          <p className="mt-0.5 text-base font-semibold text-[#F5F6F8]">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="rounded-xl border border-[#242934] bg-[#111318] p-4">
+          <span className="text-xs text-[#8A93A2]">Current Plan</span>
+          <p className="mt-1 text-lg font-semibold text-[#F5F6F8]">
             {activeMembership?.planNameSnapshot ?? "No Plan Assigned"}
           </p>
-          <p className="text-xs text-[#A4AAB5]">
+          <p className="mt-0.5 text-xs text-[#A4AAB5]">
             {activeMembership ? `Valid until ${formatDate(activeMembership.endDate)}` : "—"}
           </p>
         </div>
-        <div className="rounded-xl border border-[#242934] bg-[#111318] p-3.5">
-          <span className="text-[11px] text-[#8A93A2]">Client Self-Service QR Pass</span>
-          <p className="mt-0.5 font-mono text-base font-semibold text-[#F5F6F8]">
+        <div className="rounded-xl border border-[#242934] bg-[#111318] p-4">
+          <span className="text-xs text-[#8A93A2]">Client Self-Service QR Pass</span>
+          <p className="mt-1 font-mono text-lg font-semibold text-[#F5F6F8]">
             {activeQr ? `••••-${activeQr.tokenLast4}` : "None Active"}
           </p>
-          <p className="text-[11px] text-[#A4AAB5]">
+          <p className="mt-0.5 text-xs text-[#A4AAB5]">
             {activeQr
               ? `Issued ${formatDate(activeQr.issuedAt)} via Member Portal`
               : "Client generates their pass at /portal"}
           </p>
         </div>
-        <div className="rounded-xl border border-[#242934] bg-[#111318] p-3.5">
-          <span className="text-[11px] text-[#8A93A2]">Total Check-Ins Recorded</span>
-          <p className="mt-0.5 text-base font-semibold text-[#F5F6F8] tabular-nums">
+        <div className="rounded-xl border border-[#242934] bg-[#111318] p-4">
+          <span className="text-xs text-[#8A93A2]">Total Check-Ins Recorded</span>
+          <p className="mt-1 text-lg font-semibold text-[#F5F6F8] tabular-nums">
             {member.attendanceRecords.filter((a) => a.outcome === "APPROVED").length}
           </p>
-          <p className="text-[11px] text-[#A4AAB5]">Recent 25 entries shown below</p>
+          <p className="mt-0.5 text-xs text-[#A4AAB5]">Recent 25 entries shown below</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1.5 border-b border-[#242934]">
+      <div className="flex gap-2 border-b border-[#242934]">
         {(["overview", "memberships", "payments", "attendance"] as const).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => setTab(t)}
             className={cn(
-              "border-b-2 px-3.5 py-2 text-xs font-medium capitalize transition-colors",
+              "border-b-2 px-4 py-2.5 text-xs font-medium capitalize transition-colors",
               tab === t
                 ? "border-[#E32935] text-[#F5F6F8]"
                 : "border-transparent text-[#8A93A2] hover:text-[#A4AAB5]"
@@ -242,23 +242,23 @@ export default function MemberDetailPage() {
       </div>
 
       {tab === "overview" && (
-        <div className="rounded-xl border border-[#242934] bg-[#111318] p-4 text-xs">
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+        <div className="rounded-xl border border-[#242934] bg-[#111318] p-5 text-[13px]">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <span className="text-[11px] text-[#8A93A2]">Email</span>
-              <p className="mt-0.5 text-[#F5F6F8]">{member.email ?? "—"}</p>
+              <span className="text-xs text-[#8A93A2]">Email</span>
+              <p className="mt-1 text-[#F5F6F8]">{member.email ?? "—"}</p>
             </div>
             <div>
-              <span className="text-[11px] text-[#8A93A2]">Phone</span>
-              <p className="mt-0.5 text-[#F5F6F8]">{member.phone ?? "—"}</p>
+              <span className="text-xs text-[#8A93A2]">Phone</span>
+              <p className="mt-1 text-[#F5F6F8]">{member.phone ?? "—"}</p>
             </div>
             <div>
-              <span className="text-[11px] text-[#8A93A2]">Address</span>
-              <p className="mt-0.5 text-[#F5F6F8]">{member.address ?? "—"}</p>
+              <span className="text-xs text-[#8A93A2]">Address</span>
+              <p className="mt-1 text-[#F5F6F8]">{member.address ?? "—"}</p>
             </div>
             <div>
-              <span className="text-[11px] text-[#8A93A2]">Staff Notes</span>
-              <p className="mt-0.5 text-[#F5F6F8]">{member.notes ?? "No notes recorded."}</p>
+              <span className="text-xs text-[#8A93A2]">Staff Notes</span>
+              <p className="mt-1 text-[#F5F6F8]">{member.notes ?? "No notes recorded."}</p>
             </div>
           </div>
         </div>

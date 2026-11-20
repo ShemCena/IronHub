@@ -100,16 +100,16 @@ export default function AuditLogsPage() {
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
-    <div className="space-y-3 animate-panel-enter">
+    <div className="space-y-4 animate-panel-enter">
       <div>
-        <h1 className="text-lg font-semibold tracking-tight text-[#F5F6F8]">Audit Logs</h1>
-        <p className="text-[11px] text-[#A4AAB5]">
+        <h1 className="text-xl font-semibold tracking-tight text-[#F5F6F8]">Audit Logs</h1>
+        <p className="text-xs text-[#A4AAB5]">
           Filter immutable activity across password changes, payments, check-ins, members, and settings.
         </p>
       </div>
 
       {/* Category Filter Pills + Specific Action & Search */}
-      <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-1 rounded-lg border border-[#242934] bg-[#111318] p-1">
           {CATEGORY_TABS.map((t) => (
             <button
@@ -121,7 +121,7 @@ export default function AuditLogsPage() {
                 setPage(1);
               }}
               className={cn(
-                "rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors",
+                "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                 category === t.id
                   ? "bg-[#E32935] text-white"
                   : "text-[#A4AAB5] hover:bg-[#20242D] hover:text-white"
@@ -132,7 +132,7 @@ export default function AuditLogsPage() {
           ))}
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
           <select
             value={actionFilter}
             onChange={(e) => {
@@ -140,7 +140,7 @@ export default function AuditLogsPage() {
               setPage(1);
             }}
             aria-label="Filter by exact action"
-            className="h-8 rounded-lg border border-[#242934] bg-[#111318] px-2.5 text-xs text-[#F5F6F8]"
+            className="h-9 rounded-lg border border-[#242934] bg-[#111318] px-3 text-xs text-[#F5F6F8]"
           >
             <option value="ALL">All Actions</option>
             {distinctActions.map((act) => (
@@ -150,8 +150,8 @@ export default function AuditLogsPage() {
             ))}
           </select>
 
-          <div className="relative w-full sm:w-52">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8A93A2]" />
+          <div className="relative w-full sm:w-60">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8A93A2]" />
             <input
               type="search"
               value={query}
@@ -160,7 +160,7 @@ export default function AuditLogsPage() {
                 setPage(1);
               }}
               placeholder="Search actor, action..."
-              className="h-8 w-full rounded-lg border border-[#242934] bg-[#111318] pl-8 pr-3 text-xs text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none"
+              className="h-9 w-full rounded-lg border border-[#242934] bg-[#111318] pl-8.5 pr-3 text-xs text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none"
             />
           </div>
         </div>
@@ -169,9 +169,9 @@ export default function AuditLogsPage() {
       <div className="overflow-hidden rounded-xl border border-[#242934] bg-[#111318]">
         <div className="divide-y divide-[#242934]">
           {loading ? (
-            <p className="py-8 text-center text-xs text-[#8A93A2]">Loading audit trail...</p>
+            <p className="py-10 text-center text-xs text-[#8A93A2]">Loading audit trail...</p>
           ) : paged.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-8 text-center text-xs text-[#8A93A2]">
+            <div className="flex flex-col items-center gap-2 py-10 text-center text-xs text-[#8A93A2]">
               <ShieldAlert className="h-5 w-5 text-[#8A93A2]" />
               <p>No audit log entries match your selected filter.</p>
             </div>
@@ -179,17 +179,17 @@ export default function AuditLogsPage() {
             paged.map((log) => (
               <div
                 key={log.id}
-                className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 text-xs"
+                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-[13px]"
               >
-                <div className="space-y-0.5">
-                  <span className="inline-block rounded border border-[#292E38] bg-[#171A21] px-2 py-0.5 font-mono text-[10px] font-medium text-[#F5F6F8]">
+                <div className="space-y-1">
+                  <span className="inline-block rounded border border-[#292E38] bg-[#171A21] px-2.5 py-0.5 font-mono text-[11px] font-medium text-[#F5F6F8]">
                     {log.action}
                   </span>
-                  <p className="text-[11px] text-[#8A93A2]">
+                  <p className="text-xs text-[#8A93A2]">
                     {log.entityType} ({log.entityId}) · Actor: {log.actor?.name ?? "Client Portal"}
                   </p>
                 </div>
-                <span className="text-[11px] text-[#8A93A2] tabular-nums">
+                <span className="text-xs text-[#8A93A2] tabular-nums">
                   {formatDateTime(log.createdAt)}
                 </span>
               </div>
@@ -197,7 +197,7 @@ export default function AuditLogsPage() {
           )}
         </div>
         {filtered.length > 0 && (
-          <div className="border-t border-[#242934] px-3.5 py-2">
+          <div className="border-t border-[#242934] px-4 py-2.5">
             <PaginationBar
               page={page}
               totalPages={totalPages}

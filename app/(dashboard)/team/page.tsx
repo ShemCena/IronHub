@@ -142,20 +142,20 @@ export default function TeamPage() {
   const paged = staff.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
-    <div className="space-y-3 animate-panel-enter">
+    <div className="space-y-4 animate-panel-enter">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-lg font-semibold tracking-tight text-[#F5F6F8]">
+          <h1 className="text-xl font-semibold tracking-tight text-[#F5F6F8]">
             Admins &amp; Trainors
           </h1>
-          <p className="text-[11px] text-[#A4AAB5]">
+          <p className="text-xs text-[#A4AAB5]">
             Manage gym administrators and coaching trainor accounts.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           {notice && (
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#2BCB83]/30 bg-[#2BCB83]/10 px-2.5 py-1 text-xs font-medium text-[#2BCB83]">
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#2BCB83]/30 bg-[#2BCB83]/10 px-3 py-1.5 text-xs font-medium text-[#2BCB83]">
               <CheckCircle2 className="h-3.5 w-3.5" />
               {notice}
             </span>
@@ -168,7 +168,7 @@ export default function TeamPage() {
                 setForm({ name: "", email: "", password: "", role: "TRAINER" });
                 setModalOpen(true);
               }}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E32935] px-3 text-xs font-semibold text-white hover:bg-[#F13A46]"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46]"
             >
               <UserPlus className="h-3.5 w-3.5" />
               <span>Add Account</span>
@@ -177,8 +177,8 @@ export default function TeamPage() {
         </div>
       </div>
 
-      {/* 3 Compact KPI Cards */}
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+      {/* 3 KPI Cards */}
+      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
         <KpiCard
           label="Monthly Team Payroll"
           value="₱94,500"
@@ -206,19 +206,19 @@ export default function TeamPage() {
       <div className="overflow-hidden rounded-xl border border-[#242934] bg-[#111318]">
         <div className="divide-y divide-[#242934]">
           {loading ? (
-            <p className="py-8 text-center text-xs text-[#8A93A2]">Loading accounts...</p>
+            <p className="py-10 text-center text-xs text-[#8A93A2]">Loading accounts...</p>
           ) : paged.length === 0 ? (
-            <p className="py-8 text-center text-xs text-[#8A93A2]">No accounts found.</p>
+            <p className="py-10 text-center text-xs text-[#8A93A2]">No accounts found.</p>
           ) : (
             paged.map((u) => {
               const canEdit = u.id !== currentUserId;
               return (
                 <div
                   key={u.id}
-                  className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 text-xs"
+                  className="flex flex-wrap items-center justify-between gap-3 px-4 py-3.5 text-[13px]"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full border border-[#292E38] bg-[#171A21] text-[10px] font-semibold text-[#F5F6F8]">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[#292E38] bg-[#171A21] text-xs font-semibold text-[#F5F6F8]">
                       {u.name
                         .split(" ")
                         .map((p) => p[0])
@@ -228,11 +228,11 @@ export default function TeamPage() {
                     </div>
                     <div>
                       <p className="font-medium text-[#F5F6F8]">{u.name}</p>
-                      <p className="text-[11px] text-[#8A93A2]">{u.email}</p>
+                      <p className="text-xs text-[#8A93A2]">{u.email}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-md border border-[#292E38] bg-[#171A21] px-2 py-0.5 text-[11px] font-medium text-[#A4AAB5]">
+                  <div className="flex items-center gap-2.5">
+                    <span className="rounded-md border border-[#292E38] bg-[#171A21] px-2.5 py-1 text-xs font-medium text-[#A4AAB5]">
                       {formatRoleLabel(u.role)}
                     </span>
                     <StatusBadge status={u.isActive ? "ACTIVE" : "ARCHIVED"} />
@@ -241,17 +241,17 @@ export default function TeamPage() {
                         <button
                           type="button"
                           onClick={() => handleToggle(u)}
-                          className="rounded-md border border-[#242934] bg-[#171A21] px-2 py-0.5 text-[11px] text-[#A4AAB5] hover:bg-[#20242D] hover:text-white"
+                          className="rounded-md border border-[#242934] bg-[#171A21] px-2.5 py-1 text-xs text-[#A4AAB5] hover:bg-[#20242D] hover:text-white"
                         >
                           {u.isActive ? "Deactivate" : "Activate"}
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDelete(u)}
-                          className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[#242934] bg-[#171A21] text-[#8A93A2] hover:border-[#F05252]/40 hover:text-[#F05252]"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#242934] bg-[#171A21] text-[#8A93A2] hover:border-[#F05252]/40 hover:text-[#F05252]"
                           title="Delete account"
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </>
                     )}
@@ -261,7 +261,7 @@ export default function TeamPage() {
             })
           )}
         </div>
-        <div className="border-t border-[#242934] px-3.5 py-2">
+        <div className="border-t border-[#242934] px-4 py-2.5">
           <PaginationBar
             page={page}
             totalPages={totalPages}

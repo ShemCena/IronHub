@@ -143,11 +143,11 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-3 animate-panel-enter">
+    <div className="space-y-4 animate-panel-enter">
       <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-lg font-semibold tracking-tight text-[#F5F6F8]">Settings</h1>
-          <p className="text-[11px] text-[#A4AAB5]">
+          <h1 className="text-xl font-semibold tracking-tight text-[#F5F6F8]">Settings</h1>
+          <p className="text-xs text-[#A4AAB5]">
             {permissions.canViewGymSettings
               ? "Manage gym profile information and your account security."
               : "Manage your coach profile information and account security."}
@@ -170,18 +170,18 @@ export default function SettingsPage() {
       </div>
 
       {/* Combined Single-Screen Layout */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
         {permissions.canViewGymSettings && settings ? (
           <form
             onSubmit={handleSaveGymSettings}
-            className="space-y-3 rounded-xl border border-[#242934] bg-[#111318] p-4 lg:col-span-7"
+            className="space-y-4 rounded-xl border border-[#242934] bg-[#111318] p-5 lg:col-span-7"
           >
-            <div className="flex items-center justify-between border-b border-[#242934] pb-2.5">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between border-b border-[#242934] pb-3">
+              <div className="flex items-center gap-2.5">
                 <Building2 className="h-4 w-4 text-[#E32935]" />
                 <div>
-                  <h2 className="text-xs font-semibold text-[#F5F6F8]">Gym Information</h2>
-                  <p className="text-[10px] text-[#8A93A2]">
+                  <h2 className="text-sm font-semibold text-[#F5F6F8]">Gym Information</h2>
+                  <p className="text-xs text-[#8A93A2]">
                     Shown on receipts, client QR passes, and reports.
                   </p>
                 </div>
@@ -189,9 +189,9 @@ export default function SettingsPage() {
               <BrandMark />
             </div>
 
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
               <div>
-                <label htmlFor="gym-name" className="mb-1 block text-[11px] text-[#A4AAB5]">
+                <label htmlFor="gym-name" className="mb-1.5 block text-xs text-[#A4AAB5]">
                   Gym Name
                 </label>
                 <input
@@ -202,11 +202,11 @@ export default function SettingsPage() {
                     setSettings({ ...settings, gymName: e.target.value });
                     setDirty(true);
                   }}
-                  className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
+                  className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
                 />
               </div>
               <div>
-                <label htmlFor="gym-email" className="mb-1 block text-[11px] text-[#A4AAB5]">
+                <label htmlFor="gym-email" className="mb-1.5 block text-xs text-[#A4AAB5]">
                   Support Email
                 </label>
                 <input
@@ -218,11 +218,11 @@ export default function SettingsPage() {
                     setSettings({ ...settings, email: e.target.value });
                     setDirty(true);
                   }}
-                  className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
+                  className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
                 />
               </div>
               <div>
-                <label htmlFor="gym-phone" className="mb-1 block text-[11px] text-[#A4AAB5]">
+                <label htmlFor="gym-phone" className="mb-1.5 block text-xs text-[#A4AAB5]">
                   Phone Number
                 </label>
                 <input
@@ -233,11 +233,11 @@ export default function SettingsPage() {
                     setSettings({ ...settings, phone: e.target.value });
                     setDirty(true);
                   }}
-                  className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
+                  className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
                 />
               </div>
               <div>
-                <label htmlFor="gym-timezone" className="mb-1 block text-[11px] text-[#A4AAB5]">
+                <label htmlFor="gym-timezone" className="mb-1.5 block text-xs text-[#A4AAB5]">
                   Timezone
                 </label>
                 <input
@@ -248,11 +248,11 @@ export default function SettingsPage() {
                     setSettings({ ...settings, timezone: e.target.value });
                     setDirty(true);
                   }}
-                  className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
+                  className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
                 />
               </div>
               <div className="sm:col-span-2">
-                <label htmlFor="gym-address" className="mb-1 block text-[11px] text-[#A4AAB5]">
+                <label htmlFor="gym-address" className="mb-1.5 block text-xs text-[#A4AAB5]">
                   Address
                 </label>
                 <input
@@ -263,17 +263,17 @@ export default function SettingsPage() {
                     setSettings({ ...settings, address: e.target.value });
                     setDirty(true);
                   }}
-                  className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
+                  className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
                 />
               </div>
             </div>
 
             {permissions.canManageGymSettings && (
-              <div className="flex justify-end border-t border-[#242934] pt-2.5">
+              <div className="flex justify-end border-t border-[#242934] pt-3">
                 <button
                   type="submit"
                   disabled={!dirty || saving}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:cursor-not-allowed disabled:border disabled:border-[#242934] disabled:bg-[#20242D] disabled:text-[#8A93A2]"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E32935] px-4 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:cursor-not-allowed disabled:border disabled:border-[#242934] disabled:bg-[#20242D] disabled:text-[#8A93A2]"
                 >
                   <Save className="h-3.5 w-3.5" />
                   <span>{saving ? "Saving..." : "Save Gym Info"}</span>
@@ -285,73 +285,73 @@ export default function SettingsPage() {
           /* Trainor Profile & Coaching Information */
           <form
             onSubmit={handleSaveProfile}
-            className="flex flex-col justify-between space-y-3 rounded-xl border border-[#242934] bg-[#111318] p-4 lg:col-span-7"
+            className="flex flex-col justify-between space-y-4 rounded-xl border border-[#242934] bg-[#111318] p-5 lg:col-span-7"
           >
-            <div className="space-y-3">
-              <div className="flex items-center justify-between border-b border-[#242934] pb-2.5">
-                <div className="flex items-center gap-2">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-[#242934] pb-3">
+                <div className="flex items-center gap-2.5">
                   <UserCircle2 className="h-4 w-4 text-[#E32935]" />
                   <div>
-                    <h2 className="text-xs font-semibold text-[#F5F6F8]">Coach Profile &amp; Info</h2>
-                    <p className="text-[10px] text-[#8A93A2]">
+                    <h2 className="text-sm font-semibold text-[#F5F6F8]">Coach Profile &amp; Info</h2>
+                    <p className="text-xs text-[#8A93A2]">
                       Your coaching identity displayed to clients and admins.
                     </p>
                   </div>
                 </div>
-                <span className="rounded-md border border-[#2BCB83]/30 bg-[#2BCB83]/10 px-2 py-0.5 text-[10px] font-semibold text-[#2BCB83]">
+                <span className="rounded-md border border-[#2BCB83]/30 bg-[#2BCB83]/10 px-2.5 py-1 text-xs font-semibold text-[#2BCB83]">
                   Active {currentUser.roleLabel}
                 </span>
               </div>
 
               {profileError && (
-                <div className="flex items-center gap-2 rounded-lg border border-[#F05252]/30 bg-[#F05252]/10 p-2 text-xs text-[#F05252]">
-                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                <div className="flex items-center gap-2 rounded-lg border border-[#F05252]/30 bg-[#F05252]/10 p-2.5 text-xs text-[#F05252]">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
                   <span>{profileError}</span>
                 </div>
               )}
 
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-[11px] text-[#A4AAB5]">Full Name</label>
+                  <label className="mb-1.5 block text-xs text-[#A4AAB5]">Full Name</label>
                   <input
                     required
                     value={profileName}
                     onChange={(e) => setProfileName(e.target.value)}
-                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
+                    className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-[11px] text-[#A4AAB5]">Email Address</label>
+                  <label className="mb-1.5 block text-xs text-[#A4AAB5]">Email Address</label>
                   <input
                     disabled
                     value={currentUser.email}
-                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#8A93A2] opacity-80"
+                    className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#8A93A2] opacity-80"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-[11px] text-[#A4AAB5]">Role</label>
+                  <label className="mb-1.5 block text-xs text-[#A4AAB5]">Role</label>
                   <input
                     disabled
                     value={currentUser.roleLabel}
-                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#8A93A2] opacity-80"
+                    className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#8A93A2] opacity-80"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-[11px] text-[#A4AAB5]">Gym Branch</label>
+                  <label className="mb-1.5 block text-xs text-[#A4AAB5]">Gym Branch</label>
                   <input
                     disabled
                     value="IronHub Fitness · Cadiz City"
-                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#8A93A2] opacity-80"
+                    className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#8A93A2] opacity-80"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end border-t border-[#242934] pt-2.5">
+            <div className="flex justify-end border-t border-[#242934] pt-3">
               <button
                 type="submit"
                 disabled={profileSaving || profileName.trim() === currentUser.name}
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:cursor-not-allowed disabled:border disabled:border-[#242934] disabled:bg-[#20242D] disabled:text-[#8A93A2]"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E32935] px-4 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:cursor-not-allowed disabled:border disabled:border-[#242934] disabled:bg-[#20242D] disabled:text-[#8A93A2]"
               >
                 <Save className="h-3.5 w-3.5" />
                 <span>{profileSaving ? "Saving..." : "Save Profile"}</span>
@@ -363,38 +363,38 @@ export default function SettingsPage() {
         {/* Account & Security */}
         <form
           onSubmit={handlePasswordChange}
-          className="flex flex-col justify-between space-y-3 rounded-xl border border-[#242934] bg-[#111318] p-4 lg:col-span-5"
+          className="flex flex-col justify-between space-y-4 rounded-xl border border-[#242934] bg-[#111318] p-5 lg:col-span-5"
         >
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 border-b border-[#242934] pb-2.5">
+          <div className="space-y-3.5">
+            <div className="flex items-center gap-2.5 border-b border-[#242934] pb-3">
               <KeyRound className="h-4 w-4 text-[#E32935]" />
               <div>
-                <h2 className="text-xs font-semibold text-[#F5F6F8]">Account &amp; Security</h2>
-                <p className="text-[10px] text-[#8A93A2]">
+                <h2 className="text-sm font-semibold text-[#F5F6F8]">Account &amp; Security</h2>
+                <p className="text-xs text-[#8A93A2]">
                   {currentUser.name} ({currentUser.roleLabel}) · {currentUser.email}
                 </p>
               </div>
             </div>
 
             {pwError && (
-              <div className="flex items-center gap-2 rounded-lg border border-[#F05252]/30 bg-[#F05252]/10 p-2 text-xs text-[#F05252]">
-                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+              <div className="flex items-center gap-2 rounded-lg border border-[#F05252]/30 bg-[#F05252]/10 p-2.5 text-xs text-[#F05252]">
+                <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>{pwError}</span>
               </div>
             )}
 
             <div>
-              <label className="mb-1 block text-[11px] text-[#A4AAB5]">Current Password</label>
+              <label className="mb-1.5 block text-xs text-[#A4AAB5]">Current Password</label>
               <input
                 type="password"
                 required
                 value={pwForm.currentPassword}
                 onChange={(e) => setPwForm({ ...pwForm, currentPassword: e.target.value })}
-                className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
+                className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
               />
             </div>
             <div>
-              <label className="mb-1 block text-[11px] text-[#A4AAB5]">
+              <label className="mb-1.5 block text-xs text-[#A4AAB5]">
                 New Password (min 8 characters)
               </label>
               <input
@@ -403,16 +403,16 @@ export default function SettingsPage() {
                 minLength={8}
                 value={pwForm.newPassword}
                 onChange={(e) => setPwForm({ ...pwForm, newPassword: e.target.value })}
-                className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
+                className="h-9 w-full rounded-lg border border-[#242934] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
               />
             </div>
           </div>
 
-          <div className="flex justify-end border-t border-[#242934] pt-2.5">
+          <div className="flex justify-end border-t border-[#242934] pt-3">
             <button
               type="submit"
               disabled={pwSaving}
-              className="h-8 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:opacity-50"
+              className="h-9 rounded-lg bg-[#E32935] px-4 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:opacity-50"
             >
               {pwSaving ? "Updating..." : "Update Password"}
             </button>

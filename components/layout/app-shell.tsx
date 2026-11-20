@@ -120,14 +120,14 @@ export function AppShell({
         />
       )}
 
-      {/* Compressed, strictly fixed-size 196px x 100vh Sidebar */}
+      {/* Balanced Fixed Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex h-screen w-[196px] shrink-0 flex-col border-r border-[#1F232C] bg-[#0D0F14] transition-transform duration-200 ease-[var(--ease-out)] print:hidden lg:sticky lg:top-0 lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex h-screen w-[216px] shrink-0 flex-col border-r border-[#1F232C] bg-[#0D0F14] transition-transform duration-200 ease-[var(--ease-out)] print:hidden lg:sticky lg:top-0 lg:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex h-14 shrink-0 items-center justify-between px-4">
+        <div className="flex h-15 shrink-0 items-center justify-between px-4">
           <Link
             href="/dashboard"
             className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]"
@@ -144,7 +144,7 @@ export function AppShell({
           </button>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-2.5 py-2" aria-label="Primary navigation">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2.5" aria-label="Primary navigation">
           {visibleNav.map((item) => {
             const active =
               pathname === item.href ||
@@ -156,7 +156,7 @@ export function AppShell({
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
                 className={cn(
-                  "group relative flex h-9 items-center gap-2.5 rounded-lg px-3 text-xs font-medium transition-[background-color,color,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]",
+                  "group relative flex h-10 items-center gap-2.5 rounded-lg px-3 text-[13px] font-medium transition-[background-color,color,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]",
                   active
                     ? "bg-gradient-to-r from-[#E32935] via-[#B81F2A]/75 to-[#E32935]/10 text-white shadow-[0_6px_18px_-6px_rgba(227,41,53,0.5)]"
                     : "text-[#A4AAB5] hover:bg-[#171A21] hover:text-[#F5F6F8]"
@@ -175,10 +175,10 @@ export function AppShell({
         </nav>
 
         {/* Fixed-height Athletic Brand Card */}
-        <div className="shrink-0 p-2.5">
+        <div className="shrink-0 p-3">
           <Link
             href={hasPermission(session.role, "checkin:perform") ? "/check-in" : "/members"}
-            className="group relative block h-[132px] overflow-hidden rounded-xl border border-[#242934] bg-[#111318]"
+            className="group relative block h-[142px] overflow-hidden rounded-xl border border-[#242934] bg-[#111318]"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -206,8 +206,8 @@ export function AppShell({
 
       {/* Main Column */}
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Compact Top Bar */}
-        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-3 border-b border-[#1F232C] bg-[#090A0D]/90 px-4 backdrop-blur-md print:hidden lg:px-5">
+        {/* Top Bar */}
+        <header className="sticky top-0 z-30 flex h-15 shrink-0 items-center justify-between gap-3 border-b border-[#1F232C] bg-[#090A0D]/90 px-4 backdrop-blur-md print:hidden md:px-6">
           <div className="flex items-center gap-2.5">
             <button
               type="button"
@@ -329,8 +329,8 @@ export function AppShell({
           </div>
         </header>
 
-        {/* Compressed Main Content Container */}
-        <main className="mx-auto w-full max-w-[1040px] flex-1 p-3.5 md:p-4">
+        {/* Full-Width Responsive Workspace Container */}
+        <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-4 md:px-6 md:py-5">
           {children}
         </main>
       </div>

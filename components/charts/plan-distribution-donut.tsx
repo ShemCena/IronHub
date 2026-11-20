@@ -30,7 +30,7 @@ export function PlanDistributionDonut({
 }) {
   if (loading) {
     return (
-      <div className="flex h-36 items-center justify-center text-xs text-[#8A93A2]">
+      <div className="flex h-44 items-center justify-center text-xs text-[#8A93A2]">
         Loading plan mix...
       </div>
     );
@@ -38,7 +38,7 @@ export function PlanDistributionDonut({
 
   if (!data.length) {
     return (
-      <div className="flex h-36 items-center justify-center text-xs text-[#8A93A2]">
+      <div className="flex h-44 items-center justify-center text-xs text-[#8A93A2]">
         No active plans yet.
       </div>
     );
@@ -48,17 +48,17 @@ export function PlanDistributionDonut({
   const top = sorted[0];
 
   return (
-    <div className="flex items-center justify-center gap-3">
-      <div className="relative flex h-[126px] w-[126px] shrink-0 items-center justify-center">
-        <PieChart width={126} height={126}>
+    <div className="flex items-center justify-center gap-4">
+      <div className="relative flex h-[142px] w-[142px] shrink-0 items-center justify-center">
+        <PieChart width={142} height={142}>
           <Pie
             data={sorted}
             dataKey="count"
             nameKey="name"
             cx="50%"
             cy="50%"
-            innerRadius={39}
-            outerRadius={56}
+            innerRadius={44}
+            outerRadius={64}
             paddingAngle={3}
             cornerRadius={4}
             stroke="none"
@@ -74,24 +74,24 @@ export function PlanDistributionDonut({
               border: "1px solid #292E38",
               borderRadius: "8px",
               color: "#F5F6F8",
-              fontSize: "11px",
+              fontSize: "12px",
             }}
           />
         </PieChart>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-          <span className="text-lg font-bold text-[#F5F6F8] tabular-nums">
+          <span className="text-xl font-bold text-[#F5F6F8] tabular-nums">
             {top.percentage}%
           </span>
-          <span className="text-[10px] font-medium text-[#A4AAB5]">{top.name}</span>
+          <span className="text-[11px] font-medium text-[#A4AAB5]">{top.name}</span>
         </div>
       </div>
 
-      <div className="min-w-0 flex-1 space-y-2">
+      <div className="min-w-0 flex-1 space-y-2.5">
         {sorted.map((plan, idx) => (
-          <div key={plan.name} className="flex items-center justify-between gap-2 text-[11px]">
-            <span className="flex min-w-0 items-center gap-1.5 text-[#A4AAB5]">
+          <div key={plan.name} className="flex items-center justify-between gap-2 text-xs">
+            <span className="flex min-w-0 items-center gap-2 text-[#A4AAB5]">
               <span
-                className="h-2 w-2 shrink-0 rounded-full"
+                className="h-2.5 w-2.5 shrink-0 rounded-full"
                 style={{ backgroundColor: getPlanTierColor(plan.name, idx) }}
                 aria-hidden="true"
               />
@@ -103,10 +103,6 @@ export function PlanDistributionDonut({
           </div>
         ))}
       </div>
-
-      <span className="sr-only">
-        {sorted.map((p) => `${p.name}: ${p.count} (${p.percentage}%)`).join(", ")}
-      </span>
     </div>
   );
 }
