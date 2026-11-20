@@ -33,7 +33,7 @@ export async function GET() {
         : Promise.resolve([]),
       canViewAudit
         ? prisma.auditLog.findMany({
-            take: 30,
+            take: 200,
             orderBy: { createdAt: "desc" },
             include: { actor: { select: { name: true, role: true } } },
           })

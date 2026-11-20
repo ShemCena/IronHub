@@ -132,7 +132,11 @@ export async function PATCH(
 
       await writeAuditLog(tx, {
         actorId: session.userId,
-        action: data.status ? `MEMBER_STATUS_${data.status}` : "MEMBER_UPDATED",
+        action: nextPasswordHash
+          ? "MEMBER_PASSWORD_RESET"
+          : data.status
+          ? `MEMBER_STATUS_${data.status}`
+          : "MEMBER_UPDATED",
         entityType: "Member",
         entityId: id,
       });
