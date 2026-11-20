@@ -281,7 +281,6 @@ export default function DashboardPage() {
               deltaPercent={loading ? null : data?.trainerStats?.sessionsDelta ?? 14}
               icon={CalendarCheck}
               tone="red"
-              href="/check-in"
             />
             <KpiCard
               label="Monthly Salary"
@@ -376,36 +375,21 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* Quick Actions for Trainor */}
+            {/* Quick Actions for Trainor (no check-in access) */}
             <div className="flex flex-col justify-between rounded-xl border border-[#242934] bg-[#111318] p-3.5 lg:col-span-4">
               <h2 className="mb-2 text-xs font-semibold text-[#F5F6F8]">Coach Quick Actions</h2>
               <div className="my-auto space-y-2">
                 <Link
-                  href="/check-in"
+                  href="/members"
                   className="group flex items-center justify-between rounded-xl border border-[#E32935]/30 bg-[#171A21] p-2.5 transition-colors hover:border-[#E32935]/60 hover:bg-[#1D2029]"
                 >
                   <div className="flex items-center gap-2.5">
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#E32935]/18 text-[#E32935]">
-                      <ScanLine className="h-4 w-4" />
-                    </span>
-                    <div>
-                      <p className="text-xs font-semibold text-[#F5F6F8]">Scan Client QR</p>
-                      <p className="text-[10px] text-[#8A93A2]">Log Session Check-In</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-3.5 w-3.5 text-[#8A93A2] transition-transform group-hover:translate-x-0.5" />
-                </Link>
-                <Link
-                  href="/members"
-                  className="group flex items-center justify-between rounded-xl border border-[#242934] bg-[#171A21] p-2.5 transition-colors hover:border-[#363D4A] hover:bg-[#1D2029]"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#4B91F1]/18 text-[#4B91F1]">
                       <Users className="h-4 w-4" />
                     </span>
                     <div>
-                      <p className="text-xs font-semibold text-[#F5F6F8]">My Clients</p>
-                      <p className="text-[10px] text-[#8A93A2]">View Coached Roster</p>
+                      <p className="text-xs font-semibold text-[#F5F6F8]">My Coached Clients</p>
+                      <p className="text-[10px] text-[#8A93A2]">View Assigned Roster</p>
                     </div>
                   </div>
                   <ChevronRight className="h-3.5 w-3.5 text-[#8A93A2] transition-transform group-hover:translate-x-0.5" />
@@ -419,8 +403,8 @@ export default function DashboardPage() {
                       <Wallet className="h-4 w-4" />
                     </span>
                     <div>
-                      <p className="text-xs font-semibold text-[#F5F6F8]">Account Settings</p>
-                      <p className="text-[10px] text-[#8A93A2]">Password &amp; Security</p>
+                      <p className="text-xs font-semibold text-[#F5F6F8]">Account Security</p>
+                      <p className="text-[10px] text-[#8A93A2]">Update Password</p>
                     </div>
                   </div>
                   <ChevronRight className="h-3.5 w-3.5 text-[#8A93A2] transition-transform group-hover:translate-x-0.5" />

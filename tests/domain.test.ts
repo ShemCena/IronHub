@@ -106,6 +106,7 @@ describe("RBAC permissions & 3-role hierarchy", () => {
     expect(canManageStaffRole("TRAINER", "ADMIN")).toBe(false);
     expect(hasPermission("TRAINER", "dashboard:view")).toBe(true);
     expect(hasPermission("TRAINER", "members:view")).toBe(true);
+    expect(hasPermission("TRAINER", "checkin:perform")).toBe(false);
     expect(hasPermission("TRAINER", "reports:view")).toBe(false);
   });
 });

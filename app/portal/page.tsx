@@ -706,9 +706,9 @@ export default function MemberPortalDashboardPage() {
             </div>
           )}
 
-          {/* SECTION 2: MY QR PASS */}
+          {/* SECTION 2: MY QR PASS (Compressed) */}
           {section === "qr" && (
-            <div className="grid grid-cols-1 gap-3 animate-panel-enter md:grid-cols-12">
+            <div className="mx-auto grid max-w-[780px] grid-cols-1 gap-3 animate-panel-enter md:grid-cols-12">
               <div className="space-y-3 rounded-xl border border-[#242934] bg-[#111318] p-4 print:hidden md:col-span-5">
                 <div>
                   <h1 className="text-base font-semibold text-[#F5F6F8]">My Personal QR Pass</h1>
@@ -853,9 +853,9 @@ export default function MemberPortalDashboardPage() {
             </div>
           )}
 
-          {/* SECTION 3: ATTENDANCE HISTORY WITH PAGINATION */}
+          {/* SECTION 3: ATTENDANCE HISTORY WITH PAGINATION (Compressed) */}
           {section === "attendance" && (
-            <div className="space-y-3 animate-panel-enter">
+            <div className="mx-auto max-w-[820px] space-y-2.5 animate-panel-enter">
               <div>
                 <h1 className="text-lg font-semibold text-[#F5F6F8]">My Attendance Log</h1>
                 <p className="text-[11px] text-[#A4AAB5]">
@@ -918,9 +918,9 @@ export default function MemberPortalDashboardPage() {
             </div>
           )}
 
-          {/* SECTION 4: MEMBERSHIP & RECEIPTS WITH PAGINATION */}
+          {/* SECTION 4: MEMBERSHIP & RECEIPTS WITH PAGINATION (Compressed) */}
           {section === "membership" && (
-            <div className="space-y-3 animate-panel-enter">
+            <div className="mx-auto max-w-[840px] space-y-2.5 animate-panel-enter">
               <div>
                 <h1 className="text-lg font-semibold text-[#F5F6F8]">
                   Membership Plan &amp; Receipts
@@ -1023,11 +1023,11 @@ export default function MemberPortalDashboardPage() {
             </div>
           )}
 
-          {/* SECTION 5: SETTINGS & PROFILE PICTURE UPLOAD */}
+          {/* SECTION 5: SETTINGS & PROFILE PICTURE UPLOAD (Compressed) */}
           {section === "settings" && (
             <form
               onSubmit={handleSaveSettings}
-              className="grid grid-cols-1 gap-3 animate-panel-enter lg:grid-cols-12"
+              className="mx-auto grid max-w-[820px] grid-cols-1 gap-3 animate-panel-enter lg:grid-cols-12"
             >
               {/* Left: Photo Upload Card */}
               <div className="flex flex-col items-center justify-center rounded-xl border border-[#242934] bg-[#111318] p-4 text-center lg:col-span-4">

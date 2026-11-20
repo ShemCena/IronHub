@@ -17,6 +17,8 @@ import {
   ScanLine,
   ArrowRight,
   ChevronDown,
+  UserCog,
+  ShieldAlert,
 } from "lucide-react";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { cn } from "@/lib/utils";
@@ -36,6 +38,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Check-In", href: "/check-in", icon: ScanLine, permission: "checkin:perform" },
   { label: "Plans & Payments", href: "/plans-payments", icon: CreditCard, permission: "plans:view" },
   { label: "Reports", href: "/reports", icon: BarChart3, permission: "reports:view" },
+  { label: "Admins & Trainors", href: "/team", icon: UserCog, permission: "staff:manage" },
+  { label: "Audit Logs", href: "/audit-logs", icon: ShieldAlert, permission: "audit:view" },
   { label: "Settings", href: "/settings", icon: Settings, permission: "account:self" },
 ];
 
@@ -213,8 +217,8 @@ export function AppShell({
         {/* Fixed-height Athletic Brand Card */}
         <div className="shrink-0 p-2.5">
           <Link
-            href="/check-in"
-            className="group relative block h-[144px] overflow-hidden rounded-xl border border-[#242934] bg-[#111318]"
+            href={hasPermission(session.role, "checkin:perform") ? "/check-in" : "/members"}
+            className="group relative block h-[132px] overflow-hidden rounded-xl border border-[#242934] bg-[#111318]"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
