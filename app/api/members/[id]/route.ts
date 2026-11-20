@@ -75,6 +75,23 @@ export async function PATCH(
       }
     }
 
+    if (data.email) {
+      const cleanEmail = data.email.toLowerCase();
+      const [dupMember, dupUser] = await Promise.all([
+        prisma.member.findFirst({
+          where: { email: cleanEmail, id: { not: id } },
+          select: { id: true },
+        }),
+        prisma.user.findUnique({ where: { email: cleanEmail }, select: { id: true } }),
+      ]);
+      if (dupMember || dupUser) {
+        return NextResponse.json(
+          { error: "This email address is already registered to another account." },
+          { status: 409 }
+        );
+      }
+    }
+
     const updated = await prisma.$transaction(async (tx) => {
       const m = await tx.member.update({
         where: { id },

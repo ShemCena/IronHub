@@ -54,10 +54,13 @@ export async function POST(request: Request) {
     }
 
     const cleanEmail = email.toLowerCase();
-    const existing = await prisma.user.findUnique({ where: { email: cleanEmail } });
-    if (existing) {
+    const [existingUser, existingMember] = await Promise.all([
+      prisma.user.findUnique({ where: { email: cleanEmail }, select: { id: true } }),
+      prisma.member.findUnique({ where: { email: cleanEmail }, select: { id: true } }),
+    ]);
+    if (existingUser || existingMember) {
       return NextResponse.json(
-        { error: "A staff user with this email already exists." },
+        { error: "This email address is already registered to another account." },
         { status: 409 }
       );
     }

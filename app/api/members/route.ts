@@ -142,16 +142,18 @@ export async function POST(request: Request) {
     }
 
     const data = parsed.data;
-    const cleanEmail = data.email ? data.email.toLowerCase() : null;
+    const cleanEmail = data.email.toLowerCase();
 
-    if (cleanEmail) {
-      const duplicate = await prisma.member.findUnique({ where: { email: cleanEmail } });
-      if (duplicate) {
-        return NextResponse.json(
-          { error: "A member with this email address already exists." },
-          { status: 409 }
-        );
-      }
+    const [duplicateMember, duplicateUser] = await Promise.all([
+      prisma.member.findUnique({ where: { email: cleanEmail }, select: { id: true } }),
+      prisma.user.findUnique({ where: { email: cleanEmail }, select: { id: true } }),
+    ]);
+
+    if (duplicateMember || duplicateUser) {
+      return NextResponse.json(
+        { error: "This email address is already registered to another account." },
+        { status: 409 }
+      );
     }
 
     const result = await prisma.$transaction(async (tx) => {
@@ -168,7 +170,7 @@ export async function POST(request: Request) {
         }
       }
 
-      const defaultPortalHash = await bcrypt.hash("Member@2026!", 10);
+      const initialPasswordHash = await bcrypt.hash(data.password, 12);
       const assignedTrainerId =
         session.role === "TRAINER" ? session.userId : data.trainerId || null;
       const trainerFee = Number(data.trainerFee ?? 0);
@@ -184,7 +186,7 @@ export async function POST(request: Request) {
           emergencyContactPhone: data.emergencyContactPhone || null,
           address: data.address || null,
           notes: data.notes || null,
-          passwordHash: defaultPortalHash,
+          passwordHash: initialPasswordHash,
           portalActivatedAt: new Date(),
           status: assignedPlan ? "ACTIVE" : "EXPIRED",
         },

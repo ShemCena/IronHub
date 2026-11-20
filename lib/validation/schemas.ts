@@ -8,12 +8,11 @@ export const loginSchema = z.object({
 export const memberCreateSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required.").max(80),
   lastName: z.string().trim().min(1, "Last name is required.").max(80),
-  email: z
+  email: z.string().trim().email("Enter a valid email address."),
+  password: z
     .string()
-    .trim()
-    .email("Enter a valid email address.")
-    .optional()
-    .or(z.literal("")),
+    .min(8, "Initial password must be at least 8 characters.")
+    .max(100),
   phone: z.string().trim().max(30).optional().or(z.literal("")),
   emergencyContactName: z.string().trim().max(120).optional().or(z.literal("")),
   emergencyContactPhone: z.string().trim().max(30).optional().or(z.literal("")),
@@ -29,8 +28,14 @@ export const memberCreateSchema = z.object({
 });
 
 export const memberUpdateSchema = memberCreateSchema
-  .omit({ planId: true, paymentMethod: true, paymentReference: true })
+  .omit({ planId: true, paymentMethod: true, paymentReference: true, password: true })
   .extend({
+    email: z
+      .string()
+      .trim()
+      .email("Enter a valid email address.")
+      .optional()
+      .or(z.literal("")),
     status: z.enum(["ACTIVE", "EXPIRED", "SUSPENDED", "ARCHIVED"]).optional(),
   });
 

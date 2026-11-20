@@ -81,6 +81,7 @@ export default function MembersPage() {
     firstName: "",
     lastName: "",
     email: "",
+    password: "",
     phone: "",
     address: "",
     trainerId: "",
@@ -142,6 +143,7 @@ export default function MembersPage() {
       firstName: "",
       lastName: "",
       email: "",
+      password: "",
       phone: "",
       address: "",
       trainerId: trainers[0]?.id ?? "",
@@ -161,6 +163,7 @@ export default function MembersPage() {
       firstName: m.firstName,
       lastName: m.lastName,
       email: m.email ?? "",
+      password: "",
       phone: m.phone ?? "",
       address: "",
       trainerId: m.trainerId ?? "",
@@ -201,7 +204,7 @@ export default function MembersPage() {
         wasEdit ? "Client Updated" : "Client Registered",
         wasEdit
           ? `${savedName}'s profile has been updated.`
-          : `${savedName} has been registered successfully.`
+          : `${savedName} (${data.member?.memberCode ?? ""}) is registered. They can now sign in with their email & initial password, and change it anytime in Settings.`
       );
     } catch {
       setFormError("Network error while saving member.");
@@ -577,11 +580,13 @@ export default function MembersPage() {
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="mb-1 block text-xs text-[#A4AAB5]">Email</label>
+                  <label className="mb-1 block text-xs text-[#A4AAB5]">Email (Unique) *</label>
                   <input
                     type="email"
+                    required
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    placeholder="client@email.com"
                     className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                   />
                 </div>
@@ -594,6 +599,23 @@ export default function MembersPage() {
                   />
                 </div>
               </div>
+
+              {!editTarget && (
+                <div>
+                  <label className="mb-1 block text-xs text-[#A4AAB5]">
+                    Initial Portal Password * (client can change later)
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    minLength={8}
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    placeholder="Min 8 characters"
+                    className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
+                  />
+                </div>
+              )}
 
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                 {role !== "TRAINER" && (
