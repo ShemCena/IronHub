@@ -4,12 +4,24 @@ import { requireStaffSession } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/permissions/rbac";
 import { isGymCurrentlyOpen, type BusinessHoursMap } from "@/lib/domain/membership";
 
+function toDateKey(date: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone,
+  }).format(date);
+}
+
 export async function GET(request: Request) {
   try {
     const session = await requireStaffSession("dashboard:view");
     const { searchParams } = new URL(request.url);
     const daysParam = Number(searchParams.get("days") ?? "7");
     const days = [7, 30, 90].includes(daysParam) ? daysParam : 7;
+
+    const settings = await prisma.gymSetting.findUnique({ where: { id: "default" } });
+    const timeZone = settings?.timezone ?? "Asia/Manila";
 
     const now = new Date();
     const startOfToday = new Date(now);
@@ -26,9 +38,8 @@ export async function GET(request: Request) {
       expiringSoonCount,
       checkInsToday,
       revenueTodayAgg,
-      settings,
       recentCheckIns,
-      membershipsInRange,
+      renewalsInRange,
       newMembersInRange,
       activeMembershipsByPlan,
     ] = await Promise.all([
@@ -52,7 +63,6 @@ export async function GET(request: Request) {
             where: { status: "PAID", paidAt: { gte: startOfToday } },
           })
         : Promise.resolve({ _sum: { amount: null } }),
-      prisma.gymSetting.findUnique({ where: { id: "default" } }),
       prisma.attendanceRecord.findMany({
         take: 6,
         orderBy: { checkedInAt: "desc" },
@@ -63,12 +73,12 @@ export async function GET(request: Request) {
         },
       }),
       prisma.membership.findMany({
-        where: { createdAt: { gte: rangeStart }, isRenewal: true },
-        select: { createdAt: true },
+        where: { startDate: { gte: rangeStart }, isRenewal: true },
+        select: { startDate: true },
       }),
       prisma.member.findMany({
-        where: { createdAt: { gte: rangeStart }, status: { not: "ARCHIVED" } },
-        select: { createdAt: true },
+        where: { joinedAt: { gte: rangeStart }, status: { not: "ARCHIVED" } },
+        select: { joinedAt: true },
       }),
       prisma.membership.groupBy({
         by: ["planNameSnapshot"],
@@ -81,23 +91,24 @@ export async function GET(request: Request) {
     for (let i = 0; i < days; i++) {
       const d = new Date(rangeStart);
       d.setDate(d.getDate() + i);
-      const key = d.toISOString().slice(0, 10);
+      const key = toDateKey(d, timeZone);
       const label = d.toLocaleDateString("en-US", {
         weekday: days <= 7 ? "short" : undefined,
         month: days > 7 ? "short" : undefined,
         day: days > 7 ? "numeric" : undefined,
+        timeZone,
       });
       dayBuckets.set(key, { label, newMembers: 0, renewals: 0 });
     }
 
     for (const m of newMembersInRange) {
-      const key = m.createdAt.toISOString().slice(0, 10);
+      const key = toDateKey(m.joinedAt, timeZone);
       const bucket = dayBuckets.get(key);
       if (bucket) bucket.newMembers += 1;
     }
 
-    for (const r of membershipsInRange) {
-      const key = r.createdAt.toISOString().slice(0, 10);
+    for (const r of renewalsInRange) {
+      const key = toDateKey(r.startDate, timeZone);
       const bucket = dayBuckets.get(key);
       if (bucket) bucket.renewals += 1;
     }
@@ -115,11 +126,13 @@ export async function GET(request: Request) {
 
     const gymStatus = isGymCurrentlyOpen(
       (settings?.businessHours as BusinessHoursMap | undefined) ?? null,
-      settings?.timezone ?? "Asia/Manila"
+      timeZone
     );
 
     return NextResponse.json({
+      coachName: session.name,
       gymName: settings?.gymName ?? "IronHub Fitness",
+      timeZone,
       gymStatus,
       kpis: {
         totalMembers,

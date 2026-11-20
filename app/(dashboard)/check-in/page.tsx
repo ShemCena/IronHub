@@ -10,6 +10,8 @@ import {
   Search,
   UserCheck,
   QrCode,
+  Loader2,
+  ArrowRight,
 } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatDate, formatTime } from "@/lib/formatting/currency";
@@ -53,7 +55,9 @@ export default function CheckInPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const controlsRef = useRef<{ stop: () => void } | null>(null);
 
-  const [scanning, setScanning] = useState(false);
+  const [scanState, setScanState] = useState<"idle" | "requesting" | "scanning">("idle");
+  const [devices, setDevices] = useState<{ deviceId: string; label: string }[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [tokenInput, setTokenInput] = useState("");
   const [result, setResult] = useState<CheckInResult | null>(null);
@@ -123,27 +127,35 @@ export default function CheckInPage() {
 
   async function handleStartCamera() {
     setCameraError(null);
+    setScanState("requesting");
     try {
       const { BrowserQRCodeReader } = await import("@zxing/browser");
-      const reader = new BrowserQRCodeReader();
-      setScanning(true);
+      const list = await BrowserQRCodeReader.listVideoInputDevices();
+      setDevices(list.map((d, i) => ({ deviceId: d.deviceId, label: d.label || `Camera ${i + 1}` })));
 
-      if (!videoRef.current) return;
+      const reader = new BrowserQRCodeReader();
+      if (!videoRef.current) {
+        setScanState("idle");
+        return;
+      }
+
+      const deviceId = selectedDeviceId || list[0]?.deviceId || undefined;
       const controls = await reader.decodeFromVideoDevice(
-        undefined,
+        deviceId,
         videoRef.current,
         (res) => {
           if (res) {
             const text = res.getText();
             controls.stop();
-            setScanning(false);
+            setScanState("idle");
             submitQrToken(text);
           }
         }
       );
       controlsRef.current = controls;
+      setScanState("scanning");
     } catch {
-      setScanning(false);
+      setScanState("idle");
       setCameraError(
         "Camera access is unavailable or denied. Use manual member search or paste a token."
       );
@@ -153,7 +165,7 @@ export default function CheckInPage() {
   function handleStopCamera() {
     controlsRef.current?.stop();
     controlsRef.current = null;
-    setScanning(false);
+    setScanState("idle");
   }
 
   async function handleManualCheckIn(memberId: string) {
@@ -179,14 +191,13 @@ export default function CheckInPage() {
     }
   }
 
+  const scanning = scanState === "scanning";
+
   return (
     <div className="space-y-6 animate-panel-enter">
       <div>
-        <h1
-          className="text-3xl font-bold tracking-tight text-[#F5F6F8]"
-          style={{ fontFamily: "var(--font-barlow), sans-serif" }}
-        >
-          CHECK-IN
+        <h1 className="text-3xl font-semibold tracking-tight text-[#F5F6F8]">
+          Check-In
         </h1>
         <p className="mt-1 text-sm text-[#A4AAB5]">
           Validate member QR credentials or record a manual front-desk check-in.
@@ -196,16 +207,20 @@ export default function CheckInPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Scanner Panel */}
         <div className="rounded-xl border border-[#292E38] bg-[#111318] p-5 lg:col-span-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-[#F5F6F8]">QR Scanner</h2>
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <div>
+              <h2 className="text-base font-semibold text-[#F5F6F8]">QR Scanner</h2>
+              <p className="text-xs text-[#8A93A2]">Camera or USB barcode wedge</p>
+            </div>
             {!scanning ? (
               <button
                 type="button"
+                disabled={scanState === "requesting"}
                 onClick={handleStartCamera}
-                className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46]"
+                className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#E32935] px-3.5 text-xs font-semibold text-white hover:bg-[#F13A46] disabled:opacity-60"
               >
                 <Camera className="h-4 w-4" />
-                <span>Start Camera</span>
+                <span>{scanState === "requesting" ? "Starting..." : "Start Camera"}</span>
               </button>
             ) : (
               <button
@@ -219,24 +234,79 @@ export default function CheckInPage() {
             )}
           </div>
 
-          <div className="relative flex aspect-square max-h-72 w-full items-center justify-center overflow-hidden rounded-xl border border-[#292E38] bg-[#090A0D]">
+          {devices.length > 1 && (
+            <div className="mb-3">
+              <select
+                value={selectedDeviceId}
+                onChange={(e) => setSelectedDeviceId(e.target.value)}
+                aria-label="Select camera device"
+                className="h-9 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs text-[#F5F6F8]"
+              >
+                {devices.map((d) => (
+                  <option key={d.deviceId} value={d.deviceId}>
+                    {d.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Viewfinder with 4 L-shaped corner brackets */}
+          <div className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-xl border border-[#292E38] bg-[#090A0D]">
             <video
               ref={videoRef}
               className={cn("h-full w-full object-cover", !scanning && "hidden")}
               muted
               playsInline
             />
-            {!scanning && (
+
+            {scanState === "requesting" && (
               <div className="flex flex-col items-center gap-2 px-6 text-center">
-                <QrCode className="h-10 w-10 text-[#747C89]" />
-                <p className="text-xs text-[#A4AAB5]">
-                  Camera is idle. Click Start Camera when ready to scan a member QR code.
-                </p>
+                <Loader2 className="h-8 w-8 animate-spin text-[#E32935]" />
+                <p className="text-xs text-[#A4AAB5]">Requesting camera permission...</p>
               </div>
             )}
 
-            {/* Scanner frame corners & active-only scan line */}
-            <div className="pointer-events-none absolute inset-6 rounded-lg border border-[#E32935]/40">
+            {scanState === "idle" && (
+              <div className="flex flex-col items-center gap-3 px-6 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#E32935]/12 text-[#E32935] ring-1 ring-[#E32935]/30 shadow-[0_0_28px_rgba(227,41,53,0.2)]">
+                  <QrCode className="h-8 w-8" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-[#F5F6F8]">Scan Member QR Code</p>
+                  <p className="mt-0.5 text-xs text-[#8A93A2]">
+                    Click Start Camera or use a handheld scanner below
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* L-shaped corner reticles */}
+            <div className="pointer-events-none absolute inset-6">
+              <span
+                className={cn(
+                  "absolute left-0 top-0 h-6 w-6 rounded-tl-md border-l-2 border-t-2",
+                  scanning ? "border-[#E32935]" : "border-[#8A93A2]/60"
+                )}
+              />
+              <span
+                className={cn(
+                  "absolute right-0 top-0 h-6 w-6 rounded-tr-md border-r-2 border-t-2",
+                  scanning ? "border-[#E32935]" : "border-[#8A93A2]/60"
+                )}
+              />
+              <span
+                className={cn(
+                  "absolute bottom-0 left-0 h-6 w-6 rounded-bl-md border-b-2 border-l-2",
+                  scanning ? "border-[#E32935]" : "border-[#8A93A2]/60"
+                )}
+              />
+              <span
+                className={cn(
+                  "absolute bottom-0 right-0 h-6 w-6 rounded-br-md border-b-2 border-r-2",
+                  scanning ? "border-[#E32935]" : "border-[#8A93A2]/60"
+                )}
+              />
               {scanning && (
                 <div className="animate-scan-line h-0.5 w-full bg-[#E32935] shadow-[0_0_8px_#E32935]" />
               )}
@@ -262,12 +332,12 @@ export default function CheckInPage() {
               value={tokenInput}
               onChange={(e) => setTokenInput(e.target.value)}
               placeholder="Or scan / paste QR token (IH1:...)"
-              className="h-10 flex-1 rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs text-[#F5F6F8] placeholder:text-[#747C89] focus:border-[#E32935] focus:outline-none"
+              className="h-10 flex-1 rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]/40"
             />
             <button
               type="submit"
               disabled={submitting || !tokenInput.trim()}
-              className="h-10 rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D] disabled:opacity-40"
+              className="h-10 rounded-lg border border-[#292E38] bg-[#171A21] px-3.5 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D] disabled:opacity-40"
             >
               Verify
             </button>
@@ -276,57 +346,104 @@ export default function CheckInPage() {
 
         {/* Result & Manual Fallback */}
         <div className="space-y-6 lg:col-span-7">
-          {/* Verification Result */}
+          {/* Hero Verification Result */}
           <div
             className={cn(
-              "rounded-xl border p-5 transition-colors",
+              "rounded-xl border p-6 transition-colors",
               result?.outcome === "APPROVED"
-                ? "border-[#2BCB83]/40 bg-[#2BCB83]/10"
+                ? "border-[#2BCB83]/40 bg-gradient-to-b from-[#2BCB83]/15 via-[#111318] to-[#111318]"
                 : result?.outcome === "DENIED"
-                ? "border-[#F05252]/40 bg-[#F05252]/10"
+                ? "border-[#F05252]/40 bg-gradient-to-b from-[#F05252]/15 via-[#111318] to-[#111318]"
                 : "border-[#292E38] bg-[#111318]"
             )}
           >
             {!result ? (
-              <div className="flex items-center gap-3 text-sm text-[#747C89]">
-                <UserCheck className="h-5 w-5" />
-                <span>Scan a QR code or select a member below to verify access.</span>
+              <div className="flex min-h-[104px] items-center gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#292E38] bg-[#171A21] text-[#8A93A2]">
+                  <UserCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[#F5F6F8]">Ready to Verify</p>
+                  <p className="mt-0.5 text-xs text-[#8A93A2]">
+                    Scan a member QR pass or use the manual search below to record attendance.
+                  </p>
+                </div>
               </div>
             ) : result.outcome === "APPROVED" ? (
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-[#2BCB83]" />
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3.5">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#2BCB83]/20 text-[#2BCB83] ring-1 ring-[#2BCB83]/40">
+                    <CheckCircle2 className="h-6 w-6" />
+                  </div>
                   <div>
-                    <p className="text-base font-semibold text-[#F5F6F8]">
-                      Check-In Approved — {result.member?.name}
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#2BCB83]">
+                      Check-In Successful
+                    </p>
+                    <p className="mt-0.5 text-lg font-semibold text-[#F5F6F8]">
+                      {result.member?.name}
                     </p>
                     <p className="text-xs text-[#A4AAB5]">
                       {result.member?.memberCode} · {result.member?.planName}
                       {result.member?.expiryDate
                         ? ` · Valid until ${formatDate(result.member.expiryDate)}`
                         : ""}
+                      {result.checkedInAt ? ` · ${formatTime(result.checkedInAt)}` : ""}
                     </p>
                   </div>
                 </div>
-                {result.member && (
-                  <Link
-                    href={`/members/${result.member.id}`}
-                    className="rounded-lg border border-[#292E38] bg-[#111318] px-3 py-1.5 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
+                <div className="flex items-center gap-2">
+                  {result.member && (
+                    <Link
+                      href={`/members/${result.member.id}`}
+                      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
+                    >
+                      <span>View Member</span>
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setResult(null)}
+                    className="h-9 rounded-lg px-2.5 text-xs text-[#8A93A2] hover:text-white"
                   >
-                    View Profile
-                  </Link>
-                )}
+                    Clear
+                  </button>
+                </div>
               </div>
             ) : (
-              <div className="flex items-start gap-3">
-                <XCircle className="mt-0.5 h-6 w-6 shrink-0 text-[#F05252]" />
-                <div>
-                  <p className="text-base font-semibold text-[#F5F6F8]">
-                    Check-In Denied {result.member ? `— ${result.member.name}` : ""}
-                  </p>
-                  <p className="text-xs text-[#F05252]">
-                    {result.reason ?? "Access is not permitted."}
-                  </p>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3.5">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#F05252]/20 text-[#F05252] ring-1 ring-[#F05252]/40">
+                    <XCircle className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#F05252]">
+                      Check-In Denied
+                    </p>
+                    <p className="mt-0.5 text-lg font-semibold text-[#F5F6F8]">
+                      {result.member?.name ?? "Unrecognized Credential"}
+                    </p>
+                    <p className="text-xs text-[#F05252]">
+                      {result.reason ?? "Access is not permitted."}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {result.member && (
+                    <Link
+                      href={`/members/${result.member.id}`}
+                      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
+                    >
+                      <span>View Profile</span>
+                    </Link>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setResult(null)}
+                    className="h-9 rounded-lg px-2.5 text-xs text-[#8A93A2] hover:text-white"
+                  >
+                    Clear
+                  </button>
                 </div>
               </div>
             )}
@@ -337,18 +454,18 @@ export default function CheckInPage() {
             <h2 className="text-base font-semibold text-[#F5F6F8]">
               Manual Check-In Fallback
             </h2>
-            <p className="mt-0.5 text-xs text-[#747C89]">
+            <p className="mt-0.5 text-xs text-[#8A93A2]">
               Search by name or member code if a member forgot their QR card. Recorded in audit log.
             </p>
 
             <div className="relative mt-3">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#747C89]" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8A93A2]" />
               <input
                 type="search"
                 value={manualQuery}
                 onChange={(e) => setManualQuery(e.target.value)}
                 placeholder="Type member name or code (e.g. Juan or IH-1001)..."
-                className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] pl-9 pr-3 text-sm text-[#F5F6F8] placeholder:text-[#747C89] focus:border-[#E32935] focus:outline-none"
+                className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] pl-9 pr-3 text-sm text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]/40"
               />
             </div>
 
@@ -363,7 +480,7 @@ export default function CheckInPage() {
                       <p className="font-medium text-[#F5F6F8]">
                         {m.firstName} {m.lastName}
                       </p>
-                      <p className="text-xs text-[#747C89]">
+                      <p className="text-xs text-[#8A93A2]">
                         {m.memberCode} · {m.currentPlan ?? "No Plan"}
                       </p>
                     </div>
@@ -391,7 +508,7 @@ export default function CheckInPage() {
             </h2>
             <div className="divide-y divide-[#292E38]">
               {recent.length === 0 ? (
-                <p className="py-6 text-center text-xs text-[#747C89]">
+                <p className="py-6 text-center text-xs text-[#8A93A2]">
                   No check-ins recorded yet.
                 </p>
               ) : (
@@ -402,7 +519,7 @@ export default function CheckInPage() {
                   >
                     <div>
                       <p className="font-medium text-[#F5F6F8]">{r.memberName}</p>
-                      <p className="text-xs text-[#747C89]">
+                      <p className="text-xs text-[#8A93A2]">
                         {r.memberCode} · {r.method} · {formatTime(r.checkedInAt)}
                         {r.denialReason ? ` — ${r.denialReason}` : ""}
                       </p>

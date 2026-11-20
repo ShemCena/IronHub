@@ -2,8 +2,21 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Search, UserPlus, QrCode, ChevronLeft, ChevronRight, X } from "lucide-react";
+import {
+  Search,
+  UserPlus,
+  QrCode,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Users,
+  UserCheck,
+  AlertTriangle,
+  XCircle,
+} from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { KpiCard } from "@/components/ui/kpi-card";
+import { getPlanTierColor } from "@/components/charts/plan-distribution-donut";
 import { formatCurrency, formatDate } from "@/lib/formatting/currency";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +49,9 @@ export default function MembersPage() {
   const [summary, setSummary] = useState({ total: 0, active: 0, expired: 0, suspended: 0 });
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalFiltered, setTotalFiltered] = useState(0);
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_TABS)[number]>("ALL");
+  const [planFilter, setPlanFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -62,6 +77,7 @@ export default function MembersPage() {
       const params = new URLSearchParams({
         page: String(page),
         status: statusFilter,
+        planId: planFilter,
       });
       if (search.trim()) params.set("q", search.trim());
       const res = await fetch(`/api/members?${params.toString()}`);
@@ -70,11 +86,12 @@ export default function MembersPage() {
         setMembers(data.members ?? []);
         setSummary(data.summary ?? { total: 0, active: 0, expired: 0, suspended: 0 });
         setTotalPages(data.pagination?.totalPages ?? 1);
+        setTotalFiltered(data.pagination?.total ?? 0);
       }
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, search]);
+  }, [page, statusFilter, planFilter, search]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -133,11 +150,8 @@ export default function MembersPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1
-            className="text-3xl font-bold tracking-tight text-[#F5F6F8]"
-            style={{ fontFamily: "var(--font-barlow), sans-serif" }}
-          >
-            MEMBERS
+          <h1 className="text-3xl font-semibold tracking-tight text-[#F5F6F8]">
+            Members
           </h1>
           <p className="mt-1 text-sm text-[#A4AAB5]">
             Manage gym member profiles, plan validity, and QR access credentials.
@@ -147,7 +161,7 @@ export default function MembersPage() {
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#E32935] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#F13A46]"
+          className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#E32935] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#F13A46] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]"
         >
           <UserPlus className="h-4 w-4" />
           <span>Add Member</span>
@@ -155,27 +169,39 @@ export default function MembersPage() {
       </div>
 
       {/* KPI Strip */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-[#292E38] bg-[#111318] p-4">
-          <span className="text-xs text-[#A4AAB5]">Total Members</span>
-          <p className="mt-1 text-2xl font-bold text-[#F5F6F8] tabular-nums">{summary.total}</p>
-        </div>
-        <div className="rounded-xl border border-[#292E38] bg-[#111318] p-4">
-          <span className="text-xs text-[#A4AAB5]">Active</span>
-          <p className="mt-1 text-2xl font-bold text-[#2BCB83] tabular-nums">{summary.active}</p>
-        </div>
-        <div className="rounded-xl border border-[#292E38] bg-[#111318] p-4">
-          <span className="text-xs text-[#A4AAB5]">Expired</span>
-          <p className="mt-1 text-2xl font-bold text-[#F05252] tabular-nums">{summary.expired}</p>
-        </div>
-        <div className="rounded-xl border border-[#292E38] bg-[#111318] p-4">
-          <span className="text-xs text-[#A4AAB5]">Suspended</span>
-          <p className="mt-1 text-2xl font-bold text-[#F2B84B] tabular-nums">{summary.suspended}</p>
-        </div>
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        <KpiCard
+          label="Total Members"
+          value={summary.total}
+          helper="Registered profiles"
+          icon={Users}
+          tone="blue"
+        />
+        <KpiCard
+          label="Active Members"
+          value={summary.active}
+          helper="Valid memberships"
+          icon={UserCheck}
+          tone="green"
+        />
+        <KpiCard
+          label="Expired"
+          value={summary.expired}
+          helper="Needs renewal"
+          icon={XCircle}
+          tone="red"
+        />
+        <KpiCard
+          label="Suspended"
+          value={summary.suspended}
+          helper="Access paused"
+          icon={AlertTriangle}
+          tone="amber"
+        />
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-[#292E38] bg-[#111318] p-1">
           {STATUS_TABS.map((tab) => (
             <button
@@ -186,7 +212,7 @@ export default function MembersPage() {
                 setPage(1);
               }}
               className={cn(
-                "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                "rounded-md px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]",
                 statusFilter === tab
                   ? "bg-[#E32935] text-white"
                   : "text-[#A4AAB5] hover:bg-[#20242D] hover:text-white"
@@ -197,18 +223,37 @@ export default function MembersPage() {
           ))}
         </div>
 
-        <div className="relative w-full sm:w-72">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#747C89]" />
-          <input
-            type="search"
-            value={search}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <select
+            value={planFilter}
             onChange={(e) => {
-              setSearch(e.target.value);
+              setPlanFilter(e.target.value);
               setPage(1);
             }}
-            placeholder="Filter by name, code, email..."
-            className="h-10 w-full rounded-lg border border-[#292E38] bg-[#111318] pl-9 pr-3 text-sm text-[#F5F6F8] placeholder:text-[#747C89] focus:border-[#E32935] focus:outline-none"
-          />
+            aria-label="Filter by membership plan"
+            className="h-10 rounded-lg border border-[#292E38] bg-[#111318] px-3 text-xs text-[#F5F6F8] focus-visible:border-[#E32935] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]/40"
+          >
+            <option value="ALL">All Plans</option>
+            {plans.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+
+          <div className="relative w-full sm:w-64">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8A93A2]" />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Search name, code, email..."
+              className="h-10 w-full rounded-lg border border-[#292E38] bg-[#111318] pl-9 pr-3 text-sm text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]/40"
+            />
+          </div>
         </div>
       </div>
 
@@ -216,69 +261,96 @@ export default function MembersPage() {
       <div className="overflow-hidden rounded-xl border border-[#292E38] bg-[#111318]">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-[#292E38] bg-[#171A21] text-xs font-medium uppercase tracking-wider text-[#747C89]">
+            <thead className="border-b border-[#292E38] bg-[#171A21] text-xs font-medium uppercase tracking-wider text-[#8A93A2]">
               <tr>
                 <th className="px-4 py-3">Member</th>
                 <th className="px-4 py-3">ID</th>
-                <th className="px-4 py-3">Plan</th>
+                <th className="px-4 py-3">Membership Plan</th>
                 <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Expiry</th>
+                <th className="px-4 py-3">Expiry Date</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#292E38]">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-xs text-[#747C89]">
+                  <td colSpan={6} className="px-4 py-10 text-center text-xs text-[#8A93A2]">
                     Loading members...
                   </td>
                 </tr>
               ) : members.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-xs text-[#747C89]">
+                  <td colSpan={6} className="px-4 py-10 text-center text-xs text-[#8A93A2]">
                     No members match your current filters.
                   </td>
                 </tr>
               ) : (
-                members.map((m) => (
-                  <tr key={m.id} className="transition-colors hover:bg-[#171A21]">
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/members/${m.id}`}
-                        className="font-medium text-[#F5F6F8] hover:text-[#E32935]"
-                      >
-                        {m.firstName} {m.lastName}
-                      </Link>
-                      <p className="text-xs text-[#747C89]">{m.email ?? m.phone ?? "No contact"}</p>
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs text-[#A4AAB5]">{m.memberCode}</td>
-                    <td className="px-4 py-3 text-[#A4AAB5]">{m.currentPlan ?? "Unassigned"}</td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={m.status} />
-                    </td>
-                    <td className="px-4 py-3 text-xs text-[#A4AAB5] tabular-nums">
-                      {m.expiryDate ? formatDate(m.expiryDate) : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="inline-flex items-center gap-2">
-                        <Link
-                          href={`/qr-generator?memberId=${m.id}`}
-                          className="inline-flex items-center gap-1 rounded-md border border-[#292E38] bg-[#171A21] px-2.5 py-1 text-xs text-[#A4AAB5] hover:bg-[#20242D] hover:text-white"
-                          title="Manage QR Credential"
-                        >
-                          <QrCode className="h-3.5 w-3.5" />
-                          <span>QR</span>
-                        </Link>
-                        <Link
-                          href={`/members/${m.id}`}
-                          className="rounded-md border border-[#292E38] bg-[#171A21] px-2.5 py-1 text-xs text-[#F5F6F8] hover:bg-[#20242D]"
-                        >
-                          View
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                members.map((m) => {
+                  const initials = `${m.firstName[0] ?? ""}${m.lastName[0] ?? ""}`.toUpperCase();
+                  return (
+                    <tr key={m.id} className="transition-colors hover:bg-[#171A21]">
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#292E38] bg-[#171A21] text-xs font-semibold text-[#F5F6F8]">
+                            {initials}
+                          </div>
+                          <div>
+                            <Link
+                              href={`/members/${m.id}`}
+                              className="font-medium text-[#F5F6F8] hover:text-[#E32935]"
+                            >
+                              {m.firstName} {m.lastName}
+                            </Link>
+                            <p className="text-xs text-[#8A93A2]">
+                              {m.email ?? m.phone ?? "No contact"}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2.5 font-mono text-xs text-[#A4AAB5]">
+                        {m.memberCode}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        {m.currentPlan ? (
+                          <span className="inline-flex items-center gap-2 text-[#F5F6F8]">
+                            <span
+                              className="h-2 w-2 rounded-full"
+                              style={{ backgroundColor: getPlanTierColor(m.currentPlan) }}
+                              aria-hidden="true"
+                            />
+                            {m.currentPlan}
+                          </span>
+                        ) : (
+                          <span className="text-[#8A93A2]">Unassigned</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <StatusBadge status={m.status} />
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-[#A4AAB5] tabular-nums">
+                        {m.expiryDate ? formatDate(m.expiryDate) : "—"}
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        <div className="inline-flex items-center gap-2">
+                          <Link
+                            href={`/qr-generator?memberId=${m.id}`}
+                            className="inline-flex h-8 items-center gap-1 rounded-md border border-[#292E38] bg-[#171A21] px-2.5 text-xs text-[#A4AAB5] hover:bg-[#20242D] hover:text-white"
+                            title="Manage QR Credential"
+                          >
+                            <QrCode className="h-3.5 w-3.5" />
+                            <span>QR</span>
+                          </Link>
+                          <Link
+                            href={`/members/${m.id}`}
+                            className="inline-flex h-8 items-center rounded-md border border-[#292E38] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8] hover:bg-[#20242D]"
+                          >
+                            View
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -286,8 +358,8 @@ export default function MembersPage() {
 
         {/* Pagination */}
         <div className="flex items-center justify-between border-t border-[#292E38] px-4 py-3 text-xs text-[#A4AAB5]">
-          <span>
-            Page {page} of {totalPages}
+          <span className="tabular-nums">
+            Showing {members.length} of {totalFiltered} members · Page {page} of {totalPages}
           </span>
           <div className="flex items-center gap-2">
             <button
@@ -328,7 +400,7 @@ export default function MembersPage() {
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                className="rounded-md p-1 text-[#747C89] hover:text-white"
+                className="rounded-md p-1 text-[#8A93A2] hover:text-white"
                 aria-label="Close modal"
               >
                 <X className="h-5 w-5" />
@@ -349,7 +421,7 @@ export default function MembersPage() {
                     required
                     value={form.firstName}
                     onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-                    className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-sm text-[#F5F6F8] focus:border-[#E32935] focus:outline-none"
+                    className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-sm text-[#F5F6F8] focus-visible:border-[#E32935] focus-visible:outline-none"
                   />
                 </div>
                 <div>
@@ -358,7 +430,7 @@ export default function MembersPage() {
                     required
                     value={form.lastName}
                     onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-                    className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-sm text-[#F5F6F8] focus:border-[#E32935] focus:outline-none"
+                    className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-sm text-[#F5F6F8] focus-visible:border-[#E32935] focus-visible:outline-none"
                   />
                 </div>
               </div>
@@ -370,7 +442,7 @@ export default function MembersPage() {
                     type="email"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-sm text-[#F5F6F8] focus:border-[#E32935] focus:outline-none"
+                    className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-sm text-[#F5F6F8] focus-visible:border-[#E32935] focus-visible:outline-none"
                   />
                 </div>
                 <div>
@@ -378,7 +450,7 @@ export default function MembersPage() {
                   <input
                     value={form.phone}
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-sm text-[#F5F6F8] focus:border-[#E32935] focus:outline-none"
+                    className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-sm text-[#F5F6F8] focus-visible:border-[#E32935] focus-visible:outline-none"
                   />
                 </div>
               </div>
@@ -390,7 +462,7 @@ export default function MembersPage() {
                 <select
                   value={form.planId}
                   onChange={(e) => setForm({ ...form, planId: e.target.value })}
-                  className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-sm text-[#F5F6F8] focus:border-[#E32935] focus:outline-none"
+                  className="h-10 w-full rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-sm text-[#F5F6F8] focus-visible:border-[#E32935] focus-visible:outline-none"
                 >
                   <option value="">Register without plan</option>
                   {plans.map((p) => (

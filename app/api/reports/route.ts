@@ -80,18 +80,32 @@ export async function GET(request: Request) {
       });
     }
 
+    const settings = await prisma.gymSetting.findUnique({ where: { id: "default" } });
+    const timeZone = settings?.timezone ?? "Asia/Manila";
+    const toDateKey = (d: Date) =>
+      new Intl.DateTimeFormat("en-CA", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        timeZone,
+      }).format(d);
+
     const dailyMap = new Map<string, { label: string; revenue: number }>();
     for (let i = 0; i < days; i++) {
       const d = new Date(rangeStart);
       d.setDate(d.getDate() + i);
-      const key = d.toISOString().slice(0, 10);
-      const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      const key = toDateKey(d);
+      const label = d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        timeZone,
+      });
       dailyMap.set(key, { label, revenue: 0 });
     }
 
     for (const p of payments) {
       if (p.status !== "PAID") continue;
-      const key = p.paidAt.toISOString().slice(0, 10);
+      const key = toDateKey(p.paidAt);
       const bucket = dailyMap.get(key);
       if (bucket) bucket.revenue += Number(p.amount);
     }
