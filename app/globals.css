@@ -5,7 +5,7 @@
   --surface-1: #111318;
   --surface-2: #171a21;
   --surface-3: #20242d;
-  --border-subtle: #292e38;
+  --border-subtle: #242934;
   --border-strong: #363d4a;
 
   --text-primary: #f5f6f8;
@@ -67,24 +67,57 @@ body {
 @keyframes panel-enter {
   from {
     opacity: 0;
-    transform: translateY(6px) scale(0.985);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
 .animate-panel-enter {
-  animation: panel-enter 200ms var(--ease-out) both;
+  animation: panel-enter 240ms var(--ease-out) both;
+}
+
+.animate-stagger-1 {
+  animation: panel-enter 260ms var(--ease-out) 40ms both;
+}
+
+.animate-stagger-2 {
+  animation: panel-enter 260ms var(--ease-out) 90ms both;
+}
+
+.animate-stagger-3 {
+  animation: panel-enter 260ms var(--ease-out) 140ms both;
+}
+
+.animate-stagger-4 {
+  animation: panel-enter 260ms var(--ease-out) 190ms both;
+}
+
+.card-interactive {
+  transition: transform 180ms var(--ease-out), border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card-interactive:hover {
+    transform: translateY(-2px);
+    border-color: #363d4a;
+    box-shadow: 0 12px 28px -14px rgba(0, 0, 0, 0.75);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-scan-line {
+  .animate-scan-line,
+  .animate-panel-enter,
+  .animate-stagger-1,
+  .animate-stagger-2,
+  .animate-stagger-3,
+  .animate-stagger-4 {
     animation: none;
   }
-  .animate-panel-enter {
-    animation: none;
+  .card-interactive:hover {
+    transform: none;
   }
   *,
   *::before,

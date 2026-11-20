@@ -346,56 +346,60 @@ export default function CheckInPage() {
 
         {/* Result & Manual Fallback */}
         <div className="space-y-6 lg:col-span-7">
-          {/* Hero Verification Result */}
+          {/* Tall Centered Hero Verification Card matching Reference */}
           <div
             className={cn(
-              "rounded-xl border p-6 transition-colors",
+              "flex min-h-[340px] flex-col items-center justify-center rounded-2xl border p-8 text-center transition-colors",
               result?.outcome === "APPROVED"
-                ? "border-[#2BCB83]/40 bg-gradient-to-b from-[#2BCB83]/15 via-[#111318] to-[#111318]"
+                ? "border-[#2BCB83]/40 bg-gradient-to-b from-[#164A31]/80 via-[#0E1E17] to-[#111318]"
                 : result?.outcome === "DENIED"
-                ? "border-[#F05252]/40 bg-gradient-to-b from-[#F05252]/15 via-[#111318] to-[#111318]"
-                : "border-[#292E38] bg-[#111318]"
+                ? "border-[#F05252]/40 bg-gradient-to-b from-[#4A161A]/80 via-[#1E0E10] to-[#111318]"
+                : "border-[#242934] bg-gradient-to-b from-[#152820]/50 via-[#111318] to-[#111318]"
             )}
           >
             {!result ? (
-              <div className="flex min-h-[104px] items-center gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#292E38] bg-[#171A21] text-[#8A93A2]">
-                  <UserCheck className="h-5 w-5" />
+              <div className="flex max-w-xs flex-col items-center gap-3">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#2BCB83]/15 text-[#2BCB83] ring-1 ring-[#2BCB83]/30">
+                  <UserCheck className="h-7 w-7" />
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-[#F5F6F8]">Ready to Verify</p>
-                  <p className="mt-0.5 text-xs text-[#8A93A2]">
-                    Scan a member QR pass or use the manual search below to record attendance.
-                  </p>
-                </div>
+                <p className="text-lg font-semibold text-[#F5F6F8]">Ready for Check-In</p>
+                <p className="text-xs text-[#A4AAB5]">
+                  Scan a member&apos;s QR code on the left or search manually below to verify membership access.
+                </p>
               </div>
             ) : result.outcome === "APPROVED" ? (
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-start gap-3.5">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#2BCB83]/20 text-[#2BCB83] ring-1 ring-[#2BCB83]/40">
-                    <CheckCircle2 className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-[#2BCB83]">
-                      Check-In Successful
-                    </p>
-                    <p className="mt-0.5 text-lg font-semibold text-[#F5F6F8]">
-                      {result.member?.name}
-                    </p>
-                    <p className="text-xs text-[#A4AAB5]">
-                      {result.member?.memberCode} · {result.member?.planName}
-                      {result.member?.expiryDate
-                        ? ` · Valid until ${formatDate(result.member.expiryDate)}`
-                        : ""}
-                      {result.checkedInAt ? ` · ${formatTime(result.checkedInAt)}` : ""}
-                    </p>
-                  </div>
+              <div className="flex w-full max-w-xs flex-col items-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#2BCB83] text-[#090A0D] shadow-[0_0_28px_rgba(43,203,131,0.45)]">
+                  <CheckCircle2 className="h-8 w-8" />
                 </div>
-                <div className="flex items-center gap-2">
+                <p className="mt-4 text-lg font-bold text-[#2BCB83]">
+                  Check-In Successful!
+                </p>
+                <div className="mt-4 flex h-16 w-16 items-center justify-center rounded-full border-2 border-[#2BCB83]/50 bg-[#171A21] text-lg font-bold text-white">
+                  {(result.member?.name ?? "M")
+                    .split(" ")
+                    .map((n) => n[0])
+                    .slice(0, 2)
+                    .join("")
+                    .toUpperCase()}
+                </div>
+                <p className="mt-3 text-lg font-semibold text-white">
+                  {result.member?.name}
+                </p>
+                <p className="text-xs text-[#A4AAB5]">
+                  {result.member?.planName} · {result.member?.memberCode}
+                </p>
+                <p className="mt-1 text-[11px] text-[#8A93A2] tabular-nums">
+                  {result.checkedInAt ? `Today · ${formatTime(result.checkedInAt)}` : ""}
+                  {result.member?.expiryDate
+                    ? ` · Valid until ${formatDate(result.member.expiryDate)}`
+                    : ""}
+                </p>
+                <div className="mt-5 flex w-full items-center gap-2">
                   {result.member && (
                     <Link
                       href={`/members/${result.member.id}`}
-                      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
+                      className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#292E38] bg-[#171A21] px-4 text-xs font-semibold text-white hover:bg-[#20242D]"
                     >
                       <span>View Member</span>
                       <ArrowRight className="h-3.5 w-3.5" />
@@ -404,35 +408,29 @@ export default function CheckInPage() {
                   <button
                     type="button"
                     onClick={() => setResult(null)}
-                    className="h-9 rounded-lg px-2.5 text-xs text-[#8A93A2] hover:text-white"
+                    className="h-10 rounded-xl border border-[#292E38] bg-[#111318] px-3 text-xs text-[#A4AAB5] hover:text-white"
                   >
                     Clear
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-start gap-3.5">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#F05252]/20 text-[#F05252] ring-1 ring-[#F05252]/40">
-                    <XCircle className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-[#F05252]">
-                      Check-In Denied
-                    </p>
-                    <p className="mt-0.5 text-lg font-semibold text-[#F5F6F8]">
-                      {result.member?.name ?? "Unrecognized Credential"}
-                    </p>
-                    <p className="text-xs text-[#F05252]">
-                      {result.reason ?? "Access is not permitted."}
-                    </p>
-                  </div>
+              <div className="flex w-full max-w-xs flex-col items-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F05252] text-white shadow-[0_0_28px_rgba(240,82,82,0.45)]">
+                  <XCircle className="h-8 w-8" />
                 </div>
-                <div className="flex items-center gap-2">
+                <p className="mt-4 text-lg font-bold text-[#F05252]">Check-In Denied</p>
+                <p className="mt-1.5 text-base font-semibold text-white">
+                  {result.member?.name ?? "Unrecognized Credential"}
+                </p>
+                <p className="mt-1 text-xs text-[#F05252]">
+                  {result.reason ?? "Access is not permitted."}
+                </p>
+                <div className="mt-5 flex w-full items-center gap-2">
                   {result.member && (
                     <Link
                       href={`/members/${result.member.id}`}
-                      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#292E38] bg-[#171A21] px-3 text-xs font-medium text-[#F5F6F8] hover:bg-[#20242D]"
+                      className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#292E38] bg-[#171A21] px-4 text-xs font-semibold text-white hover:bg-[#20242D]"
                     >
                       <span>View Profile</span>
                     </Link>
@@ -440,7 +438,7 @@ export default function CheckInPage() {
                   <button
                     type="button"
                     onClick={() => setResult(null)}
-                    className="h-9 rounded-lg px-2.5 text-xs text-[#8A93A2] hover:text-white"
+                    className="h-10 rounded-xl border border-[#292E38] bg-[#111318] px-3 text-xs text-[#A4AAB5] hover:text-white"
                   >
                     Clear
                   </button>

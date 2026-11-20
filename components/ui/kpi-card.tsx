@@ -2,13 +2,14 @@ import React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-type AccentTone = "blue" | "green" | "red" | "amber" | "neutral";
+type AccentTone = "blue" | "green" | "purple" | "red" | "amber" | "neutral";
 
 const TONE_CLASSES: Record<AccentTone, string> = {
-  blue: "bg-[#4B91F1]/14 text-[#4B91F1] ring-1 ring-[#4B91F1]/25",
-  green: "bg-[#2BCB83]/14 text-[#2BCB83] ring-1 ring-[#2BCB83]/25",
-  red: "bg-[#E32935]/14 text-[#E32935] ring-1 ring-[#E32935]/25",
-  amber: "bg-[#F2B84B]/14 text-[#F2B84B] ring-1 ring-[#F2B84B]/25",
+  blue: "bg-[#4B91F1]/16 text-[#4B91F1] ring-1 ring-[#4B91F1]/30",
+  green: "bg-[#2BCB83]/16 text-[#2BCB83] ring-1 ring-[#2BCB83]/30",
+  purple: "bg-[#8B5CF6]/16 text-[#A78BFA] ring-1 ring-[#8B5CF6]/30",
+  red: "bg-[#E32935]/16 text-[#E32935] ring-1 ring-[#E32935]/30",
+  amber: "bg-[#F2B84B]/16 text-[#F2B84B] ring-1 ring-[#F2B84B]/30",
   neutral: "bg-[#20242D] text-[#A4AAB5] ring-1 ring-[#292E38]",
 };
 
@@ -33,7 +34,7 @@ export function KpiCard({
     <div className="flex items-center gap-4">
       <div
         className={cn(
-          "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
+          "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
           TONE_CLASSES[tone]
         )}
       >
@@ -49,7 +50,7 @@ export function KpiCard({
         >
           {value}
         </p>
-        {helper && <p className="mt-0.5 truncate text-[11px] text-[#8A93A2]">{helper}</p>}
+        {helper && <p className="mt-0.5 truncate text-[11px] text-[#2BCB83]">{helper}</p>}
       </div>
     </div>
   );
@@ -58,7 +59,7 @@ export function KpiCard({
     return (
       <Link
         href={href}
-        className="block rounded-xl border border-[#292E38] bg-[#111318] p-5 transition-colors hover:border-[#363D4A] hover:bg-[#171A21] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]"
+        className="card-interactive block rounded-2xl border border-[#242934] bg-[#111318]/95 p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]"
       >
         {content}
       </Link>
@@ -66,7 +67,7 @@ export function KpiCard({
   }
 
   return (
-    <div className="rounded-xl border border-[#292E38] bg-[#111318] p-5">
+    <div className="card-interactive rounded-2xl border border-[#242934] bg-[#111318]/95 p-5">
       {content}
     </div>
   );

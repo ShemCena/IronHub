@@ -15,8 +15,6 @@ import {
   LogOut,
   Menu,
   X,
-  PanelLeftClose,
-  PanelLeftOpen,
   ScanLine,
   ArrowRight,
   ChevronDown,
@@ -37,7 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, permission: "dashboard:view" },
   { label: "Members", href: "/members", icon: Users, permission: "members:view" },
   { label: "Check-In", href: "/check-in", icon: ScanLine, permission: "checkin:perform" },
-  { label: "QR Credentials", href: "/qr-generator", icon: QrCode, permission: "qr:manage" },
+  { label: "QR Generator", href: "/qr-generator", icon: QrCode, permission: "qr:manage" },
   { label: "Plans & Payments", href: "/plans-payments", icon: CreditCard, permission: "plans:view" },
   { label: "Reports", href: "/reports", icon: BarChart3, permission: "reports:view" },
   { label: "Settings", href: "/settings", icon: Settings, permission: "settings:view" },
@@ -68,7 +66,6 @@ export function AppShell({
   const router = useRouter();
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -155,26 +152,25 @@ export function AppShell({
     <div className="flex min-h-screen bg-[#090A0D] text-[#F5F6F8]">
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/70 print:hidden lg:hidden"
+          className="fixed inset-0 z-40 bg-black/75 print:hidden lg:hidden"
           onClick={() => setMobileOpen(false)}
           aria-hidden="true"
         />
       )}
 
-      {/* Sidebar */}
+      {/* Fixed-size, non-resizing Sidebar (identical 244px x 100vh across all routes) */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-[#292E38] bg-[#111318] transition-[width,transform] duration-200 ease-[var(--ease-out)] print:hidden lg:static",
-          collapsed ? "lg:w-[76px]" : "lg:w-[248px]",
-          mobileOpen ? "w-[248px] translate-x-0" : "-translate-x-full lg:translate-x-0"
+          "fixed inset-y-0 left-0 z-50 flex h-screen w-[244px] shrink-0 flex-col border-r border-[#1F232C] bg-[#0D0F14] transition-transform duration-200 ease-[var(--ease-out)] print:hidden lg:sticky lg:top-0 lg:translate-x-0",
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex h-16 items-center justify-between border-b border-[#292E38] px-4">
+        <div className="flex h-16 shrink-0 items-center justify-between px-5">
           <Link
             href="/dashboard"
             className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]"
           >
-            <BrandMark collapsed={collapsed} />
+            <BrandMark />
           </Link>
           <button
             type="button"
@@ -186,7 +182,7 @@ export function AppShell({
           </button>
         </div>
 
-        <nav className="flex-1 space-y-1 p-3" aria-label="Primary navigation">
+        <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 py-3" aria-label="Primary navigation">
           {visibleNav.map((item) => {
             const active =
               pathname === item.href ||
@@ -198,81 +194,63 @@ export function AppShell({
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
                 className={cn(
-                  "group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]",
+                  "group relative flex h-11 items-center gap-3 rounded-xl px-3.5 text-sm font-medium transition-[background-color,color,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]",
                   active
-                    ? "border border-[#E32935]/25 bg-gradient-to-r from-[#E32935]/24 via-[#E32935]/10 to-transparent text-[#F5F6F8]"
-                    : "border border-transparent text-[#A4AAB5] hover:bg-[#20242D] hover:text-[#F5F6F8]"
+                    ? "bg-gradient-to-r from-[#E32935] via-[#B81F2A]/75 to-[#E32935]/10 text-white shadow-[0_8px_24px_-8px_rgba(227,41,53,0.5)]"
+                    : "text-[#A4AAB5] hover:bg-[#171A21] hover:text-[#F5F6F8]"
                 )}
               >
-                {active && (
-                  <span
-                    className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r bg-[#E32935]"
-                    aria-hidden="true"
-                  />
-                )}
                 <Icon
                   className={cn(
                     "h-[18px] w-[18px] shrink-0 transition-colors",
-                    active ? "text-[#E32935]" : "text-[#8A93A2] group-hover:text-[#F5F6F8]"
+                    active ? "text-white" : "text-[#8A93A2] group-hover:text-[#F5F6F8]"
                   )}
                 />
-                {!collapsed && <span className="truncate">{item.label}</span>}
+                <span className="truncate">{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        <div className="space-y-3 border-t border-[#292E38] p-3">
-          {!collapsed && (
-            <Link
-              href="/check-in"
-              className="group relative block overflow-hidden rounded-xl border border-[#292E38] bg-[#171A21] p-3.5 transition-colors hover:border-[#E32935]/40"
-            >
-              <div
-                className="pointer-events-none absolute -right-4 -top-4 h-16 w-16 rounded-full bg-[#E32935]/15 blur-xl"
-                aria-hidden="true"
-              />
+        {/* Fixed-height athletic brand card anchored at bottom of sidebar */}
+        <div className="shrink-0 p-3.5">
+          <Link
+            href="/check-in"
+            className="group relative block h-[184px] overflow-hidden rounded-2xl border border-[#242934] bg-[#111318]"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/sidebar-athlete.jpg"
+              alt=""
+              aria-hidden="true"
+              className="h-full w-full object-cover object-top opacity-85 transition-transform duration-300 ease-[var(--ease-out)] group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#090A0D] via-[#090A0D]/55 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 flex flex-col items-center p-4 text-center">
               <p
-                className="text-sm font-bold uppercase tracking-wider text-[#F5F6F8]"
+                className="text-base font-bold uppercase leading-tight tracking-wider text-white"
                 style={{ fontFamily: "var(--font-barlow), sans-serif" }}
               >
-                STRONGER <span className="text-[#E32935]">TOGETHER</span>
+                STRONGER
+                <span className="block text-[#E32935]">TOGETHER</span>
               </p>
-              <div className="mt-1.5 flex items-center justify-between">
-                <span className="text-[11px] text-[#8A93A2]">Front-Desk Scanner</span>
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#E32935] text-white transition-transform group-hover:translate-x-0.5">
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </span>
-              </div>
-            </Link>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setCollapsed((c) => !c)}
-            className="hidden w-full items-center justify-center gap-2 rounded-lg border border-[#292E38] bg-[#171A21] px-3 py-2 text-xs font-medium text-[#A4AAB5] transition-colors hover:bg-[#20242D] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935] lg:flex"
-          >
-            {collapsed ? (
-              <PanelLeftOpen className="h-4 w-4" />
-            ) : (
-              <>
-                <PanelLeftClose className="h-4 w-4" />
-                <span>Collapse Sidebar</span>
-              </>
-            )}
-          </button>
+              <span className="mt-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-[#E32935] text-white shadow-[0_0_16px_rgba(227,41,53,0.5)] transition-transform duration-150 group-hover:translate-x-0.5">
+                <ArrowRight className="h-3.5 w-3.5" />
+              </span>
+            </div>
+          </Link>
         </div>
       </aside>
 
       {/* Main Column */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Top Bar */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-[#292E38] bg-[#090A0D]/95 px-4 backdrop-blur-sm print:hidden lg:px-6">
+        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-[#1F232C] bg-[#090A0D]/90 px-4 backdrop-blur-md print:hidden lg:px-7">
           <div className="flex flex-1 items-center gap-3">
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
-              className="rounded-lg border border-[#292E38] bg-[#111318] p-2 text-[#A4AAB5] hover:text-white lg:hidden"
+              className="rounded-lg border border-[#242934] bg-[#111318] p-2 text-[#A4AAB5] hover:text-white lg:hidden"
               aria-label="Open navigation"
             >
               <Menu className="h-5 w-5" />
@@ -280,7 +258,7 @@ export function AppShell({
 
             <div className="relative w-full max-w-md">
               <Search
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8A93A2]"
+                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8A93A2]"
                 aria-hidden="true"
               />
               <input
@@ -290,17 +268,17 @@ export function AppShell({
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => searchResults && setSearchOpen(true)}
                 onBlur={() => setTimeout(() => setSearchOpen(false), 180)}
-                placeholder="Search members, IDs, or plans..."
-                className="h-10 w-full rounded-lg border border-[#292E38] bg-[#111318] pl-9 pr-14 text-sm text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]/40"
+                placeholder="Search members, plans..."
+                className="h-10 w-full rounded-xl border border-[#242934] bg-[#111318] pl-10 pr-14 text-sm text-[#F5F6F8] placeholder:text-[#8A93A2] focus-visible:border-[#E32935] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]/40"
                 aria-label="Global search"
                 aria-expanded={searchOpen}
               />
-              <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-[#292E38] bg-[#171A21] px-1.5 py-0.5 text-[10px] font-medium text-[#8A93A2] sm:inline-block">
+              <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded border border-[#292E38] bg-[#171A21] px-1.5 py-0.5 text-[10px] font-medium text-[#8A93A2] sm:inline-block">
                 Ctrl K
               </kbd>
 
               {searchOpen && searchResults && (
-                <div className="absolute left-0 right-0 top-12 z-50 rounded-xl border border-[#292E38] bg-[#171A21] p-2 shadow-xl">
+                <div className="absolute left-0 right-0 top-12 z-50 rounded-xl border border-[#292E38] bg-[#171A21] p-2 shadow-2xl">
                   {searchResults.members.length === 0 && searchResults.plans.length === 0 ? (
                     <p className="px-3 py-2 text-xs text-[#8A93A2]">
                       No matching members or plans.
@@ -340,7 +318,7 @@ export function AppShell({
               <button
                 type="button"
                 onClick={handleMarkNotificationsRead}
-                className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-[#292E38] bg-[#111318] text-[#A4AAB5] transition-colors hover:bg-[#20242D] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]"
+                className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-[#242934] bg-[#111318] text-[#A4AAB5] transition-colors hover:bg-[#171A21] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]"
                 aria-label="Notifications"
               >
                 <Bell className="h-4 w-4" />
@@ -352,7 +330,7 @@ export function AppShell({
               </button>
 
               {notifOpen && (
-                <div className="absolute right-0 top-12 z-50 w-80 rounded-xl border border-[#292E38] bg-[#171A21] p-3 shadow-xl">
+                <div className="absolute right-0 top-12 z-50 w-80 rounded-xl border border-[#292E38] bg-[#171A21] p-3 shadow-2xl">
                   <div className="mb-2 flex items-center justify-between border-b border-[#292E38] pb-2">
                     <span className="text-xs font-semibold uppercase tracking-wider text-[#A4AAB5]">
                       Notifications
@@ -396,10 +374,10 @@ export function AppShell({
                   setNotifOpen(false);
                   setAccountOpen((o) => !o);
                 }}
-                className="flex h-10 items-center gap-2.5 rounded-lg border border-[#292E38] bg-[#111318] px-2.5 transition-colors hover:bg-[#171A21] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]"
+                className="flex h-10 items-center gap-2.5 rounded-xl border border-[#242934] bg-[#111318] px-2.5 transition-colors hover:bg-[#171A21] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E32935]"
                 aria-expanded={accountOpen}
               >
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E32935]/15 text-xs font-semibold text-[#E32935] ring-1 ring-[#E32935]/30">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E32935]/18 text-xs font-semibold text-[#E32935] ring-1 ring-[#E32935]/35">
                   {initials}
                 </div>
                 <div className="hidden text-left sm:block">
@@ -414,7 +392,7 @@ export function AppShell({
               </button>
 
               {accountOpen && (
-                <div className="absolute right-0 top-12 z-50 w-52 rounded-xl border border-[#292E38] bg-[#171A21] p-1.5 shadow-xl">
+                <div className="absolute right-0 top-12 z-50 w-52 rounded-xl border border-[#292E38] bg-[#171A21] p-1.5 shadow-2xl">
                   <div className="border-b border-[#292E38] px-3 py-2">
                     <p className="truncate text-xs font-medium text-[#F5F6F8]">{session.name}</p>
                     <p className="truncate text-[11px] text-[#8A93A2]">{session.email}</p>
@@ -442,7 +420,7 @@ export function AppShell({
         </header>
 
         {/* Main Content */}
-        <main className="mx-auto w-full max-w-[1440px] flex-1 p-4 md:p-6 lg:p-8">
+        <main className="mx-auto w-full max-w-[1440px] flex-1 p-5 md:p-6 lg:p-7">
           {children}
         </main>
       </div>

@@ -10,8 +10,8 @@ export interface PlanSlice {
 }
 
 const FIXED_TIER_COLORS: Record<string, string> = {
-  Premium: "#E32935",
-  Standard: "#4B91F1",
+  Premium: "#4B91F1",
+  Standard: "#8B5CF6",
   Basic: "#8A93A2",
 };
 
