@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Search, ShieldAlert } from "lucide-react";
 import { PaginationBar } from "@/components/ui/pagination-bar";
+import { TableRowsSkeleton } from "@/components/ui/ironhub-loader";
 import { formatDateTime } from "@/lib/formatting/currency";
 import { getCached, setCached } from "@/lib/cache/client-cache";
 import { cn } from "@/lib/utils";
@@ -179,7 +180,7 @@ export default function AuditLogsPage() {
       <div className="overflow-hidden rounded-xl border border-[#242934] bg-[#111318]">
         <div className="divide-y divide-[#242934]">
           {loading ? (
-            <p className="py-10 text-center text-xs text-[#8A93A2]">Loading audit trail...</p>
+            <TableRowsSkeleton rows={6} showAvatar={false} />
           ) : paged.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-10 text-center text-xs text-[#8A93A2]">
               <ShieldAlert className="h-5 w-5 text-[#8A93A2]" />

@@ -2,6 +2,7 @@
 
 import React from "react";
 import { PieChart, Pie, Cell, Tooltip } from "recharts";
+import { IronHubPulseMark } from "@/components/ui/ironhub-loader";
 
 export interface PlanSlice {
   name: string;
@@ -30,8 +31,8 @@ export function PlanDistributionDonut({
 }) {
   if (loading) {
     return (
-      <div className="flex h-44 items-center justify-center text-xs text-[#8A93A2]">
-        Loading plan mix...
+      <div className="flex h-44 items-center justify-center">
+        <IronHubPulseMark label="Syncing plan mix..." size="sm" />
       </div>
     );
   }

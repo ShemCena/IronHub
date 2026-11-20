@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Save, CheckCircle2, AlertCircle, KeyRound, Building2, UserCircle2 } from "lucide-react";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { useFeedback } from "@/components/ui/feedback-modal";
+import { SettingsSkeleton } from "@/components/ui/ironhub-loader";
 import { getCached, setCached } from "@/lib/cache/client-cache";
 import type { BusinessHoursMap } from "@/lib/domain/membership";
 
@@ -153,7 +154,7 @@ export default function SettingsPage() {
   }
 
   if (!permissions || !currentUser) {
-    return <p className="py-10 text-center text-xs text-[#8A93A2]">Loading settings...</p>;
+    return <SettingsSkeleton />;
   }
 
   return (

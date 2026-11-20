@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PlanDistributionDonut } from "@/components/charts/plan-distribution-donut";
+import { InlineChartLoader, TableRowsSkeleton } from "@/components/ui/ironhub-loader";
 import { formatCurrency } from "@/lib/formatting/currency";
 import { getCached, setCached } from "@/lib/cache/client-cache";
 import { cn } from "@/lib/utils";
@@ -145,10 +146,8 @@ export default function ReportsPage() {
           </h2>
           <p className="text-xs text-[#8A93A2]">Posted over-the-counter payments (PHP)</p>
           <div className="mt-3 h-52 w-full">
-            {loading ? (
-              <div className="flex h-full items-center justify-center text-xs text-[#8A93A2]">
-                Loading revenue chart...
-              </div>
+            {loading && !data ? (
+              <InlineChartLoader label="Calculating revenue..." heightClass="h-52" />
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data?.revenueSeries ?? []}>
@@ -221,6 +220,9 @@ export default function ReportsPage() {
             Ranked by coaching revenue &amp; active coached clients
           </span>
         </div>
+        {loading && !data ? (
+          <TableRowsSkeleton rows={3} showAvatar={false} />
+        ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-[13px]">
             <thead className="border-b border-[#242934] bg-[#171A21] text-[11px] font-medium uppercase tracking-wider text-[#8A93A2]">
@@ -283,6 +285,7 @@ export default function ReportsPage() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
     </div>
   );

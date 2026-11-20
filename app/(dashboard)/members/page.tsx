@@ -17,6 +17,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { useFeedback } from "@/components/ui/feedback-modal";
+import { TableRowsSkeleton } from "@/components/ui/ironhub-loader";
 import { getPlanTierColor } from "@/components/charts/plan-distribution-donut";
 import { formatCurrency, formatDate } from "@/lib/formatting/currency";
 import { getCached, setCached, invalidateCache } from "@/lib/cache/client-cache";
@@ -413,6 +414,9 @@ export default function MembersPage() {
 
       {/* Table + Numbered Pagination */}
       <div className="overflow-hidden rounded-xl border border-[#242934] bg-[#111318]">
+        {loading && members.length === 0 ? (
+          <TableRowsSkeleton rows={6} showAvatar />
+        ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-[13px]">
             <thead className="border-b border-[#242934] bg-[#171A21] text-[11px] font-medium uppercase tracking-wider text-[#8A93A2]">
@@ -427,13 +431,7 @@ export default function MembersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#242934]">
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-xs text-[#8A93A2]">
-                    Loading members...
-                  </td>
-                </tr>
-              ) : members.length === 0 ? (
+              {members.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-10 text-center text-xs text-[#8A93A2]">
                     No members match your current filters.
@@ -551,6 +549,7 @@ export default function MembersPage() {
             </tbody>
           </table>
         </div>
+        )}
 
         <PaginationBar
           page={page}

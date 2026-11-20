@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Ban, ShieldAlert, CheckCircle2, Archive } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { SettingsSkeleton } from "@/components/ui/ironhub-loader";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/formatting/currency";
 import { cn } from "@/lib/utils";
 
@@ -110,7 +111,7 @@ export default function MemberDetailPage() {
   }
 
   if (loading) {
-    return <p className="py-10 text-center text-xs text-[#8A93A2]">Loading member profile...</p>;
+    return <SettingsSkeleton />;
   }
 
   if (error || !member) {

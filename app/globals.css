@@ -107,13 +107,68 @@ body {
   }
 }
 
+@keyframes ih-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes ih-bar-wave {
+  0%,
+  100% {
+    transform: scaleY(0.38);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes ih-telemetry-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(260%);
+  }
+}
+
+.ih-skeleton {
+  background: linear-gradient(
+    90deg,
+    #171a21 0%,
+    #222733 45%,
+    #2a303f 50%,
+    #222733 55%,
+    #171a21 100%
+  );
+  background-size: 220% 100%;
+  animation: ih-shimmer 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.ih-bar {
+  transform-origin: center bottom;
+  animation: ih-bar-wave 1.05s var(--ease-in-out) infinite;
+}
+
+.ih-telemetry-runner {
+  animation: ih-telemetry-sweep 1.35s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-scan-line,
   .animate-panel-enter,
   .animate-stagger-1,
   .animate-stagger-2,
   .animate-stagger-3,
-  .animate-stagger-4 {
+  .animate-stagger-4,
+  .ih-skeleton,
+  .ih-bar,
+  .ih-telemetry-runner {
     animation: none;
   }
   .card-interactive:hover {

@@ -30,6 +30,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { useFeedback } from "@/components/ui/feedback-modal";
+import { PortalBootSkeleton } from "@/components/ui/ironhub-loader";
 import { formatCurrency, formatDate, formatDateTime, formatTime } from "@/lib/formatting/currency";
 import { getCached, setCached, invalidateCache } from "@/lib/cache/client-cache";
 import { cn } from "@/lib/utils";
@@ -340,11 +341,7 @@ export default function MemberPortalDashboardPage() {
   }
 
   if (loading || !data) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#090A0D] text-xs text-[#8A93A2]">
-        Loading your Client Dashboard...
-      </div>
-    );
+    return <PortalBootSkeleton />;
   }
 
   const initials = `${data.member.firstName[0] ?? ""}${data.member.lastName[0] ?? ""}`.toUpperCase();

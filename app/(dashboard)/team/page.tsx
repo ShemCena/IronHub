@@ -15,6 +15,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { useFeedback } from "@/components/ui/feedback-modal";
+import { TableRowsSkeleton } from "@/components/ui/ironhub-loader";
 import { getCached, setCached, invalidateCache } from "@/lib/cache/client-cache";
 
 interface TeamUser {
@@ -221,7 +222,7 @@ export default function TeamPage() {
       <div className="overflow-hidden rounded-xl border border-[#242934] bg-[#111318]">
         <div className="divide-y divide-[#242934]">
           {loading ? (
-            <p className="py-10 text-center text-xs text-[#8A93A2]">Loading accounts...</p>
+            <TableRowsSkeleton rows={5} showAvatar />
           ) : paged.length === 0 ? (
             <p className="py-10 text-center text-xs text-[#8A93A2]">No accounts found.</p>
           ) : (

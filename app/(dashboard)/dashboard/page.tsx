@@ -28,6 +28,7 @@ import { KpiCard } from "@/components/ui/kpi-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { PlanDistributionDonut } from "@/components/charts/plan-distribution-donut";
+import { DashboardSkeleton, InlineChartLoader } from "@/components/ui/ironhub-loader";
 import { getCached, setCached } from "@/lib/cache/client-cache";
 import { cn } from "@/lib/utils";
 
@@ -170,6 +171,10 @@ export default function DashboardPage() {
     (clientPage - 1) * CLIENT_PAGE_SIZE,
     clientPage * CLIENT_PAGE_SIZE
   );
+
+  if (loading && !data) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="space-y-4">
@@ -481,9 +486,7 @@ export default function DashboardPage() {
 
               <div className="h-48 w-full">
                 {loading ? (
-                  <div className="flex h-full items-center justify-center text-xs text-[#8A93A2]">
-                    Loading activity chart...
-                  </div>
+                  <InlineChartLoader label="Updating activity..." heightClass="h-48" />
                 ) : !data?.membershipTrend.length ? (
                   <div className="flex h-full items-center justify-center text-xs text-[#8A93A2]">
                     No membership activity in this period.
