@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db/prisma";
 import { requireStaffSession } from "@/lib/auth/session";
 import { memberUpdateSchema } from "@/lib/validation/schemas";
@@ -92,6 +93,11 @@ export async function PATCH(
       }
     }
 
+    const nextPasswordHash =
+      session.role !== "TRAINER" && data.password && data.password.length >= 8
+        ? await bcrypt.hash(data.password, 12)
+        : undefined;
+
     const updated = await prisma.$transaction(async (tx) => {
       const m = await tx.member.update({
         where: { id },
@@ -106,6 +112,9 @@ export async function PATCH(
           notes: data.notes || null,
           status: session.role === "TRAINER" ? undefined : data.status,
           archivedAt: data.status === "ARCHIVED" ? new Date() : undefined,
+          ...(nextPasswordHash
+            ? { passwordHash: nextPasswordHash, portalActivatedAt: new Date() }
+            : {}),
         },
       });
 

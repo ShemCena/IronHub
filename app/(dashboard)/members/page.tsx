@@ -600,7 +600,7 @@ export default function MembersPage() {
                 </div>
               </div>
 
-              {!editTarget && (
+              {!editTarget ? (
                 <div>
                   <label className="mb-1 block text-xs text-[#A4AAB5]">
                     Initial Portal Password * (client can change later)
@@ -615,6 +615,22 @@ export default function MembersPage() {
                     className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
                   />
                 </div>
+              ) : (
+                role !== "TRAINER" && (
+                  <div>
+                    <label className="mb-1 block text-xs text-[#A4AAB5]">
+                      Reset Portal Password (Optional)
+                    </label>
+                    <input
+                      type="password"
+                      minLength={8}
+                      value={form.password}
+                      onChange={(e) => setForm({ ...form, password: e.target.value })}
+                      placeholder="Leave blank to keep current password"
+                      className="h-8 w-full rounded-lg border border-[#242934] bg-[#171A21] px-2.5 text-xs text-[#F5F6F8]"
+                    />
+                  </div>
+                )
               )}
 
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">

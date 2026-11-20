@@ -36,6 +36,12 @@ export const memberUpdateSchema = memberCreateSchema
       .email("Enter a valid email address.")
       .optional()
       .or(z.literal("")),
+    password: z
+      .string()
+      .min(8, "New password must be at least 8 characters.")
+      .max(100)
+      .optional()
+      .or(z.literal("")),
     status: z.enum(["ACTIVE", "EXPIRED", "SUSPENDED", "ARCHIVED"]).optional(),
   });
 
